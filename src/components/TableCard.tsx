@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table } from '../types';
 import { GuestChip } from './GuestChip';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface TableCardProps {
   table: Table;
@@ -26,6 +27,7 @@ export function TableCard({
   onRemoveTable,
   onGuestClick,
 }: TableCardProps) {
+  const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(table.name);
@@ -57,7 +59,7 @@ export function TableCard({
         <button
           onClick={onToggleCollapse}
           className="flex items-start gap-1.5 min-w-0 flex-1 text-left"
-          title={collapsed ? 'Expand table' : 'Collapse table'}
+          title={collapsed ? t('tables.expandTable') : t('tables.collapseTable')}
         >
           <span
             className={`text-slate-400 text-xs mt-1 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`}
@@ -88,7 +90,7 @@ export function TableCard({
                   setEditingName(true);
                 }}
                 className="block text-sm font-semibold text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
-                title="Click to rename"
+                title={t('header.renameHint')}
               >
                 {table.name}
               </span>
@@ -96,7 +98,7 @@ export function TableCard({
             <span
               className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
             >
-              {guests.length}/{table.capacity} seats
+              {t('tables.seats', { seated: guests.length, capacity: table.capacity })}
             </span>
           </span>
         </button>
@@ -104,25 +106,25 @@ export function TableCard({
           <button
             onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}
             className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title="Decrease capacity"
+            title={t('tables.decreaseCapacity')}
           >
             −
           </button>
           <button
             onClick={() => onUpdateTable({ capacity: table.capacity + 1 })}
             className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title="Increase capacity"
+            title={t('tables.increaseCapacity')}
           >
             +
           </button>
           <button
             onClick={() => {
-              if (guests.length === 0 || confirm(`Remove ${table.name}? Seated guests will become unseated.`)) {
+              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: table.name }))) {
                 onRemoveTable();
               }
             }}
             className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
-            title="Remove table"
+            title={t('tables.removeTable')}
           >
             ✕
           </button>
@@ -132,7 +134,7 @@ export function TableCard({
       {!collapsed && (
         <div className="flex-1 space-y-1.5 min-h-[52px]">
           {guests.length === 0 && (
-            <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">Drop guests here</p>
+            <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">{t('tables.dropHere')}</p>
           )}
           {guests.map((g) => (
             <GuestChip

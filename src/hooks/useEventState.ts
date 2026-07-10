@@ -36,14 +36,14 @@ export function useEventState() {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
   }, []);
 
-  const addTable = useCallback((table?: Partial<Table>) => {
+  const addTable = useCallback((namePrefix = 'Table') => {
     setState((prev) => {
       const base = prev ?? makeEventState();
       const nextNumber = base.tables.length + 1;
       const newTable: Table = {
         id: makeId('t'),
-        name: table?.name ?? `Table ${nextNumber}`,
-        capacity: table?.capacity ?? 8,
+        name: `${namePrefix} ${nextNumber}`,
+        capacity: 8,
       };
       return { ...base, tables: [...base.tables, newTable], updatedAt: new Date().toISOString() };
     });

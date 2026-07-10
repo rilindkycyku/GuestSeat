@@ -26,7 +26,20 @@ function normalizeEntry(entry: ImportGuestEntry, group?: string): Guest | null {
   return null;
 }
 
-export class ImportError extends Error {}
+export type ImportErrorCode =
+  | 'INVALID_JSON'
+  | 'GUESTS_KEY_EMPTY'
+  | 'FLAT_ARRAY_EMPTY'
+  | 'GROUPED_EMPTY'
+  | 'UNRECOGNIZED';
+
+export class ImportError extends Error {
+  code: ImportErrorCode;
+  constructor(code: ImportErrorCode) {
+    super(code);
+    this.code = code;
+  }
+}
 
 /**
  * Accepts three shapes:
@@ -34,10 +47,15 @@ export class ImportError extends Error {}
  *     (the format produced by the user's own guest-list export)
  *  2. [ "Full guest entry", { name, surname, table }, ... ] - flat array
  *  3. { guests: [...], tables: [...], eventName } - a previously exported GuestSeat file (round-trip)
+ *
+ * `tableLabel` is used as the display prefix for tables generated from shape 1 (e.g. "Table A").
  */
-export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Table[]; eventName?: string } {
+export function parseImportedJson(
+  raw: unknown,
+  tableLabel = 'Table'
+): { guests: Guest[]; tables: Table[]; eventName?: string } {
   if (raw === null || typeof raw !== 'object') {
-    throw new ImportError('That file is not valid JSON for a guest list.');
+    throw new ImportError('INVALID_JSON');
   }
 
   const data = raw as ImportShape;
@@ -49,7 +67,7 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
     const tables: Table[] = (full.tables ?? []).map((t) => {
       const id = t.id ?? makeId('t');
       if (t.id) tableIdMap.set(t.id, t.id);
-      return { id, name: t.name ?? 'Table', capacity: t.capacity ?? 8 };
+      return { id, name: t.name ?? tableLabel, capacity: t.capacity ?? 8 };
     });
     const guests = full.guests
       .map((e) => normalizeEntry(e))
@@ -60,7 +78,7 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
           typeof original === 'object' && original ? original.table ?? (original as any).tableId : undefined;
         return rawTable ? { ...g, tableId: tables.some((t) => t.id === rawTable) ? rawTable : null } : g;
       });
-    if (guests.length === 0) throw new ImportError('That file has a "guests" list but no valid entries were found.');
+    if (guests.length === 0) throw new ImportError('GUESTS_KEY_EMPTY');
     return { guests, tables, eventName: full.eventName };
   }
 
@@ -68,7 +86,7 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
   if (Array.isArray(data)) {
     const guests = data.map((e) => normalizeEntry(e)).filter((g): g is Guest => g !== null);
     if (guests.length === 0) {
-      throw new ImportError('That JSON array did not contain any recognizable guest names.');
+      throw new ImportError('FLAT_ARRAY_EMPTY');
     }
     return { guests, tables: [] };
   }
@@ -82,7 +100,7 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
     const tables: Table[] = [];
     for (const key of groupKeys) {
       const entries = (data as Record<string, ImportGuestEntry[]>)[key];
-      const table: Table = { id: makeId('t'), name: `Table ${key}`, capacity: entries.length };
+      const table: Table = { id: makeId('t'), name: `${tableLabel} ${key}`, capacity: entries.length };
       const tableGuests: Guest[] = [];
       for (const entry of entries) {
         const g = normalizeEntry(entry, key);
@@ -94,14 +112,12 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
       }
     }
     if (guests.length === 0) {
-      throw new ImportError('That JSON did not contain any recognizable guest names.');
+      throw new ImportError('GROUPED_EMPTY');
     }
     return { guests, tables };
   }
 
-  throw new ImportError(
-    'Unrecognized JSON structure. Expected a list of names, a list of guest objects, or groups of names.'
-  );
+  throw new ImportError('UNRECOGNIZED');
 }
 
 export function makeEventState(partial: Partial<EventState> = {}): EventState {

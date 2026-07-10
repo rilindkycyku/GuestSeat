@@ -1,6 +1,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest } from '../types';
 import { GuestChip } from './GuestChip';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface UnseatedPanelProps {
   guests: Guest[];
@@ -9,6 +10,7 @@ interface UnseatedPanelProps {
 }
 
 export function UnseatedPanel({ guests, matchedIds, onGuestClick }: UnseatedPanelProps) {
+  const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: 'unseated' });
 
   return (
@@ -20,7 +22,7 @@ export function UnseatedPanel({ guests, matchedIds, onGuestClick }: UnseatedPane
       }`}
     >
       <div className="flex items-center justify-between mb-2 px-1">
-        <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Unseated Guests</h2>
+        <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{t('unseated.title')}</h2>
         <span className="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5">
           {guests.length}
         </span>
@@ -28,9 +30,9 @@ export function UnseatedPanel({ guests, matchedIds, onGuestClick }: UnseatedPane
       <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-[80px]">
         {guests.length === 0 && (
           <p className="text-xs text-slate-400 text-center py-6">
-            Everyone is seated 🎉
+            {t('unseated.allSeated')}
             <br />
-            Drag guests here to unseat them.
+            {t('unseated.dragHint')}
           </p>
         )}
         {guests.map((g) => (

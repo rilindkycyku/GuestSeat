@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useEventState } from './hooks/useEventState';
+import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
 import { UnseatedPanel } from './components/UnseatedPanel';
 import { TableCard } from './components/TableCard';
 import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
+import { SettingsControls } from './components/SettingsControls';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import type { Guest } from './types';
 
@@ -25,6 +27,7 @@ export default function App() {
     updateGuest,
     removeGuest,
   } = useEventState();
+  const { t } = useLanguage();
 
   const [query, setQuery] = useState('');
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
@@ -35,14 +38,17 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
 
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 3000);
   };
 
-  const tableById = useMemo(() => new Map((state?.tables ?? []).map((t) => [t.id, t])), [state]);
+  const tableById = useMemo(() => new Map((state?.tables ?? []).map((tb) => [tb.id, tb])), [state]);
 
   const seatedCount = useMemo(() => {
     const m = new Map<string, number>();
@@ -78,7 +84,7 @@ export default function App() {
 
   useEffect(() => {
     if (!matchedTableIds || matchedTableIds.size === 0) return;
-    const firstMatch = state?.tables.find((t) => matchedTableIds.has(t.id));
+    const firstMatch = state?.tables.find((tb) => matchedTableIds.has(tb.id));
     if (!firstMatch) return;
     const el = document.querySelector(`[data-table-id="${firstMatch.id}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -108,18 +114,18 @@ export default function App() {
     try {
       const text = await file.text();
       const json = JSON.parse(text);
-      const { guests, tables, eventName } = parseImportedJson(json);
+      const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'));
       if (mode === 'replace') {
-        loadFromImport(guests, tables, eventName);
-        showToast(`Loaded ${guests.length} guests.`);
+        loadFromImport(guests, tables, eventName ?? t('header.defaultEventName'));
+        showToast(t('import.loaded', { count: guests.length }));
       } else {
         mergeFromImport(guests);
-        showToast(`Imported ${guests.length} more guests.`);
+        showToast(t('import.importedMore', { count: guests.length }));
       }
     } catch (err) {
-      if (err instanceof ImportError) showToast(err.message);
-      else if (err instanceof SyntaxError) showToast('That file is not valid JSON.');
-      else showToast('Could not read that file.');
+      if (err instanceof ImportError) showToast(t(`import.errors.${err.code}`));
+      else if (err instanceof SyntaxError) showToast(t('import.errors.SYNTAX_ERROR'));
+      else showToast(t('import.errors.READ_FAILED'));
     }
   };
 
@@ -135,7 +141,7 @@ export default function App() {
       if (table && guest && guest.tableId !== table.id) {
         const currentCount = seatedCount.get(table.id) ?? 0;
         if (currentCount >= table.capacity) {
-          showToast(`${table.name} is full (${table.capacity}/${table.capacity}).`);
+          showToast(t('tables.tableFull', { name: table.name, capacity: table.capacity }));
           return;
         }
       }
@@ -144,7 +150,9 @@ export default function App() {
   };
 
   if (!state) {
-    return <Onboarding onImported={(g, t, name) => loadFromImport(g, t, name)} />;
+    return (
+      <Onboarding onImported={(guests, tables, name) => loadFromImport(guests, tables, name)} />
+    );
   }
 
   const totalGuests = state.guests.length;
@@ -173,7 +181,7 @@ export default function App() {
                 <button
                   onClick={() => setNameDraft(state.eventName)}
                   className="font-bold text-base sm:text-lg text-slate-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
-                  title="Click to rename"
+                  title={t('header.renameHint')}
                 >
                   {state.eventName}
                 </button>
@@ -188,35 +196,36 @@ export default function App() {
                 onClick={() => setAddingGuest(true)}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                + Guest
+                {t('header.addGuest')}
               </button>
               <button
-                onClick={() => addTable()}
+                onClick={() => addTable(t('tables.namePrefix'))}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                + Table
+                {t('header.addTable')}
               </button>
               <button
                 onClick={() => importInputRef.current?.click()}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                Import
+                {t('header.import')}
               </button>
               <ExportMenu state={state} />
               <button
                 onClick={() => {
-                  if (confirm('Clear all guests and tables? This cannot be undone.')) resetAll();
+                  if (confirm(t('header.resetConfirm'))) resetAll();
                 }}
                 className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
               >
-                Reset
+                {t('header.reset')}
               </button>
+              <SettingsControls />
             </div>
 
             <button
               onClick={() => setMenuOpen((o) => !o)}
               className="sm:hidden ml-auto w-9 h-9 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
-              aria-label="Menu"
+              aria-label={t('header.menu')}
             >
               {menuOpen ? '✕' : '☰'}
             </button>
@@ -237,7 +246,7 @@ export default function App() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, surname, or table…"
+              placeholder={t('header.searchPlaceholder')}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-10 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
@@ -257,16 +266,16 @@ export default function App() {
                 }}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                + Guest
+                {t('header.addGuest')}
               </button>
               <button
                 onClick={() => {
-                  addTable();
+                  addTable(t('tables.namePrefix'));
                   setMenuOpen(false);
                 }}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                + Table
+                {t('header.addTable')}
               </button>
               <button
                 onClick={() => {
@@ -275,18 +284,19 @@ export default function App() {
                 }}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                Import
+                {t('header.import')}
               </button>
               <ExportMenu state={state} fullWidth />
               <button
                 onClick={() => {
-                  if (confirm('Clear all guests and tables? This cannot be undone.')) resetAll();
+                  if (confirm(t('header.resetConfirm'))) resetAll();
                   setMenuOpen(false);
                 }}
-                className="col-span-2 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
               >
-                Reset
+                {t('header.reset')}
               </button>
+              <SettingsControls className="col-span-1 justify-center" />
             </div>
           )}
         </header>
@@ -302,24 +312,24 @@ export default function App() {
                 <button
                   onClick={() =>
                     setCollapsedTableIds((prev) =>
-                      prev.size === state.tables.length ? new Set() : new Set(state.tables.map((t) => t.id))
+                      prev.size === state.tables.length ? new Set() : new Set(state.tables.map((tb) => tb.id))
                     )
                   }
                   className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
-                  {collapsedTableIds.size === state.tables.length ? 'Expand all' : 'Collapse all'}
+                  {collapsedTableIds.size === state.tables.length ? t('tables.expandAll') : t('tables.collapseAll')}
                 </button>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {state.tables.length === 0 && (
                 <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
-                  <p className="mb-3">No tables yet.</p>
+                  <p className="mb-3">{t('tables.noTablesYet')}</p>
                   <button
-                    onClick={() => addTable()}
+                    onClick={() => addTable(t('tables.namePrefix'))}
                     className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500"
                   >
-                    Create your first table
+                    {t('tables.createFirst')}
                   </button>
                 </div>
               )}

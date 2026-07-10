@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Guest } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface AddGuestModalProps {
   onAdd: (guest: Partial<Guest> & { name: string }) => void;
@@ -7,6 +8,7 @@ interface AddGuestModalProps {
 }
 
 export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
 
@@ -22,10 +24,10 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
         className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Add guest</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('addGuest.title')}</h2>
 
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
-          Name <span className="text-red-500">*</span>
+          {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
         <input
           autoFocus
@@ -36,7 +38,7 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
         />
 
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
-          Surname <span className="text-slate-400">(optional)</span>
+          {t('guestEditor.surname')} <span className="text-slate-400">({t('common.optional')})</span>
         </label>
         <input
           value={surname}
@@ -50,14 +52,14 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
             onClick={onClose}
             className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={save}
             disabled={!name.trim()}
             className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 disabled:opacity-40"
           >
-            Add
+            {t('common.add')}
           </button>
         </div>
       </div>
