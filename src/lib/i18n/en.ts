@@ -43,7 +43,7 @@ export const en = {
     addTable: '+ Table',
     import: 'Import',
     reset: 'Reset',
-    resetConfirm: 'Clear all guests and tables? This cannot be undone.',
+    resetConfirm: 'Restore the original guest list? Your changes will be lost.',
     menu: 'Menu',
     renameHint: 'Click to rename',
   },

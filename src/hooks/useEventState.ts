@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { EventState, Guest, Table } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
+import { getDefaultEventState } from '../lib/defaultEvent';
 import { clearState, loadState, saveState } from '../lib/storage';
 
 export function useEventState() {
-  const [state, setState] = useState<EventState | null>(() => loadState());
-  const skipNextSave = useRef(false);
+  // Seed with the saved state, falling back to the bundled default guest list so the
+  // app opens straight to the seating chart without requiring an upload.
+  const [state, setState] = useState<EventState | null>(() => loadState() ?? getDefaultEventState());
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
     if (state) saveState(state);
   }, [state]);
 
@@ -33,8 +31,7 @@ export function useEventState() {
 
   const resetAll = useCallback(() => {
     clearState();
-    skipNextSave.current = true;
-    setState(null);
+    setState(getDefaultEventState());
   }, []);
 
   const setEventName = useCallback((eventName: string) => {
