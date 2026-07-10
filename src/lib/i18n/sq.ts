@@ -20,6 +20,9 @@ export const sq = {
     exampleTitle: 'Formati shembull',
     exampleExplanation:
       'Çdo çelës bëhet një <strong>tavolinë</strong> (p.sh. "A" → Tavolina A), dhe emrat e saj ulen automatikisht në atë tavolinë. Vetëm <strong>emri</strong> është i detyrueshëm — mbiemrat janë opsionalë dhe mund të shtohen më vonë. Funksionon edhe një varg i thjeshtë emrash, ose objekte si {{sample}} (këto vijnë të paulura).',
+    tableNaming: 'Emrat e tavolinave',
+    namingLetters: 'Shkronja (A, B, C…)',
+    namingNumbers: 'Numra (1, 2, 3…)',
   },
   import: {
     errors: {
@@ -60,6 +63,18 @@ export const sq = {
     collapseTable: 'Mbylle tavolinën',
     expandTable: 'Hape tavolinën',
     tableFull: '{{name}} është plot ({{capacity}}/{{capacity}}).',
+    side: {
+      none: 'Pa palë',
+      groom: 'Dhëndri',
+      bride: 'Nusja',
+    },
+    setSide: 'Vendos në cilën palë bën pjesë kjo tavolinë',
+    filter: {
+      all: 'Të gjitha tavolinat',
+      groom: 'Pala e Dhëndrit',
+      bride: 'Pala e Nuses',
+    },
+    noTablesForFilter: "Ende s'ka tavolina në këtë palë.",
   },
   unseated: {
     title: 'Të ftuar pa vend',
@@ -87,5 +102,17 @@ export const sq = {
     pdfDesc: 'Skema e printueshme e vendeve',
     csv: 'CSV',
     csvDesc: 'Miqësore me spreadsheet',
+    fields: {
+      name: 'Emri',
+      surname: 'Mbiemri',
+      table: 'Tavolina',
+      notes: 'Shënime',
+      side: 'Pala',
+      unseated: 'Pa vend',
+      unknownTable: 'Tavolinë e panjohur',
+    },
+    summary: '{{guests}} të ftuar · {{tables}} tavolina · gjeneruar më {{date}}',
+    noGuestsSeated: '(asnjë i ftuar i ulur)',
+    unseatedHeading: 'Pa vend ({{count}})',
   },
 } satisfies TranslationDict;

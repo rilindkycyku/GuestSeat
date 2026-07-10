@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { EventState, Guest, Table } from '../types';
 
+type Translator = (key: string, vars?: Record<string, string | number>) => string;
+
 function downloadBlob(content: BlobPart, filename: string, type: string): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -22,34 +24,49 @@ function slug(name: string): string {
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'event';
 }
 
+function sideLabel(table: Table | undefined, t: Translator): string {
+  if (!table?.side) return '';
+  return t(`tables.side.${table.side}`);
+}
+
 export function exportAsJson(state: EventState): void {
   downloadBlob(JSON.stringify(state, null, 2), `${slug(state.eventName)}-seating.json`, 'application/json');
 }
 
-export function exportAsCsv(state: EventState): void {
-  const tableById = new Map(state.tables.map((t) => [t.id, t]));
-  const header = ['Name', 'Surname', 'Table', 'Notes'];
+export function exportAsCsv(state: EventState, t: Translator): void {
+  const tableById = new Map(state.tables.map((tb) => [tb.id, tb]));
+  const header = [
+    t('export.fields.name'),
+    t('export.fields.surname'),
+    t('export.fields.table'),
+    t('export.fields.side'),
+    t('export.fields.notes'),
+  ];
   const rows = [...state.guests]
     .sort((a, b) => fullName(a).localeCompare(fullName(b)))
-    .map((g) => [
-      g.name,
-      g.surname ?? '',
-      g.tableId ? tableById.get(g.tableId)?.name ?? 'Unknown table' : 'Unseated',
-      g.notes ?? '',
-    ]);
+    .map((g) => {
+      const table = g.tableId ? tableById.get(g.tableId) : undefined;
+      return [
+        g.name,
+        g.surname ?? '',
+        g.tableId ? (table?.name ?? t('export.fields.unknownTable')) : t('export.fields.unseated'),
+        sideLabel(table, t),
+        g.notes ?? '',
+      ];
+    });
   const csv = [header, ...rows]
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     .join('\n');
   downloadBlob(csv, `${slug(state.eventName)}-seating.csv`, 'text/csv');
 }
 
-export function exportAsPdf(state: EventState): void {
+export function exportAsPdf(state: EventState, t: Translator): void {
   const doc = new jsPDF();
   const tables: Table[] = state.tables;
   const guestsByTable = new Map<string, Guest[]>();
   const unseated: Guest[] = [];
   for (const g of state.guests) {
-    if (g.tableId && tables.some((t) => t.id === g.tableId)) {
+    if (g.tableId && tables.some((tb) => tb.id === g.tableId)) {
       const list = guestsByTable.get(g.tableId) ?? [];
       list.push(g);
       guestsByTable.set(g.tableId, list);
@@ -63,7 +80,11 @@ export function exportAsPdf(state: EventState): void {
   doc.setFontSize(10);
   doc.setTextColor(120);
   doc.text(
-    `${state.guests.length} guests · ${tables.length} tables · generated ${new Date().toLocaleDateString()}`,
+    t('export.summary', {
+      guests: state.guests.length,
+      tables: tables.length,
+      date: new Date().toLocaleDateString(),
+    }),
     14,
     25
   );
@@ -81,16 +102,17 @@ export function exportAsPdf(state: EventState): void {
       y = 20;
     }
     doc.setFontSize(13);
-    doc.text(`${table.name}  (${guests.length}/${table.capacity})`, 14, y);
+    const side = sideLabel(table, t);
+    doc.text(`${table.name}${side ? ` — ${side}` : ''}  (${guests.length}/${table.capacity})`, 14, y);
     y += 4;
     autoTable(doc, {
       startY: y,
-      head: [['#', 'Guest', 'Notes']],
+      head: [['#', t('export.fields.name'), t('export.fields.notes')]],
       body: guests.length
         ? guests.map((g, i) => [String(i + 1), fullName(g), g.notes ?? ''])
-        : [['—', '(no guests seated)', '']],
+        : [['—', t('export.noGuestsSeated'), '']],
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [79, 70, 229] },
+      headStyles: { fillColor: table.side === 'bride' ? [219, 39, 119] : table.side === 'groom' ? [37, 99, 235] : [79, 70, 229] },
       margin: { left: 14, right: 14 },
       theme: 'striped',
     });
@@ -104,11 +126,11 @@ export function exportAsPdf(state: EventState): void {
       y = 20;
     }
     doc.setFontSize(13);
-    doc.text(`Unseated (${unseated.length})`, 14, y);
+    doc.text(t('export.unseatedHeading', { count: unseated.length }), 14, y);
     y += 4;
     autoTable(doc, {
       startY: y,
-      head: [['#', 'Guest', 'Notes']],
+      head: [['#', t('export.fields.name'), t('export.fields.notes')]],
       body: [...unseated]
         .sort((a, b) => fullName(a).localeCompare(fullName(b)))
         .map((g, i) => [String(i + 1), fullName(g), g.notes ?? '']),

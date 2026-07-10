@@ -19,10 +19,15 @@ export function useEventState() {
     setState(makeEventState({ guests, tables, eventName }));
   }, []);
 
-  const mergeFromImport = useCallback((guests: Guest[]) => {
+  const mergeFromImport = useCallback((guests: Guest[], tables: Table[] = []) => {
     setState((prev) => {
       const base = prev ?? makeEventState();
-      return { ...base, guests: [...base.guests, ...guests], updatedAt: new Date().toISOString() };
+      return {
+        ...base,
+        guests: [...base.guests, ...guests],
+        tables: [...base.tables, ...tables],
+        updatedAt: new Date().toISOString(),
+      };
     });
   }, []);
 

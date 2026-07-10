@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { Guest, Table } from '../types';
+import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -15,6 +15,11 @@ interface TableCardProps {
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
 }
+
+const SIDE_STYLES: Record<TableSide, string> = {
+  groom: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+  bride: 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300',
+};
 
 export function TableCard({
   table,
@@ -40,11 +45,16 @@ export function TableCard({
     setEditingName(false);
   };
 
+  const setSide = (side: TableSide | undefined) => {
+    onUpdateTable({ side });
+  };
+
   return (
     <div
       ref={setNodeRef}
       data-testid="table-card"
       data-table-id={table.id}
+      data-table-side={table.side ?? ''}
       className={`flex flex-col rounded-2xl border-2 p-3 transition-colors bg-white dark:bg-slate-900 scroll-mt-24 ${
         isOver
           ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30'
@@ -56,9 +66,17 @@ export function TableCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onToggleCollapse}
-          className="flex items-start gap-1.5 min-w-0 flex-1 text-left"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onToggleCollapse();
+            }
+          }}
+          className="flex items-start gap-1.5 min-w-0 flex-1 text-left cursor-pointer"
           title={collapsed ? t('tables.expandTable') : t('tables.collapseTable')}
         >
           <span
@@ -95,13 +113,41 @@ export function TableCard({
                 {table.name}
               </span>
             )}
-            <span
-              className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
-            >
-              {t('tables.seats', { seated: guests.length, capacity: table.capacity })}
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span
+                className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
+              >
+                {t('tables.seats', { seated: guests.length, capacity: table.capacity })}
+              </span>
+              <div
+                className="flex items-center gap-0.5"
+                onClick={(e) => e.stopPropagation()}
+                title={t('tables.setSide')}
+              >
+                <button
+                  onClick={() => setSide(table.side === 'groom' ? undefined : 'groom')}
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+                    table.side === 'groom'
+                      ? SIDE_STYLES.groom
+                      : 'text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500'
+                  }`}
+                >
+                  {t('tables.side.groom')}
+                </button>
+                <button
+                  onClick={() => setSide(table.side === 'bride' ? undefined : 'bride')}
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+                    table.side === 'bride'
+                      ? SIDE_STYLES.bride
+                      : 'text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500'
+                  }`}
+                >
+                  {t('tables.side.bride')}
+                </button>
+              </div>
+            </div>
           </span>
-        </button>
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}

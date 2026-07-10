@@ -12,11 +12,17 @@ export interface Guest {
   tableId: string | null;
 }
 
+export type TableSide = 'groom' | 'bride';
+
 export interface Table {
   id: string;
   name: string;
   capacity: number;
+  /** Which side of the wedding this table belongs to, if categorized. */
+  side?: TableSide;
 }
+
+export type TableNamingMode = 'letters' | 'numbers';
 
 export interface EventState {
   eventName: string;

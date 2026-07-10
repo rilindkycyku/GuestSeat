@@ -41,7 +41,7 @@ export function ExportMenu({ state, fullWidth }: { state: EventState; fullWidth?
           </button>
           <button
             onClick={() => {
-              exportAsPdf(state);
+              exportAsPdf(state, t);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
@@ -50,7 +50,7 @@ export function ExportMenu({ state, fullWidth }: { state: EventState; fullWidth?
           </button>
           <button
             onClick={() => {
-              exportAsCsv(state);
+              exportAsCsv(state, t);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"

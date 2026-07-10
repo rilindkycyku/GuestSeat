@@ -3,7 +3,7 @@ import { ImportError, parseImportedJson } from '../lib/importGuests';
 import { EXAMPLE_JSON_TEXT } from '../lib/exampleData';
 import { useLanguage } from '../hooks/useLanguage';
 import { SettingsControls } from './SettingsControls';
-import type { Guest, Table } from '../types';
+import type { Guest, Table, TableNamingMode } from '../types';
 
 interface OnboardingProps {
   onImported: (guests: Guest[], tables: Table[], eventName?: string) => void;
@@ -14,6 +14,7 @@ export function Onboarding({ onImported }: OnboardingProps) {
   const [error, setError] = useState<string | null>(null);
   const [showExample, setShowExample] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [namingMode, setNamingMode] = useState<TableNamingMode>('letters');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -22,7 +23,7 @@ export function Onboarding({ onImported }: OnboardingProps) {
       try {
         const text = await file.text();
         const json = JSON.parse(text);
-        const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'));
+        const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'), namingMode);
         onImported(guests, tables, eventName ?? t('header.defaultEventName'));
       } catch (err) {
         if (err instanceof ImportError) {
@@ -34,7 +35,7 @@ export function Onboarding({ onImported }: OnboardingProps) {
         }
       }
     },
-    [onImported, t]
+    [onImported, t, namingMode]
   );
 
   const onDrop = useCallback(
@@ -61,9 +62,13 @@ export function Onboarding({ onImported }: OnboardingProps) {
 
   const loadExample = useCallback(() => {
     setError(null);
-    const { guests, tables, eventName } = parseImportedJson(JSON.parse(EXAMPLE_JSON_TEXT), t('tables.namePrefix'));
+    const { guests, tables, eventName } = parseImportedJson(
+      JSON.parse(EXAMPLE_JSON_TEXT),
+      t('tables.namePrefix'),
+      namingMode
+    );
     onImported(guests, tables, eventName ?? t('header.defaultEventName'));
-  }, [onImported, t]);
+  }, [onImported, t, namingMode]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 relative">
@@ -93,6 +98,36 @@ export function Onboarding({ onImported }: OnboardingProps) {
           <p className="text-slate-600 dark:text-slate-300 mb-4">
             {t('onboarding.dropHint', { ext: '.json' })}
           </p>
+
+          <div
+            className="inline-flex items-center gap-2 mb-4 text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-slate-400">{t('onboarding.tableNaming')}:</span>
+            <div className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 p-0.5">
+              <button
+                onClick={() => setNamingMode('letters')}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors ${
+                  namingMode === 'letters'
+                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {t('onboarding.namingLetters')}
+              </button>
+              <button
+                onClick={() => setNamingMode('numbers')}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors ${
+                  namingMode === 'numbers'
+                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {t('onboarding.namingNumbers')}
+              </button>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => fileInputRef.current?.click()}

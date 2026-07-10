@@ -10,7 +10,7 @@ import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsControls } from './components/SettingsControls';
 import { ImportError, parseImportedJson } from './lib/importGuests';
-import type { Guest } from './types';
+import type { Guest, TableSide } from './types';
 
 export default function App() {
   const {
@@ -36,6 +36,7 @@ export default function App() {
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sideFilter, setSideFilter] = useState<'all' | TableSide>('all');
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
@@ -49,6 +50,23 @@ export default function App() {
   };
 
   const tableById = useMemo(() => new Map((state?.tables ?? []).map((tb) => [tb.id, tb])), [state]);
+
+  const filteredTables = useMemo(() => {
+    if (!state) return [];
+    if (sideFilter === 'all') return state.tables;
+    return state.tables.filter((tb) => tb.side === sideFilter);
+  }, [state, sideFilter]);
+
+  const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
+
+  const sideCounts = useMemo(() => {
+    const counts = { groom: 0, bride: 0 };
+    for (const tb of state?.tables ?? []) {
+      if (tb.side === 'groom') counts.groom += 1;
+      else if (tb.side === 'bride') counts.bride += 1;
+    }
+    return counts;
+  }, [state]);
 
   const seatedCount = useMemo(() => {
     const m = new Map<string, number>();
@@ -64,12 +82,13 @@ export default function App() {
     if (!q) return null;
     const set = new Set<string>();
     for (const g of state.guests) {
+      if (g.tableId && !visibleTableIds.has(g.tableId)) continue;
       const table = g.tableId ? tableById.get(g.tableId) : undefined;
       const haystack = `${g.name} ${g.surname ?? ''} ${table?.name ?? ''}`.toLowerCase();
       if (haystack.includes(q)) set.add(g.id);
     }
     return set;
-  }, [state, query, tableById]);
+  }, [state, query, tableById, visibleTableIds]);
 
   const matchedTableIds = useMemo(() => {
     if (!matchedIds || !state) return null;
@@ -119,7 +138,7 @@ export default function App() {
         loadFromImport(guests, tables, eventName ?? t('header.defaultEventName'));
         showToast(t('import.loaded', { count: guests.length }));
       } else {
-        mergeFromImport(guests);
+        mergeFromImport(guests, tables);
         showToast(t('import.importedMore', { count: guests.length }));
       }
     } catch (err) {
@@ -307,18 +326,56 @@ export default function App() {
           </div>
 
           <div className="min-w-0 w-full">
-            {state.tables.length > 0 && !isSearching && (
-              <div className="flex justify-end mb-3">
-                <button
-                  onClick={() =>
-                    setCollapsedTableIds((prev) =>
-                      prev.size === state.tables.length ? new Set() : new Set(state.tables.map((tb) => tb.id))
-                    )
-                  }
-                  className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                >
-                  {collapsedTableIds.size === state.tables.length ? t('tables.expandAll') : t('tables.collapseAll')}
-                </button>
+            {state.tables.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setSideFilter('all')}
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      sideFilter === 'all'
+                        ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {t('tables.filter.all')}
+                  </button>
+                  <button
+                    onClick={() => setSideFilter('groom')}
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      sideFilter === 'groom'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {t('tables.filter.groom')} ({sideCounts.groom})
+                  </button>
+                  <button
+                    onClick={() => setSideFilter('bride')}
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      sideFilter === 'bride'
+                        ? 'bg-pink-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {t('tables.filter.bride')} ({sideCounts.bride})
+                  </button>
+                </div>
+                {!isSearching && filteredTables.length > 0 && (
+                  <button
+                    onClick={() =>
+                      setCollapsedTableIds((prev) =>
+                        filteredTables.every((tb) => prev.has(tb.id))
+                          ? new Set([...prev].filter((id) => !visibleTableIds.has(id)))
+                          : new Set([...prev, ...filteredTables.map((tb) => tb.id)])
+                      )
+                    }
+                    className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    {filteredTables.every((tb) => collapsedTableIds.has(tb.id))
+                      ? t('tables.expandAll')
+                      : t('tables.collapseAll')}
+                  </button>
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -333,7 +390,12 @@ export default function App() {
                   </button>
                 </div>
               )}
-              {state.tables.map((table) => (
+              {state.tables.length > 0 && filteredTables.length === 0 && (
+                <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                  <p>{t('tables.noTablesForFilter')}</p>
+                </div>
+              )}
+              {filteredTables.map((table) => (
                 <TableCard
                   key={table.id}
                   table={table}

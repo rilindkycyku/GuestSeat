@@ -1,4 +1,4 @@
-import type { EventState, Guest, ImportGuestEntry, ImportShape, Table } from '../types';
+import type { EventState, Guest, ImportGuestEntry, ImportShape, Table, TableNamingMode } from '../types';
 
 function makeId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
@@ -49,10 +49,13 @@ export class ImportError extends Error {
  *  3. { guests: [...], tables: [...], eventName } - a previously exported GuestSeat file (round-trip)
  *
  * `tableLabel` is used as the display prefix for tables generated from shape 1 (e.g. "Table A").
+ * `namingMode` controls whether those tables are suffixed with their original key ("Table A") or
+ * a sequential number ("Table 1").
  */
 export function parseImportedJson(
   raw: unknown,
-  tableLabel = 'Table'
+  tableLabel = 'Table',
+  namingMode: TableNamingMode = 'letters'
 ): { guests: Guest[]; tables: Table[]; eventName?: string } {
   if (raw === null || typeof raw !== 'object') {
     throw new ImportError('INVALID_JSON');
@@ -100,7 +103,8 @@ export function parseImportedJson(
     const tables: Table[] = [];
     for (const key of groupKeys) {
       const entries = (data as Record<string, ImportGuestEntry[]>)[key];
-      const table: Table = { id: makeId('t'), name: `${tableLabel} ${key}`, capacity: entries.length };
+      const suffix = namingMode === 'numbers' ? String(tables.length + 1) : key;
+      const table: Table = { id: makeId('t'), name: `${tableLabel} ${suffix}`, capacity: entries.length };
       const tableGuests: Guest[] = [];
       for (const entry of entries) {
         const g = normalizeEntry(entry, key);

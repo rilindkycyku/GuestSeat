@@ -18,6 +18,9 @@ export const en = {
     exampleTitle: 'Example format',
     exampleExplanation:
       'Each key becomes a <strong>table</strong> (e.g. "A" → Table A), and its names are seated at that table automatically. Only <strong>name</strong> is required — surnames are optional and can be added later in the app. A flat array of names, or objects like {{sample}}, also works (those come in unseated).',
+    tableNaming: 'Table names',
+    namingLetters: 'Letters (A, B, C…)',
+    namingNumbers: 'Numbers (1, 2, 3…)',
   },
   import: {
     errors: {
@@ -58,6 +61,18 @@ export const en = {
     collapseTable: 'Collapse table',
     expandTable: 'Expand table',
     tableFull: '{{name}} is full ({{capacity}}/{{capacity}}).',
+    side: {
+      none: 'No side',
+      groom: 'Groom',
+      bride: 'Bride',
+    },
+    setSide: 'Set which side this table belongs to',
+    filter: {
+      all: 'All tables',
+      groom: "Groom's side",
+      bride: "Bride's side",
+    },
+    noTablesForFilter: 'No tables on this side yet.',
   },
   unseated: {
     title: 'Unseated Guests',
@@ -85,6 +100,18 @@ export const en = {
     pdfDesc: 'Printable seating chart',
     csv: 'CSV',
     csvDesc: 'Spreadsheet-friendly',
+    fields: {
+      name: 'Name',
+      surname: 'Surname',
+      table: 'Table',
+      notes: 'Notes',
+      side: 'Side',
+      unseated: 'Unseated',
+      unknownTable: 'Unknown table',
+    },
+    summary: '{{guests}} guests · {{tables}} tables · generated {{date}}',
+    noGuestsSeated: '(no guests seated)',
+    unseatedHeading: 'Unseated ({{count}})',
   },
 };
 
