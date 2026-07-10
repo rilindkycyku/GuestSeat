@@ -109,15 +109,23 @@ export default function App() {
     if (!state) return null;
     const q = query.trim().toLowerCase();
     if (!q) return null;
+    const isVisible = (g: Guest) => !g.tableId || visibleTableIds.has(g.tableId);
     const set = new Set<string>();
     for (const g of state.guests) {
-      if (g.tableId && !visibleTableIds.has(g.tableId)) continue;
+      if (!isVisible(g)) continue;
       const table = g.tableId ? tableById.get(g.tableId) : undefined;
       const haystack = `${g.name} ${g.surname ?? ''} ${table ? tableDisplayName(table, t) : ''}`.toLowerCase();
       if (haystack.includes(q)) set.add(g.id);
     }
+    // Also surface linked partners of any direct match, so connected guests always show together.
+    for (const id of [...set]) {
+      for (const linkedId of guestById.get(id)?.linkedGuestIds ?? []) {
+        const linked = guestById.get(linkedId);
+        if (linked && isVisible(linked)) set.add(linkedId);
+      }
+    }
     return set;
-  }, [state, query, tableById, visibleTableIds, t]);
+  }, [state, query, tableById, visibleTableIds, t, guestById]);
 
   const matchedTableIds = useMemo(() => {
     if (!matchedIds || !state) return null;
@@ -198,6 +206,16 @@ export default function App() {
     const guestId = String(active.id);
     const dropId = String(over.id);
     trySeatGuest(guestId, dropId === 'unseated' ? null : dropId);
+  };
+
+  const handleLinkGuests = (guestIdA: string, guestIdB: string) => {
+    linkGuests(guestIdA, guestIdB);
+    const a = guestById.get(guestIdA);
+    const b = guestById.get(guestIdB);
+    if (a && b) {
+      if (a.tableId == null && b.tableId != null) trySeatGuest(a.id, b.tableId);
+      else if (b.tableId == null && a.tableId != null) trySeatGuest(b.id, a.tableId);
+    }
   };
 
   if (!state) {
@@ -469,7 +487,7 @@ export default function App() {
           onSave={(patch) => updateGuest(editingGuest.id, patch)}
           onDelete={() => removeGuest(editingGuest.id)}
           onClose={() => setEditingGuestId(null)}
-          onLink={(otherId) => linkGuests(editingGuest.id, otherId)}
+          onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
           onSeatGuest={trySeatGuest}
         />

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { groupLinkedWithin } from '../lib/linkGroups';
 
 interface TableCardProps {
   table: Table;
@@ -38,21 +39,9 @@ export function TableCard({
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
   const displayName = tableDisplayName(table, t);
-  const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(displayName);
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
-
-  const commitName = () => {
-    const trimmed = nameDraft.trim();
-    if (!trimmed || trimmed === displayName) {
-      // No real change — leave auto-naming (and its live translation) intact.
-      setEditingName(false);
-      return;
-    }
-    onUpdateTable({ name: trimmed, autoSuffix: undefined });
-    setEditingName(false);
-  };
+  const guestGroups = useMemo(() => groupLinkedWithin(guests), [guests]);
 
   const setSide = (side: TableSide | undefined) => {
     onUpdateTable({ side });
@@ -94,35 +83,7 @@ export function TableCard({
             ▾
           </span>
           <span className="min-w-0 flex-1">
-            {editingName ? (
-              <input
-                autoFocus
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={commitName}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitName();
-                  if (e.key === 'Escape') {
-                    setNameDraft(displayName);
-                    setEditingName(false);
-                  }
-                }}
-                className="w-full text-sm font-semibold bg-transparent border-b border-indigo-400 outline-none text-slate-800 dark:text-white"
-              />
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNameDraft(displayName);
-                  setEditingName(true);
-                }}
-                className="block text-sm font-semibold text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
-                title={t('header.renameHint')}
-              >
-                {displayName}
-              </span>
-            )}
+            <span className="block text-sm font-semibold text-slate-800 dark:text-white truncate">{displayName}</span>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <span
                 className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
@@ -192,16 +153,37 @@ export function TableCard({
           {guests.length === 0 && (
             <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">{t('tables.dropHere')}</p>
           )}
-          {guests.map((g) => (
-            <GuestChip
-              key={g.id}
-              guest={g}
-              highlighted={matchedIds ? matchedIds.has(g.id) : false}
-              linkBadge={linkBadges.get(g.id)}
-              onClick={() => onGuestClick(g)}
-              compact
-            />
-          ))}
+          {guestGroups.map((group) =>
+            group.length > 1 ? (
+              <div
+                key={group[0].id}
+                className="rounded-lg border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 p-1.5 space-y-1.5"
+              >
+                <div className="flex items-center gap-1 px-0.5 text-[10px] font-medium text-indigo-500 dark:text-indigo-400">
+                  🔗 {t('guestEditor.linkedGuests')}
+                </div>
+                {group.map((g) => (
+                  <GuestChip
+                    key={g.id}
+                    guest={g}
+                    highlighted={matchedIds ? matchedIds.has(g.id) : false}
+                    linkBadge={linkBadges.get(g.id)}
+                    onClick={() => onGuestClick(g)}
+                    compact
+                  />
+                ))}
+              </div>
+            ) : (
+              <GuestChip
+                key={group[0].id}
+                guest={group[0]}
+                highlighted={matchedIds ? matchedIds.has(group[0].id) : false}
+                linkBadge={linkBadges.get(group[0].id)}
+                onClick={() => onGuestClick(group[0])}
+                compact
+              />
+            )
+          )}
         </div>
       )}
 
