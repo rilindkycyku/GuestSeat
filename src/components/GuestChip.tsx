@@ -29,7 +29,7 @@ export function GuestChip({ guest, highlighted, onClick, compact }: GuestChipPro
       title={guest.notes}
       data-testid="guest-chip"
       data-guest-id={guest.id}
-      className={`group flex items-center gap-1.5 w-full text-left rounded-lg border px-2.5 py-1.5 text-sm transition-colors cursor-grab active:cursor-grabbing touch-none
+      className={`group flex items-center gap-1.5 w-full text-left rounded-lg border px-2.5 py-1.5 text-sm transition-colors cursor-grab active:cursor-grabbing touch-pan-y
         ${isDragging ? 'opacity-40' : 'opacity-100'}
         ${
           highlighted

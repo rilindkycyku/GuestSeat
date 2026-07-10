@@ -19,10 +19,15 @@ export function useEventState() {
     setState(makeEventState({ guests, tables, eventName }));
   }, []);
 
-  const mergeFromImport = useCallback((guests: Guest[]) => {
+  const mergeFromImport = useCallback((guests: Guest[], tables: Table[] = []) => {
     setState((prev) => {
       const base = prev ?? makeEventState();
-      return { ...base, guests: [...base.guests, ...guests], updatedAt: new Date().toISOString() };
+      return {
+        ...base,
+        guests: [...base.guests, ...guests],
+        tables: [...base.tables, ...tables],
+        updatedAt: new Date().toISOString(),
+      };
     });
   }, []);
 
@@ -36,14 +41,14 @@ export function useEventState() {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
   }, []);
 
-  const addTable = useCallback((table?: Partial<Table>) => {
+  const addTable = useCallback((namePrefix = 'Table') => {
     setState((prev) => {
       const base = prev ?? makeEventState();
       const nextNumber = base.tables.length + 1;
       const newTable: Table = {
         id: makeId('t'),
-        name: table?.name ?? `Table ${nextNumber}`,
-        capacity: table?.capacity ?? 8,
+        name: `${namePrefix} ${nextNumber}`,
+        capacity: 8,
       };
       return { ...base, tables: [...base.tables, newTable], updatedAt: new Date().toISOString() };
     });
