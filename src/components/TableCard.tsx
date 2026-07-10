@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
@@ -38,21 +37,8 @@ export function TableCard({
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
   const displayName = tableDisplayName(table, t);
-  const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(displayName);
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
-
-  const commitName = () => {
-    const trimmed = nameDraft.trim();
-    if (!trimmed || trimmed === displayName) {
-      // No real change — leave auto-naming (and its live translation) intact.
-      setEditingName(false);
-      return;
-    }
-    onUpdateTable({ name: trimmed, autoSuffix: undefined });
-    setEditingName(false);
-  };
 
   const setSide = (side: TableSide | undefined) => {
     onUpdateTable({ side });
@@ -94,35 +80,7 @@ export function TableCard({
             ▾
           </span>
           <span className="min-w-0 flex-1">
-            {editingName ? (
-              <input
-                autoFocus
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={commitName}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitName();
-                  if (e.key === 'Escape') {
-                    setNameDraft(displayName);
-                    setEditingName(false);
-                  }
-                }}
-                className="w-full text-sm font-semibold bg-transparent border-b border-indigo-400 outline-none text-slate-800 dark:text-white"
-              />
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNameDraft(displayName);
-                  setEditingName(true);
-                }}
-                className="block text-sm font-semibold text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
-                title={t('header.renameHint')}
-              >
-                {displayName}
-              </span>
-            )}
+            <span className="block text-sm font-semibold text-slate-800 dark:text-white truncate">{displayName}</span>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <span
                 className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}

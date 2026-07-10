@@ -109,15 +109,23 @@ export default function App() {
     if (!state) return null;
     const q = query.trim().toLowerCase();
     if (!q) return null;
+    const isVisible = (g: Guest) => !g.tableId || visibleTableIds.has(g.tableId);
     const set = new Set<string>();
     for (const g of state.guests) {
-      if (g.tableId && !visibleTableIds.has(g.tableId)) continue;
+      if (!isVisible(g)) continue;
       const table = g.tableId ? tableById.get(g.tableId) : undefined;
       const haystack = `${g.name} ${g.surname ?? ''} ${table ? tableDisplayName(table, t) : ''}`.toLowerCase();
       if (haystack.includes(q)) set.add(g.id);
     }
+    // Also surface linked partners of any direct match, so connected guests always show together.
+    for (const id of [...set]) {
+      for (const linkedId of guestById.get(id)?.linkedGuestIds ?? []) {
+        const linked = guestById.get(linkedId);
+        if (linked && isVisible(linked)) set.add(linkedId);
+      }
+    }
     return set;
-  }, [state, query, tableById, visibleTableIds, t]);
+  }, [state, query, tableById, visibleTableIds, t, guestById]);
 
   const matchedTableIds = useMemo(() => {
     if (!matchedIds || !state) return null;
