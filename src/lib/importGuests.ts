@@ -73,22 +73,30 @@ export function parseImportedJson(raw: unknown): { guests: Guest[]; tables: Tabl
     return { guests, tables: [] };
   }
 
-  // Shape 1: grouped object of arrays (the format used by lista_e_dasmes.json)
+  // Shape 1: grouped object of arrays (the format used by lista_e_dasmes.json).
+  // Each key is treated as a table name, and its names are seated at that table.
   const groupKeys = Object.keys(data as Record<string, unknown>);
   const allArrays = groupKeys.every((k) => Array.isArray((data as Record<string, unknown>)[k]));
   if (groupKeys.length > 0 && allArrays) {
     const guests: Guest[] = [];
+    const tables: Table[] = [];
     for (const key of groupKeys) {
       const entries = (data as Record<string, ImportGuestEntry[]>)[key];
+      const table: Table = { id: makeId('t'), name: `Table ${key}`, capacity: entries.length };
+      const tableGuests: Guest[] = [];
       for (const entry of entries) {
         const g = normalizeEntry(entry, key);
-        if (g) guests.push(g);
+        if (g) tableGuests.push({ ...g, tableId: table.id });
+      }
+      if (tableGuests.length > 0) {
+        tables.push(table);
+        guests.push(...tableGuests);
       }
     }
     if (guests.length === 0) {
       throw new ImportError('That JSON did not contain any recognizable guest names.');
     }
-    return { guests, tables: [] };
+    return { guests, tables };
   }
 
   throw new ImportError(

@@ -151,9 +151,11 @@ export function Onboarding({ onImported }: OnboardingProps) {
           >
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Example format</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
-              Group names under any key (e.g. an alphabet letter). Only <strong>name</strong> is required — surnames
-              are optional and can be added later in the app. A flat array of names, or objects like{' '}
-              <code className="text-xs">{'{ "name": "...", "surname": "..." }'}</code>, also works.
+              Each key becomes a <strong>table</strong> (e.g. "A" → Table A), and its names are seated at that
+              table automatically. Only <strong>name</strong> is required — surnames are optional and can be added
+              later in the app. A flat array of names, or objects like{' '}
+              <code className="text-xs">{'{ "name": "...", "surname": "..." }'}</code>, also works (those come in
+              unseated).
             </p>
             <pre className="bg-slate-50 dark:bg-slate-950 rounded-lg p-4 text-xs overflow-auto max-h-80 text-slate-700 dark:text-slate-300">
 {EXAMPLE_JSON_TEXT}
