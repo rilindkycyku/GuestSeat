@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ImportError, parseImportedJson } from '../lib/importGuests';
+import { parseImportedCsv } from '../lib/importCsv';
 import { EXAMPLE_JSON_TEXT } from '../lib/exampleData';
 import { useLanguage } from '../hooks/useLanguage';
 import { SettingsControls } from './SettingsControls';
@@ -22,6 +23,11 @@ export function Onboarding({ onImported }: OnboardingProps) {
       setError(null);
       try {
         const text = await file.text();
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const { guests, tables } = parseImportedCsv(text);
+          onImported(guests, tables, t('header.defaultEventName'));
+          return;
+        }
         const json = JSON.parse(text);
         const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'), namingMode);
         onImported(guests, tables, eventName ?? t('header.defaultEventName'));
@@ -96,7 +102,7 @@ export function Onboarding({ onImported }: OnboardingProps) {
           }`}
         >
           <p className="text-slate-600 dark:text-slate-300 mb-4">
-            {t('onboarding.dropHint', { ext: '.json' })}
+            {t('onboarding.dropHint', { ext: '.json / .csv' })}
           </p>
 
           <div
@@ -151,7 +157,7 @@ export function Onboarding({ onImported }: OnboardingProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/json,.json"
+            accept="application/json,.json,text/csv,.csv"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];

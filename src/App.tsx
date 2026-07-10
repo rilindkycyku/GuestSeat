@@ -10,6 +10,7 @@ import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsControls } from './components/SettingsControls';
 import { ImportError, parseImportedJson } from './lib/importGuests';
+import { parseImportedCsv } from './lib/importCsv';
 import { loadCollapsedTableIds, saveCollapsedTableIds } from './lib/storage';
 import { tableDisplayName } from './lib/tableDisplay';
 import type { Guest, TableSide } from './types';
@@ -169,8 +170,9 @@ export default function App() {
   const handleImportFile = async (file: File, mode: 'replace' | 'merge') => {
     try {
       const text = await file.text();
-      const json = JSON.parse(text);
-      const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'));
+      const { guests, tables, eventName } = file.name.toLowerCase().endsWith('.csv')
+        ? parseImportedCsv(text)
+        : parseImportedJson(JSON.parse(text), t('tables.namePrefix'));
       if (mode === 'replace') {
         loadFromImport(guests, tables, eventName ?? t('header.defaultEventName'));
         showToast(t('import.loaded', { count: guests.length }));
@@ -301,7 +303,7 @@ export default function App() {
             <input
               ref={importInputRef}
               type="file"
-              accept="application/json,.json"
+              accept="application/json,.json,text/csv,.csv"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

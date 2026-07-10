@@ -32,7 +32,8 @@ export type ImportErrorCode =
   | 'GUESTS_KEY_EMPTY'
   | 'FLAT_ARRAY_EMPTY'
   | 'GROUPED_EMPTY'
-  | 'UNRECOGNIZED';
+  | 'UNRECOGNIZED'
+  | 'CSV_EMPTY';
 
 export class ImportError extends Error {
   code: ImportErrorCode;
