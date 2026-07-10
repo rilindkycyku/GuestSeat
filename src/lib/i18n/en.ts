@@ -31,6 +31,7 @@ export const en = {
       FLAT_ARRAY_EMPTY: 'That JSON array did not contain any recognizable guest names.',
       GROUPED_EMPTY: 'That JSON did not contain any recognizable guest names.',
       UNRECOGNIZED: 'Unrecognized JSON structure. Expected a list of names, a list of guest objects, or groups of names.',
+      CSV_EMPTY: 'That CSV did not contain any recognizable guest rows.',
     },
     loaded: 'Loaded {{count}} guests.',
     importedMore: 'Imported {{count}} more guests.',
@@ -73,6 +74,7 @@ export const en = {
       bride: "Bride's side",
     },
     noTablesForFilter: 'No tables on this side yet.',
+    noSearchMatches: 'No tables match your search.',
   },
   unseated: {
     title: 'Unseated Guests',
@@ -113,6 +115,7 @@ export const en = {
       name: 'Name',
       surname: 'Surname',
       table: 'Table',
+      capacity: 'Table capacity',
       notes: 'Notes',
       side: 'Side',
       unseated: 'Unseated',

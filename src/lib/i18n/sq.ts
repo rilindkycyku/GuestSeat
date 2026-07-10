@@ -33,6 +33,7 @@ export const sq = {
       FLAT_ARRAY_EMPTY: 'Ky varg JSON nuk përmbante asnjë emër të njohshëm të ftuari.',
       GROUPED_EMPTY: 'Ky JSON nuk përmbante asnjë emër të njohshëm të ftuari.',
       UNRECOGNIZED: 'Strukturë JSON e panjohur. Pritej një listë emrash, një listë objektesh të ftuarish, ose grupe emrash.',
+      CSV_EMPTY: 'Ky CSV nuk përmbante asnjë rresht të njohshëm të ftuari.',
     },
     loaded: 'U ngarkuan {{count}} të ftuar.',
     importedMore: 'U importuan edhe {{count}} të ftuar.',
@@ -75,6 +76,7 @@ export const sq = {
       bride: 'Pala e Nuses',
     },
     noTablesForFilter: "Ende s'ka tavolina në këtë palë.",
+    noSearchMatches: 'Asnjë tavolinë nuk përputhet me kërkimin.',
   },
   unseated: {
     title: 'Të ftuar pa vend',
@@ -115,6 +117,7 @@ export const sq = {
       name: 'Emri',
       surname: 'Mbiemri',
       table: 'Tavolina',
+      capacity: 'Kapaciteti i tavolinës',
       notes: 'Shënime',
       side: 'Pala',
       unseated: 'Pa vend',
