@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
 import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
@@ -512,6 +513,7 @@ export default function App() {
           {toast}
         </div>
       )}
+      <Analytics />
     </DndContext>
   );
 }
