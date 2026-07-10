@@ -208,6 +208,16 @@ export default function App() {
     trySeatGuest(guestId, dropId === 'unseated' ? null : dropId);
   };
 
+  const handleLinkGuests = (guestIdA: string, guestIdB: string) => {
+    linkGuests(guestIdA, guestIdB);
+    const a = guestById.get(guestIdA);
+    const b = guestById.get(guestIdB);
+    if (a && b) {
+      if (a.tableId == null && b.tableId != null) trySeatGuest(a.id, b.tableId);
+      else if (b.tableId == null && a.tableId != null) trySeatGuest(b.id, a.tableId);
+    }
+  };
+
   if (!state) {
     return (
       <Onboarding onImported={(guests, tables, name) => loadFromImport(guests, tables, name)} />
@@ -477,7 +487,7 @@ export default function App() {
           onSave={(patch) => updateGuest(editingGuest.id, patch)}
           onDelete={() => removeGuest(editingGuest.id)}
           onClose={() => setEditingGuestId(null)}
-          onLink={(otherId) => linkGuests(editingGuest.id, otherId)}
+          onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
           onSeatGuest={trySeatGuest}
         />

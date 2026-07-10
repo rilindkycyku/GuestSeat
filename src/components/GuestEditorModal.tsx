@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Guest, Table } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
@@ -39,6 +39,11 @@ export function GuestEditorModal({
   const [tableId, setTableId] = useState<string>(guest.tableId ?? '');
   const [linkSearch, setLinkSearch] = useState('');
 
+  // Keep the table selector in sync when linking auto-seats this guest elsewhere.
+  useEffect(() => {
+    setTableId(guest.tableId ?? '');
+  }, [guest.tableId]);
+
   const tableById = useMemo(() => new Map(tables.map((tb) => [tb.id, tb])), [tables]);
   const guestById = useMemo(() => new Map(allGuests.map((g) => [g.id, g])), [allGuests]);
 
@@ -47,15 +52,17 @@ export function GuestEditorModal({
     .filter((g): g is Guest => g !== undefined)
     .sort((a, b) => fullName(a).localeCompare(fullName(b)));
 
-  const linkResults = useMemo(() => {
+  const { linkResults, hasExcludedByTable } = useMemo(() => {
     const q = linkSearch.trim().toLowerCase();
-    if (!q) return [];
+    if (!q) return { linkResults: [] as Guest[], hasExcludedByTable: false };
     const linkedIds = new Set(guest.linkedGuestIds ?? []);
-    return allGuests
+    const canLinkWith = (g: Guest) => guest.tableId == null || g.tableId == null || g.tableId === guest.tableId;
+    const nameMatches = allGuests
       .filter((g) => g.id !== guest.id && !linkedIds.has(g.id))
-      .filter((g) => `${g.name} ${g.surname ?? ''}`.toLowerCase().includes(q))
-      .slice(0, 6);
-  }, [linkSearch, allGuests, guest.id, guest.linkedGuestIds]);
+      .filter((g) => `${g.name} ${g.surname ?? ''}`.toLowerCase().includes(q));
+    const eligible = nameMatches.filter(canLinkWith).slice(0, 6);
+    return { linkResults: eligible, hasExcludedByTable: eligible.length === 0 && nameMatches.length > 0 };
+  }, [linkSearch, allGuests, guest.id, guest.linkedGuestIds, guest.tableId]);
 
   const save = () => {
     if (!name.trim()) return;
@@ -175,7 +182,9 @@ export function GuestEditorModal({
                 className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-40 overflow-y-auto"
               >
                 {linkResults.length === 0 && (
-                  <p className="px-3 py-2 text-xs text-slate-400">{t('guestEditor.noMatches')}</p>
+                  <p className="px-3 py-2 text-xs text-slate-400">
+                    {hasExcludedByTable ? t('guestEditor.onlySameTableOrUnseated') : t('guestEditor.noMatches')}
+                  </p>
                 )}
                 {linkResults.map((g) => (
                   <button
