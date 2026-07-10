@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useEventState } from './hooks/useEventState';
 import { Onboarding } from './components/Onboarding';
@@ -31,6 +31,8 @@ export default function App() {
   const [addingGuest, setAddingGuest] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(new Set());
+  const [menuOpen, setMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -62,6 +64,25 @@ export default function App() {
     }
     return set;
   }, [state, query, tableById]);
+
+  const matchedTableIds = useMemo(() => {
+    if (!matchedIds || !state) return null;
+    const set = new Set<string>();
+    for (const g of state.guests) {
+      if (g.tableId && matchedIds.has(g.id)) set.add(g.tableId);
+    }
+    return set;
+  }, [matchedIds, state]);
+
+  const isSearching = query.trim().length > 0;
+
+  useEffect(() => {
+    if (!matchedTableIds || matchedTableIds.size === 0) return;
+    const firstMatch = state?.tables.find((t) => matchedTableIds.has(t.id));
+    if (!firstMatch) return;
+    const el = document.querySelector(`[data-table-id="${firstMatch.id}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [matchedTableIds, state?.tables]);
 
   const guestsByTable = useMemo(() => {
     const m = new Map<string, Guest[]>();
@@ -132,10 +153,10 @@ export default function App() {
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-4 py-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xl">🪑</span>
+        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl shrink-0">🪑</span>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
               {nameDraft !== null ? (
                 <input
                   autoFocus
@@ -146,38 +167,23 @@ export default function App() {
                     setNameDraft(null);
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                  className="font-bold text-lg bg-transparent border-b border-indigo-400 outline-none text-slate-900 dark:text-white min-w-0"
+                  className="font-bold text-base sm:text-lg bg-transparent border-b border-indigo-400 outline-none text-slate-900 dark:text-white min-w-0"
                 />
               ) : (
                 <button
                   onClick={() => setNameDraft(state.eventName)}
-                  className="font-bold text-lg text-slate-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
+                  className="font-bold text-base sm:text-lg text-slate-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
                   title="Click to rename"
                 >
                   {state.eventName}
                 </button>
               )}
-              <span className="hidden sm:inline text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 shrink-0">
-                {totalSeated}/{totalGuests} seated
+              <span className="text-[11px] sm:text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 shrink-0">
+                {totalSeated}/{totalGuests}
               </span>
             </div>
 
-            <div className="relative flex-1 min-w-[180px] max-w-sm">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by name, surname, or table…"
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
-              />
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-              {query && matchedIds && (
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-                  {matchedIds.size}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
               <button
                 onClick={() => setAddingGuest(true)}
                 className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -196,17 +202,6 @@ export default function App() {
               >
                 Import
               </button>
-              <input
-                ref={importInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void handleImportFile(file, 'merge');
-                  e.target.value = '';
-                }}
-              />
               <ExportMenu state={state} />
               <button
                 onClick={() => {
@@ -217,37 +212,140 @@ export default function App() {
                 Reset
               </button>
             </div>
+
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="sm:hidden ml-auto w-9 h-9 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
+              aria-label="Menu"
+            >
+              {menuOpen ? '✕' : '☰'}
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleImportFile(file, 'merge');
+                e.target.value = '';
+              }}
+            />
           </div>
+
+          <div className="relative mt-2.5">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, surname, or table…"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-10 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+            />
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+            {query && matchedIds && (
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                {matchedIds.size}
+              </span>
+            )}
+          </div>
+
+          {menuOpen && (
+            <div className="sm:hidden mt-2.5 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setAddingGuest(true);
+                  setMenuOpen(false);
+                }}
+                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                + Guest
+              </button>
+              <button
+                onClick={() => {
+                  addTable();
+                  setMenuOpen(false);
+                }}
+                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                + Table
+              </button>
+              <button
+                onClick={() => {
+                  importInputRef.current?.click();
+                  setMenuOpen(false);
+                }}
+                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                Import
+              </button>
+              <ExportMenu state={state} fullWidth />
+              <button
+                onClick={() => {
+                  if (confirm('Clear all guests and tables? This cannot be undone.')) resetAll();
+                  setMenuOpen(false);
+                }}
+                className="col-span-2 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+              >
+                Reset
+              </button>
+            </div>
+          )}
         </header>
 
-        <main className="flex-1 p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+        <main className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
           <div className="lg:sticky lg:top-[72px] lg:h-[calc(100vh-88px)]">
             <UnseatedPanel guests={unseatedGuests} matchedIds={matchedIds} onGuestClick={setEditingGuest} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {state.tables.length === 0 && (
-              <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
-                <p className="mb-3">No tables yet.</p>
+          <div className="min-w-0 w-full">
+            {state.tables.length > 0 && !isSearching && (
+              <div className="flex justify-end mb-3">
                 <button
-                  onClick={() => addTable()}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500"
+                  onClick={() =>
+                    setCollapsedTableIds((prev) =>
+                      prev.size === state.tables.length ? new Set() : new Set(state.tables.map((t) => t.id))
+                    )
+                  }
+                  className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
-                  Create your first table
+                  {collapsedTableIds.size === state.tables.length ? 'Expand all' : 'Collapse all'}
                 </button>
               </div>
             )}
-            {state.tables.map((table) => (
-              <TableCard
-                key={table.id}
-                table={table}
-                guests={guestsByTable.get(table.id) ?? []}
-                matchedIds={matchedIds}
-                onUpdateTable={(patch) => updateTable(table.id, patch)}
-                onRemoveTable={() => removeTable(table.id)}
-                onGuestClick={setEditingGuest}
-              />
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+              {state.tables.length === 0 && (
+                <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                  <p className="mb-3">No tables yet.</p>
+                  <button
+                    onClick={() => addTable()}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500"
+                  >
+                    Create your first table
+                  </button>
+                </div>
+              )}
+              {state.tables.map((table) => (
+                <TableCard
+                  key={table.id}
+                  table={table}
+                  guests={guestsByTable.get(table.id) ?? []}
+                  matchedIds={matchedIds}
+                  highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
+                  collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
+                  onToggleCollapse={() => {
+                    if (isSearching) return;
+                    setCollapsedTableIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(table.id)) next.delete(table.id);
+                      else next.add(table.id);
+                      return next;
+                    });
+                  }}
+                  onUpdateTable={(patch) => updateTable(table.id, patch)}
+                  onRemoveTable={() => removeTable(table.id)}
+                  onGuestClick={setEditingGuest}
+                />
+              ))}
+            </div>
           </div>
         </main>
       </div>
