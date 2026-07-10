@@ -35,22 +35,30 @@ export function exportAsJson(state: EventState): void {
 
 export function exportAsCsv(state: EventState, t: Translator): void {
   const tableById = new Map(state.tables.map((tb) => [tb.id, tb]));
+  const guestById = new Map(state.guests.map((g) => [g.id, g]));
   const header = [
     t('export.fields.name'),
     t('export.fields.surname'),
     t('export.fields.table'),
     t('export.fields.side'),
+    t('export.fields.linkedWith'),
     t('export.fields.notes'),
   ];
   const rows = [...state.guests]
     .sort((a, b) => fullName(a).localeCompare(fullName(b)))
     .map((g) => {
       const table = g.tableId ? tableById.get(g.tableId) : undefined;
+      const linked = (g.linkedGuestIds ?? [])
+        .map((id) => guestById.get(id))
+        .filter((p): p is Guest => !!p)
+        .map((p) => fullName(p))
+        .join('; ');
       return [
         g.name,
         g.surname ?? '',
         g.tableId ? (table?.name ?? t('export.fields.unknownTable')) : t('export.fields.unseated'),
         sideLabel(table, t),
+        linked,
         g.notes ?? '',
       ];
     });

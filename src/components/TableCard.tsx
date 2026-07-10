@@ -8,6 +8,7 @@ interface TableCardProps {
   table: Table;
   guests: Guest[];
   matchedIds: Set<string> | null;
+  linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -25,6 +26,7 @@ export function TableCard({
   table,
   guests,
   matchedIds,
+  linkBadges,
   highlighted,
   collapsed,
   onToggleCollapse,
@@ -187,11 +189,22 @@ export function TableCard({
               key={g.id}
               guest={g}
               highlighted={matchedIds ? matchedIds.has(g.id) : false}
+              linkBadge={linkBadges.get(g.id)}
               onClick={() => onGuestClick(g)}
               compact
             />
           ))}
         </div>
+      )}
+
+      {collapsed && guests.length > 0 && (
+        <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+          {guests
+            .slice(0, 4)
+            .map((g) => g.name)
+            .join(', ')}
+          {guests.length > 4 ? ` +${guests.length - 4}` : ''}
+        </p>
       )}
     </div>
   );

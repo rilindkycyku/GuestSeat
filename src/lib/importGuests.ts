@@ -15,12 +15,13 @@ function normalizeEntry(entry: ImportGuestEntry, group?: string): Guest | null {
     const surname = (entry.surname ?? entry.lastName ?? entry.last_name ?? '').toString().trim();
     if (!name) return null;
     return {
-      id: makeId('g'),
+      id: entry.id || makeId('g'),
       name,
       surname: surname || undefined,
       notes: entry.notes,
       group: entry.group ?? group,
       tableId: null,
+      linkedGuestIds: Array.isArray(entry.linkedGuestIds) ? entry.linkedGuestIds : undefined,
     };
   }
   return null;
@@ -82,7 +83,14 @@ export function parseImportedJson(
         return rawTable ? { ...g, tableId: tables.some((t) => t.id === rawTable) ? rawTable : null } : g;
       });
     if (guests.length === 0) throw new ImportError('GUESTS_KEY_EMPTY');
-    return { guests, tables, eventName: full.eventName };
+    // Drop any link references to guests that didn't survive normalization (e.g. blank names).
+    const validGuestIds = new Set(guests.map((g) => g.id));
+    const cleanedGuests = guests.map((g) =>
+      g.linkedGuestIds?.length
+        ? { ...g, linkedGuestIds: g.linkedGuestIds.filter((id) => validGuestIds.has(id)) }
+        : g
+    );
+    return { guests: cleanedGuests, tables, eventName: full.eventName };
   }
 
   // Shape 2: flat array

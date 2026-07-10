@@ -10,6 +10,7 @@ import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsControls } from './components/SettingsControls';
 import { ImportError, parseImportedJson } from './lib/importGuests';
+import { loadCollapsedTableIds, saveCollapsedTableIds } from './lib/storage';
 import type { Guest, TableSide } from './types';
 
 export default function App() {
@@ -26,18 +27,24 @@ export default function App() {
     addGuest,
     updateGuest,
     removeGuest,
+    linkGuests,
+    unlinkGuests,
   } = useEventState();
   const { t } = useLanguage();
 
   const [query, setQuery] = useState('');
-  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
-  const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(new Set());
+  const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
   const [menuOpen, setMenuOpen] = useState(false);
   const [sideFilter, setSideFilter] = useState<'all' | TableSide>('all');
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    saveCollapsedTableIds(collapsedTableIds);
+  }, [collapsedTableIds]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -50,6 +57,27 @@ export default function App() {
   };
 
   const tableById = useMemo(() => new Map((state?.tables ?? []).map((tb) => [tb.id, tb])), [state]);
+
+  const guestById = useMemo(() => new Map((state?.guests ?? []).map((g) => [g.id, g])), [state]);
+
+  const editingGuest = editingGuestId ? (guestById.get(editingGuestId) ?? null) : null;
+
+  const linkBadges = useMemo(() => {
+    const map = new Map<string, { status: 'together' | 'apart'; title: string }>();
+    if (!state) return map;
+    for (const g of state.guests) {
+      if (!g.linkedGuestIds?.length) continue;
+      const partners = g.linkedGuestIds.map((id) => guestById.get(id)).filter((p): p is Guest => !!p);
+      if (partners.length === 0) continue;
+      const together = g.tableId != null && partners.every((p) => p.tableId === g.tableId);
+      const names = partners.map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name)).join(', ');
+      map.set(g.id, {
+        status: together ? 'together' : 'apart',
+        title: `${t('guestEditor.linkedGuests')}: ${names}`,
+      });
+    }
+    return map;
+  }, [state, guestById, t]);
 
   const filteredTables = useMemo(() => {
     if (!state) return [];
@@ -148,15 +176,10 @@ export default function App() {
     }
   };
 
-  const onDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const guestId = String(active.id);
-    const dropId = String(over.id);
-    const targetTableId = dropId === 'unseated' ? null : dropId;
+  const trySeatGuest = (guestId: string, targetTableId: string | null) => {
     if (targetTableId) {
       const table = tableById.get(targetTableId);
-      const guest = state?.guests.find((g) => g.id === guestId);
+      const guest = guestById.get(guestId);
       if (table && guest && guest.tableId !== table.id) {
         const currentCount = seatedCount.get(table.id) ?? 0;
         if (currentCount >= table.capacity) {
@@ -166,6 +189,14 @@ export default function App() {
       }
     }
     seatGuest(guestId, targetTableId);
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const guestId = String(active.id);
+    const dropId = String(over.id);
+    trySeatGuest(guestId, dropId === 'unseated' ? null : dropId);
   };
 
   if (!state) {
@@ -322,7 +353,12 @@ export default function App() {
 
         <main className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
           <div className="lg:sticky lg:top-[72px] lg:h-[calc(100vh-88px)]">
-            <UnseatedPanel guests={unseatedGuests} matchedIds={matchedIds} onGuestClick={setEditingGuest} />
+            <UnseatedPanel
+              guests={unseatedGuests}
+              matchedIds={matchedIds}
+              linkBadges={linkBadges}
+              onGuestClick={(g) => setEditingGuestId(g.id)}
+            />
           </div>
 
           <div className="min-w-0 w-full">
@@ -401,6 +437,7 @@ export default function App() {
                   table={table}
                   guests={guestsByTable.get(table.id) ?? []}
                   matchedIds={matchedIds}
+                  linkBadges={linkBadges}
                   highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                   collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
                   onToggleCollapse={() => {
@@ -414,7 +451,7 @@ export default function App() {
                   }}
                   onUpdateTable={(patch) => updateTable(table.id, patch)}
                   onRemoveTable={() => removeTable(table.id)}
-                  onGuestClick={setEditingGuest}
+                  onGuestClick={(g) => setEditingGuestId(g.id)}
                 />
               ))}
             </div>
@@ -426,10 +463,14 @@ export default function App() {
         <GuestEditorModal
           guest={editingGuest}
           tables={state.tables}
+          allGuests={state.guests}
           seatedCount={seatedCount}
           onSave={(patch) => updateGuest(editingGuest.id, patch)}
           onDelete={() => removeGuest(editingGuest.id)}
-          onClose={() => setEditingGuest(null)}
+          onClose={() => setEditingGuestId(null)}
+          onLink={(otherId) => linkGuests(editingGuest.id, otherId)}
+          onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
+          onSeatGuest={trySeatGuest}
         />
       )}
 

@@ -10,6 +10,8 @@ export interface Guest {
   group?: string;
   /** Table the guest is currently seated at, if any. */
   tableId: string | null;
+  /** IDs of other guests this guest is linked to (couples, families, plus-ones). Always mutual. */
+  linkedGuestIds?: string[];
 }
 
 export type TableSide = 'groom' | 'bride';
@@ -35,6 +37,7 @@ export interface EventState {
 export type ImportGuestEntry =
   | string
   | {
+      id?: string;
       name?: string;
       firstName?: string;
       first_name?: string;
@@ -45,6 +48,7 @@ export type ImportGuestEntry =
       tableName?: string;
       notes?: string;
       group?: string;
+      linkedGuestIds?: string[];
     };
 
 export type ImportShape =

@@ -25,3 +25,24 @@ export function saveState(state: EventState): void {
 export function clearState(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+const COLLAPSED_KEY = 'guestseat.collapsedTables.v1';
+
+export function loadCollapsedTableIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(COLLAPSED_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set(parsed.filter((id) => typeof id === 'string')) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+export function saveCollapsedTableIds(ids: Set<string>): void {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...ids]));
+  } catch {
+    // storage full or unavailable — silently skip persistence
+  }
+}
