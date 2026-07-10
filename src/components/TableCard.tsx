@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { groupLinkedWithin } from '../lib/linkGroups';
 
 interface TableCardProps {
   table: Table;
@@ -39,6 +41,7 @@ export function TableCard({
   const displayName = tableDisplayName(table, t);
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
+  const guestGroups = useMemo(() => groupLinkedWithin(guests), [guests]);
 
   const setSide = (side: TableSide | undefined) => {
     onUpdateTable({ side });
@@ -150,16 +153,37 @@ export function TableCard({
           {guests.length === 0 && (
             <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">{t('tables.dropHere')}</p>
           )}
-          {guests.map((g) => (
-            <GuestChip
-              key={g.id}
-              guest={g}
-              highlighted={matchedIds ? matchedIds.has(g.id) : false}
-              linkBadge={linkBadges.get(g.id)}
-              onClick={() => onGuestClick(g)}
-              compact
-            />
-          ))}
+          {guestGroups.map((group) =>
+            group.length > 1 ? (
+              <div
+                key={group[0].id}
+                className="rounded-lg border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 p-1.5 space-y-1.5"
+              >
+                <div className="flex items-center gap-1 px-0.5 text-[10px] font-medium text-indigo-500 dark:text-indigo-400">
+                  🔗 {t('guestEditor.linkedGuests')}
+                </div>
+                {group.map((g) => (
+                  <GuestChip
+                    key={g.id}
+                    guest={g}
+                    highlighted={matchedIds ? matchedIds.has(g.id) : false}
+                    linkBadge={linkBadges.get(g.id)}
+                    onClick={() => onGuestClick(g)}
+                    compact
+                  />
+                ))}
+              </div>
+            ) : (
+              <GuestChip
+                key={group[0].id}
+                guest={group[0]}
+                highlighted={matchedIds ? matchedIds.has(group[0].id) : false}
+                linkBadge={linkBadges.get(group[0].id)}
+                onClick={() => onGuestClick(group[0])}
+                compact
+              />
+            )
+          )}
         </div>
       )}
 
