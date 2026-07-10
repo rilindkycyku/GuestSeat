@@ -49,6 +49,7 @@ export function useEventState() {
         id: makeId('t'),
         name: `${namePrefix} ${nextNumber}`,
         capacity: 8,
+        autoSuffix: String(nextNumber),
       };
       return { ...base, tables: [...base.tables, newTable], updatedAt: new Date().toISOString() };
     });
@@ -118,7 +119,53 @@ export function useEventState() {
       if (!prev) return prev;
       return {
         ...prev,
-        guests: prev.guests.filter((g) => g.id !== guestId),
+        guests: prev.guests
+          .filter((g) => g.id !== guestId)
+          .map((g) =>
+            g.linkedGuestIds?.includes(guestId)
+              ? { ...g, linkedGuestIds: g.linkedGuestIds.filter((id) => id !== guestId) }
+              : g
+          ),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const linkGuests = useCallback((guestIdA: string, guestIdB: string) => {
+    if (guestIdA === guestIdB) return;
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => {
+          if (g.id === guestIdA) {
+            const links = g.linkedGuestIds ?? [];
+            return links.includes(guestIdB) ? g : { ...g, linkedGuestIds: [...links, guestIdB] };
+          }
+          if (g.id === guestIdB) {
+            const links = g.linkedGuestIds ?? [];
+            return links.includes(guestIdA) ? g : { ...g, linkedGuestIds: [...links, guestIdA] };
+          }
+          return g;
+        }),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const unlinkGuests = useCallback((guestIdA: string, guestIdB: string) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => {
+          if (g.id === guestIdA || g.id === guestIdB) {
+            const otherId = g.id === guestIdA ? guestIdB : guestIdA;
+            if (!g.linkedGuestIds?.includes(otherId)) return g;
+            return { ...g, linkedGuestIds: g.linkedGuestIds.filter((id) => id !== otherId) };
+          }
+          return g;
+        }),
         updatedAt: new Date().toISOString(),
       };
     });
@@ -137,5 +184,7 @@ export function useEventState() {
     addGuest,
     updateGuest,
     removeGuest,
+    linkGuests,
+    unlinkGuests,
   };
 }

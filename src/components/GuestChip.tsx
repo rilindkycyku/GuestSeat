@@ -7,9 +7,10 @@ interface GuestChipProps {
   highlighted?: boolean;
   onClick?: () => void;
   compact?: boolean;
+  linkBadge?: { status: 'together' | 'apart'; title: string };
 }
 
-export function GuestChip({ guest, highlighted, onClick, compact }: GuestChipProps) {
+export function GuestChip({ guest, highlighted, onClick, compact, linkBadge }: GuestChipProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: guest.id,
     data: { guestId: guest.id },
@@ -43,7 +44,15 @@ export function GuestChip({ guest, highlighted, onClick, compact }: GuestChipPro
         {guest.name}
         {guest.surname ? <span className="text-slate-500 dark:text-slate-400"> {guest.surname}</span> : null}
       </span>
-      {guest.notes && <span className="ml-auto text-xs text-slate-400 shrink-0">📝</span>}
+      {linkBadge && (
+        <span
+          title={linkBadge.title}
+          className={`ml-auto text-xs shrink-0 ${linkBadge.status === 'together' ? 'opacity-90' : 'opacity-70'}`}
+        >
+          {linkBadge.status === 'together' ? '🔗' : '🔗⚠️'}
+        </span>
+      )}
+      {guest.notes && <span className={`${linkBadge ? '' : 'ml-auto'} text-xs text-slate-400 shrink-0`}>📝</span>}
     </button>
   );
 }

@@ -3,11 +3,13 @@ import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
+import { tableDisplayName } from '../lib/tableDisplay';
 
 interface TableCardProps {
   table: Table;
   guests: Guest[];
   matchedIds: Set<string> | null;
+  linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -25,6 +27,7 @@ export function TableCard({
   table,
   guests,
   matchedIds,
+  linkBadges,
   highlighted,
   collapsed,
   onToggleCollapse,
@@ -34,14 +37,20 @@ export function TableCard({
 }: TableCardProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
+  const displayName = tableDisplayName(table, t);
   const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(table.name);
+  const [nameDraft, setNameDraft] = useState(displayName);
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
 
   const commitName = () => {
     const trimmed = nameDraft.trim();
-    onUpdateTable({ name: trimmed || table.name });
+    if (!trimmed || trimmed === displayName) {
+      // No real change — leave auto-naming (and its live translation) intact.
+      setEditingName(false);
+      return;
+    }
+    onUpdateTable({ name: trimmed, autoSuffix: undefined });
     setEditingName(false);
   };
 
@@ -95,7 +104,7 @@ export function TableCard({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commitName();
                   if (e.key === 'Escape') {
-                    setNameDraft(table.name);
+                    setNameDraft(displayName);
                     setEditingName(false);
                   }
                 }}
@@ -105,12 +114,13 @@ export function TableCard({
               <span
                 onClick={(e) => {
                   e.stopPropagation();
+                  setNameDraft(displayName);
                   setEditingName(true);
                 }}
                 className="block text-sm font-semibold text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
                 title={t('header.renameHint')}
               >
-                {table.name}
+                {displayName}
               </span>
             )}
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -165,7 +175,7 @@ export function TableCard({
           </button>
           <button
             onClick={() => {
-              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: table.name }))) {
+              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
                 onRemoveTable();
               }
             }}
@@ -187,11 +197,22 @@ export function TableCard({
               key={g.id}
               guest={g}
               highlighted={matchedIds ? matchedIds.has(g.id) : false}
+              linkBadge={linkBadges.get(g.id)}
               onClick={() => onGuestClick(g)}
               compact
             />
           ))}
         </div>
+      )}
+
+      {collapsed && guests.length > 0 && (
+        <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+          {guests
+            .slice(0, 4)
+            .map((g) => g.name)
+            .join(', ')}
+          {guests.length > 4 ? ` +${guests.length - 4}` : ''}
+        </p>
       )}
     </div>
   );
