@@ -76,6 +76,7 @@ export const sq = {
       bride: 'Pala e Nuses',
     },
     noTablesForFilter: "Ende s'ka tavolina në këtë palë.",
+    noSearchMatches: 'Asnjë tavolinë nuk përputhet me kërkimin.',
   },
   unseated: {
     title: 'Të ftuar pa vend',

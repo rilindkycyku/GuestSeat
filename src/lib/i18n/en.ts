@@ -74,6 +74,7 @@ export const en = {
       bride: "Bride's side",
     },
     noTablesForFilter: 'No tables on this side yet.',
+    noSearchMatches: 'No tables match your search.',
   },
   unseated: {
     title: 'Unseated Guests',
