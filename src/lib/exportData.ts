@@ -71,6 +71,15 @@ export function exportAsCsv(state: EventState, t: Translator): void {
 
 export function exportAsPdf(state: EventState, t: Translator): void {
   const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 10;
+  const marginTop = 10;
+  const bottomLimit = pageHeight - 10;
+  const columnCount = 3;
+  const gap = 4;
+  const columnWidth = (pageWidth - marginX * 2 - gap * (columnCount - 1)) / columnCount;
+
   const tables: Table[] = state.tables;
   const guestsByTable = new Map<string, Guest[]>();
   const unseated: Guest[] = [];
@@ -84,9 +93,9 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     }
   }
 
-  doc.setFontSize(18);
-  doc.text(state.eventName, 14, 18);
-  doc.setFontSize(10);
+  doc.setFontSize(15);
+  doc.text(state.eventName, marginX, marginTop + 5);
+  doc.setFontSize(8.5);
   doc.setTextColor(120);
   doc.text(
     t('export.summary', {
@@ -94,62 +103,84 @@ export function exportAsPdf(state: EventState, t: Translator): void {
       tables: tables.length,
       date: new Date().toLocaleDateString(),
     }),
-    14,
-    25
+    marginX,
+    marginTop + 10
   );
   doc.setTextColor(0);
 
-  let y = 34;
-  const pageHeight = doc.internal.pageSize.getHeight();
+  const columnY: number[] = new Array(columnCount).fill(marginTop + 16);
+
+  const pickColumn = () => columnY.indexOf(Math.min(...columnY));
+
+  const drawSectionHeading = (label: string, color: [number, number, number]) => {
+    let y = Math.max(...columnY);
+    if (y + 8 > bottomLimit) {
+      doc.addPage();
+      y = marginTop;
+    }
+    doc.setFontSize(10.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...color);
+    doc.text(label, marginX, y + 4);
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'normal');
+    columnY.fill(y + 9);
+  };
+
+  const drawBlock = (heading: string, guests: Guest[]) => {
+    const sorted = [...guests].sort((a, b) => fullName(a).localeCompare(fullName(b)));
+    const estHeight = 7 + Math.max(sorted.length, 1) * 3.7 + 3;
+    let colIndex = pickColumn();
+    if (columnY[colIndex] + estHeight > bottomLimit) {
+      doc.addPage();
+      columnY.fill(marginTop);
+      colIndex = 0;
+    }
+    const x = marginX + colIndex * (columnWidth + gap);
+    const startY = columnY[colIndex];
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(heading, x, startY + 3, { maxWidth: columnWidth });
+    doc.setFont('helvetica', 'normal');
+    autoTable(doc, {
+      startY: startY + 4.5,
+      margin: { left: x },
+      tableWidth: columnWidth,
+      head: [],
+      body: sorted.length
+        ? sorted.map((g, i) => [`${i + 1}. ${fullName(g)}${g.notes ? ` — ${g.notes}` : ''}`])
+        : [[t('export.noGuestsSeated')]],
+      styles: { fontSize: 7.3, cellPadding: 0.8, textColor: [40, 40, 40] },
+      theme: 'plain',
+      showHead: false,
+    });
+    // @ts-expect-error autoTable attaches this at runtime
+    columnY[colIndex] = doc.lastAutoTable.finalY + 4;
+  };
 
   const sortedTables = [...tables].sort((a, b) =>
     tableDisplayName(a, t).localeCompare(tableDisplayName(b, t), undefined, { numeric: true })
   );
+  const sections: { label: string; color: [number, number, number]; tables: Table[] }[] = [
+    { label: t('tables.filter.groom'), color: [37, 99, 235], tables: sortedTables.filter((tb) => tb.side === 'groom') },
+    { label: t('tables.filter.bride'), color: [219, 39, 119], tables: sortedTables.filter((tb) => tb.side === 'bride') },
+    { label: t('export.ungroupedHeading'), color: [79, 70, 229], tables: sortedTables.filter((tb) => !tb.side) },
+  ];
 
-  for (const table of sortedTables) {
-    const guests = (guestsByTable.get(table.id) ?? []).sort((a, b) => fullName(a).localeCompare(fullName(b)));
-    if (y > pageHeight - 30) {
-      doc.addPage();
-      y = 20;
+  for (const section of sections) {
+    if (section.tables.length === 0) continue;
+    drawSectionHeading(section.label, section.color);
+    for (const table of section.tables) {
+      const guests = guestsByTable.get(table.id) ?? [];
+      const side = sideLabel(table, t);
+      const heading = `${tableDisplayName(table, t)}${side ? ` (${side})` : ''} — ${guests.length}/${table.capacity}`;
+      drawBlock(heading, guests);
     }
-    doc.setFontSize(13);
-    const side = sideLabel(table, t);
-    doc.text(`${tableDisplayName(table, t)}${side ? ` — ${side}` : ''}  (${guests.length}/${table.capacity})`, 14, y);
-    y += 4;
-    autoTable(doc, {
-      startY: y,
-      head: [['#', t('export.fields.name'), t('export.fields.notes')]],
-      body: guests.length
-        ? guests.map((g, i) => [String(i + 1), fullName(g), g.notes ?? ''])
-        : [['—', t('export.noGuestsSeated'), '']],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: table.side === 'bride' ? [219, 39, 119] : table.side === 'groom' ? [37, 99, 235] : [79, 70, 229] },
-      margin: { left: 14, right: 14 },
-      theme: 'striped',
-    });
-    // @ts-expect-error autoTable attaches this at runtime
-    y = doc.lastAutoTable.finalY + 10;
   }
 
   if (unseated.length) {
-    if (y > pageHeight - 30) {
-      doc.addPage();
-      y = 20;
-    }
-    doc.setFontSize(13);
-    doc.text(t('export.unseatedHeading', { count: unseated.length }), 14, y);
-    y += 4;
-    autoTable(doc, {
-      startY: y,
-      head: [['#', t('export.fields.name'), t('export.fields.notes')]],
-      body: [...unseated]
-        .sort((a, b) => fullName(a).localeCompare(fullName(b)))
-        .map((g, i) => [String(i + 1), fullName(g), g.notes ?? '']),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [148, 163, 184] },
-      margin: { left: 14, right: 14 },
-      theme: 'striped',
-    });
+    drawSectionHeading(t('unseated.title'), [100, 116, 139]);
+    drawBlock(t('export.unseatedHeading', { count: unseated.length }), unseated);
   }
 
   doc.save(`${slug(state.eventName)}-seating.pdf`);

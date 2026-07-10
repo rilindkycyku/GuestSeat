@@ -45,7 +45,7 @@ export const sq = {
     addTable: '+ Tavolinë',
     import: 'Importo',
     reset: 'Rivendos',
-    resetConfirm: "Të pastrohen të gjithë të ftuarit dhe tavolinat? Ky veprim s'mund të kthehet.",
+    resetConfirm: 'Të rikthehet lista fillestare e të ftuarve? Ndryshimet tuaja do të humbasin.',
     menu: 'Menyja',
     renameHint: "Kliko për ta riemërtuar",
   },
@@ -127,5 +127,6 @@ export const sq = {
     summary: '{{guests}} të ftuar · {{tables}} tavolina · gjeneruar më {{date}}',
     noGuestsSeated: '(asnjë i ftuar i ulur)',
     unseatedHeading: 'Pa vend ({{count}})',
+    ungroupedHeading: 'Tavolina të tjera',
   },
 } satisfies TranslationDict;
