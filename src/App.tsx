@@ -11,6 +11,7 @@ import { ExportMenu } from './components/ExportMenu';
 import { SettingsControls } from './components/SettingsControls';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { loadCollapsedTableIds, saveCollapsedTableIds } from './lib/storage';
+import { tableDisplayName } from './lib/tableDisplay';
 import type { Guest, TableSide } from './types';
 
 export default function App() {
@@ -112,11 +113,11 @@ export default function App() {
     for (const g of state.guests) {
       if (g.tableId && !visibleTableIds.has(g.tableId)) continue;
       const table = g.tableId ? tableById.get(g.tableId) : undefined;
-      const haystack = `${g.name} ${g.surname ?? ''} ${table?.name ?? ''}`.toLowerCase();
+      const haystack = `${g.name} ${g.surname ?? ''} ${table ? tableDisplayName(table, t) : ''}`.toLowerCase();
       if (haystack.includes(q)) set.add(g.id);
     }
     return set;
-  }, [state, query, tableById, visibleTableIds]);
+  }, [state, query, tableById, visibleTableIds, t]);
 
   const matchedTableIds = useMemo(() => {
     if (!matchedIds || !state) return null;
@@ -183,7 +184,7 @@ export default function App() {
       if (table && guest && guest.tableId !== table.id) {
         const currentCount = seatedCount.get(table.id) ?? 0;
         if (currentCount >= table.capacity) {
-          showToast(t('tables.tableFull', { name: table.name, capacity: table.capacity }));
+          showToast(t('tables.tableFull', { name: tableDisplayName(table, t), capacity: table.capacity }));
           return;
         }
       }

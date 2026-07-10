@@ -1,8 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { EventState, Guest, Table } from '../types';
-
-type Translator = (key: string, vars?: Record<string, string | number>) => string;
+import { tableDisplayName, type Translator } from './tableDisplay';
 
 function downloadBlob(content: BlobPart, filename: string, type: string): void {
   const blob = new Blob([content], { type });
@@ -56,7 +55,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
       return [
         g.name,
         g.surname ?? '',
-        g.tableId ? (table?.name ?? t('export.fields.unknownTable')) : t('export.fields.unseated'),
+        g.tableId ? (table ? tableDisplayName(table, t) : t('export.fields.unknownTable')) : t('export.fields.unseated'),
         sideLabel(table, t),
         linked,
         g.notes ?? '',
@@ -101,7 +100,9 @@ export function exportAsPdf(state: EventState, t: Translator): void {
   let y = 34;
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const sortedTables = [...tables].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const sortedTables = [...tables].sort((a, b) =>
+    tableDisplayName(a, t).localeCompare(tableDisplayName(b, t), undefined, { numeric: true })
+  );
 
   for (const table of sortedTables) {
     const guests = (guestsByTable.get(table.id) ?? []).sort((a, b) => fullName(a).localeCompare(fullName(b)));
@@ -111,7 +112,7 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     }
     doc.setFontSize(13);
     const side = sideLabel(table, t);
-    doc.text(`${table.name}${side ? ` — ${side}` : ''}  (${guests.length}/${table.capacity})`, 14, y);
+    doc.text(`${tableDisplayName(table, t)}${side ? ` — ${side}` : ''}  (${guests.length}/${table.capacity})`, 14, y);
     y += 4;
     autoTable(doc, {
       startY: y,

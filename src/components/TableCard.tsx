@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableSide } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
+import { tableDisplayName } from '../lib/tableDisplay';
 
 interface TableCardProps {
   table: Table;
@@ -36,14 +37,20 @@ export function TableCard({
 }: TableCardProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
+  const displayName = tableDisplayName(table, t);
   const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(table.name);
+  const [nameDraft, setNameDraft] = useState(displayName);
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
 
   const commitName = () => {
     const trimmed = nameDraft.trim();
-    onUpdateTable({ name: trimmed || table.name });
+    if (!trimmed || trimmed === displayName) {
+      // No real change — leave auto-naming (and its live translation) intact.
+      setEditingName(false);
+      return;
+    }
+    onUpdateTable({ name: trimmed, autoSuffix: undefined });
     setEditingName(false);
   };
 
@@ -97,7 +104,7 @@ export function TableCard({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commitName();
                   if (e.key === 'Escape') {
-                    setNameDraft(table.name);
+                    setNameDraft(displayName);
                     setEditingName(false);
                   }
                 }}
@@ -107,12 +114,13 @@ export function TableCard({
               <span
                 onClick={(e) => {
                   e.stopPropagation();
+                  setNameDraft(displayName);
                   setEditingName(true);
                 }}
                 className="block text-sm font-semibold text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
                 title={t('header.renameHint')}
               >
-                {table.name}
+                {displayName}
               </span>
             )}
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -167,7 +175,7 @@ export function TableCard({
           </button>
           <button
             onClick={() => {
-              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: table.name }))) {
+              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
                 onRemoveTable();
               }
             }}

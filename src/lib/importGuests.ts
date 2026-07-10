@@ -71,7 +71,7 @@ export function parseImportedJson(
     const tables: Table[] = (full.tables ?? []).map((t) => {
       const id = t.id ?? makeId('t');
       if (t.id) tableIdMap.set(t.id, t.id);
-      return { id, name: t.name ?? tableLabel, capacity: t.capacity ?? 8 };
+      return { id, name: t.name ?? tableLabel, capacity: t.capacity ?? 8, side: t.side, autoSuffix: t.autoSuffix };
     });
     const guests = full.guests
       .map((e) => normalizeEntry(e))
@@ -112,7 +112,12 @@ export function parseImportedJson(
     for (const key of groupKeys) {
       const entries = (data as Record<string, ImportGuestEntry[]>)[key];
       const suffix = namingMode === 'numbers' ? String(tables.length + 1) : key;
-      const table: Table = { id: makeId('t'), name: `${tableLabel} ${suffix}`, capacity: entries.length };
+      const table: Table = {
+        id: makeId('t'),
+        name: `${tableLabel} ${suffix}`,
+        capacity: entries.length,
+        autoSuffix: suffix,
+      };
       const tableGuests: Guest[] = [];
       for (const entry of entries) {
         const g = normalizeEntry(entry, key);

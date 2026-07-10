@@ -49,6 +49,7 @@ export function useEventState() {
         id: makeId('t'),
         name: `${namePrefix} ${nextNumber}`,
         capacity: 8,
+        autoSuffix: String(nextNumber),
       };
       return { ...base, tables: [...base.tables, newTable], updatedAt: new Date().toISOString() };
     });

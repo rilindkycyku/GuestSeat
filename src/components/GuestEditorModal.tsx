@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Guest, Table } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
+import { tableDisplayName } from '../lib/tableDisplay';
 
 interface GuestEditorModalProps {
   guest: Guest;
@@ -103,7 +104,7 @@ export function GuestEditorModal({
           <option value="">{t('guestEditor.unseatedOption')}</option>
           {tables.map((tb) => (
             <option key={tb.id} value={tb.id}>
-              {tb.name} ({seatedCount.get(tb.id) ?? 0}/{tb.capacity})
+              {tableDisplayName(tb, t)} ({seatedCount.get(tb.id) ?? 0}/{tb.capacity})
             </option>
           ))}
         </select>
@@ -136,7 +137,7 @@ export function GuestEditorModal({
                   >
                     <span className="text-xs text-slate-700 dark:text-slate-200 truncate">
                       {lgTable
-                        ? t('guestEditor.linkedSeatedAt', { name: fullName(lg), table: lgTable.name })
+                        ? t('guestEditor.linkedSeatedAt', { name: fullName(lg), table: tableDisplayName(lgTable, t) })
                         : t('guestEditor.linkedUnseated', { name: fullName(lg) })}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">

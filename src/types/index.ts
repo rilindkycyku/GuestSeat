@@ -18,10 +18,17 @@ export type TableSide = 'groom' | 'bride';
 
 export interface Table {
   id: string;
+  /** Stored name — used verbatim once the user manually renames the table. */
   name: string;
   capacity: number;
   /** Which side of the wedding this table belongs to, if categorized. */
   side?: TableSide;
+  /**
+   * If set, this table's display name is auto-generated as `${namePrefix} ${autoSuffix}`
+   * in the active language (e.g. "Table A" / "Tavolina A"), overriding `name`. Cleared as
+   * soon as the user manually renames the table.
+   */
+  autoSuffix?: string;
 }
 
 export type TableNamingMode = 'letters' | 'numbers';
