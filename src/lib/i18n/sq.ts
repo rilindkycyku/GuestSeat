@@ -127,5 +127,6 @@ export const sq = {
     summary: '{{guests}} të ftuar · {{tables}} tavolina · gjeneruar më {{date}}',
     noGuestsSeated: '(asnjë i ftuar i ulur)',
     unseatedHeading: 'Pa vend ({{count}})',
+    ungroupedHeading: 'Tavolina të tjera',
   },
 } satisfies TranslationDict;

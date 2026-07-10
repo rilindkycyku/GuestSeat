@@ -125,6 +125,7 @@ export const en = {
     summary: '{{guests}} guests · {{tables}} tables · generated {{date}}',
     noGuestsSeated: '(no guests seated)',
     unseatedHeading: 'Unseated ({{count}})',
+    ungroupedHeading: 'Other Tables',
   },
 };
 
