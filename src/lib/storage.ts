@@ -46,3 +46,20 @@ export function saveCollapsedTableIds(ids: Set<string>): void {
     // storage full or unavailable — silently skip persistence
   }
 }
+
+export type ViewMode = 'list' | 'floor';
+
+const VIEW_MODE_KEY = 'guestseat.viewMode.v1';
+
+export function loadViewMode(): ViewMode {
+  const raw = localStorage.getItem(VIEW_MODE_KEY);
+  return raw === 'floor' ? 'floor' : 'list';
+}
+
+export function saveViewMode(mode: ViewMode): void {
+  try {
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+  } catch {
+    // storage full or unavailable — silently skip persistence
+  }
+}

@@ -53,7 +53,7 @@ export function TableCard({
       data-testid="table-card"
       data-table-id={table.id}
       data-table-side={table.side ?? ''}
-      className={`flex flex-col rounded-2xl border-2 p-3 transition-colors bg-white dark:bg-slate-900 scroll-mt-24 ${
+      className={`flex flex-col rounded-2xl border-2 p-3 transition-all bg-white dark:bg-slate-900 shadow-sm hover:shadow-md scroll-mt-24 ${
         isOver
           ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30'
           : highlighted

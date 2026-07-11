@@ -6,13 +6,20 @@ import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
 import { UnseatedPanel } from './components/UnseatedPanel';
 import { TableCard } from './components/TableCard';
+import { FloorTable } from './components/FloorTable';
 import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
-import { SettingsControls } from './components/SettingsControls';
+import { SettingsModal } from './components/SettingsModal';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
-import { loadCollapsedTableIds, saveCollapsedTableIds } from './lib/storage';
+import {
+  loadCollapsedTableIds,
+  saveCollapsedTableIds,
+  loadViewMode,
+  saveViewMode,
+  type ViewMode,
+} from './lib/storage';
 import { tableDisplayName } from './lib/tableDisplay';
 import type { Guest, TableSide } from './types';
 
@@ -32,6 +39,8 @@ export default function App() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    setAllRsvp,
+    unseatAll,
   } = useEventState();
   const { t } = useLanguage();
 
@@ -43,11 +52,17 @@ export default function App() {
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
   const [menuOpen, setMenuOpen] = useState(false);
   const [sideFilter, setSideFilter] = useState<'all' | TableSide>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     saveCollapsedTableIds(collapsedTableIds);
   }, [collapsedTableIds]);
+
+  useEffect(() => {
+    saveViewMode(viewMode);
+  }, [viewMode]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -226,6 +241,32 @@ export default function App() {
     }
   };
 
+  const guestCount = state?.guests.length ?? 0;
+
+  const handleMarkAllComing = () => {
+    if (!confirm(t('settings.markAllComingConfirm', { count: guestCount }))) return;
+    setAllRsvp('confirmed');
+    showToast(t('settings.markedAllComing'));
+  };
+
+  const handleMarkAllPending = () => {
+    if (!confirm(t('settings.markAllPendingConfirm', { count: guestCount }))) return;
+    setAllRsvp(undefined);
+    showToast(t('settings.markedAllPending'));
+  };
+
+  const handleUnseatAll = () => {
+    if (!confirm(t('settings.unseatAllConfirm'))) return;
+    unseatAll();
+    showToast(t('settings.unseatedAll'));
+  };
+
+  const handleReset = () => {
+    if (!confirm(t('header.resetConfirm'))) return;
+    resetAll();
+    setSettingsOpen(false);
+  };
+
   if (!state) {
     return (
       <Onboarding onImported={(guests, tables, name) => loadFromImport(guests, tables, name)} />
@@ -306,23 +347,31 @@ export default function App() {
               </button>
               <ExportMenu state={state} />
               <button
-                onClick={() => {
-                  if (confirm(t('header.resetConfirm'))) resetAll();
-                }}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                onClick={() => setSettingsOpen(true)}
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+                title={t('settings.title')}
+                aria-label={t('settings.title')}
               >
-                {t('header.reset')}
+                ⚙️
               </button>
-              <SettingsControls />
             </div>
 
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="sm:hidden ml-auto w-9 h-9 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
-              aria-label={t('header.menu')}
-            >
-              {menuOpen ? '✕' : '☰'}
-            </button>
+            <div className="sm:hidden ml-auto flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
+                aria-label={t('settings.title')}
+              >
+                ⚙️
+              </button>
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
+                aria-label={t('header.menu')}
+              >
+                {menuOpen ? '✕' : '☰'}
+              </button>
+            </div>
             <input
               ref={importInputRef}
               type="file"
@@ -381,16 +430,6 @@ export default function App() {
                 {t('header.import')}
               </button>
               <ExportMenu state={state} fullWidth />
-              <button
-                onClick={() => {
-                  if (confirm(t('header.resetConfirm'))) resetAll();
-                  setMenuOpen(false);
-                }}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
-              >
-                {t('header.reset')}
-              </button>
-              <SettingsControls className="col-span-1 justify-center" />
             </div>
           )}
         </header>
@@ -440,22 +479,48 @@ export default function App() {
                     {t('tables.filter.bride')} ({sideCounts.bride})
                   </button>
                 </div>
-                {!isSearching && filteredTables.length > 0 && (
-                  <button
-                    onClick={() =>
-                      setCollapsedTableIds((prev) =>
-                        filteredTables.every((tb) => prev.has(tb.id))
-                          ? new Set([...prev].filter((id) => !visibleTableIds.has(id)))
-                          : new Set([...prev, ...filteredTables.map((tb) => tb.id)])
-                      )
-                    }
-                    className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  >
-                    {filteredTables.every((tb) => collapsedTableIds.has(tb.id))
-                      ? t('tables.expandAll')
-                      : t('tables.collapseAll')}
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {!isSearching && viewMode === 'list' && filteredTables.length > 0 && (
+                    <button
+                      onClick={() =>
+                        setCollapsedTableIds((prev) =>
+                          filteredTables.every((tb) => prev.has(tb.id))
+                            ? new Set([...prev].filter((id) => !visibleTableIds.has(id)))
+                            : new Set([...prev, ...filteredTables.map((tb) => tb.id)])
+                        )
+                      }
+                      className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    >
+                      {filteredTables.every((tb) => collapsedTableIds.has(tb.id))
+                        ? t('tables.expandAll')
+                        : t('tables.collapseAll')}
+                    </button>
+                  )}
+                  <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
+                    <button
+                      onClick={() => setViewMode('list')}
+                      title={t('settings.viewList')}
+                      className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                        viewMode === 'list'
+                          ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
+                          : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    >
+                      ☰
+                    </button>
+                    <button
+                      onClick={() => setViewMode('floor')}
+                      title={t('settings.viewFloor')}
+                      className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                        viewMode === 'floor'
+                          ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
+                          : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    >
+                      ◯
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -480,29 +545,42 @@ export default function App() {
                   <p>{t('tables.noSearchMatches')}</p>
                 </div>
               )}
-              {tablesToRender.map((table) => (
-                <TableCard
-                  key={table.id}
-                  table={table}
-                  guests={guestsByTable.get(table.id) ?? []}
-                  matchedIds={matchedIds}
-                  linkBadges={linkBadges}
-                  highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
-                  collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
-                  onToggleCollapse={() => {
-                    if (isSearching) return;
-                    setCollapsedTableIds((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(table.id)) next.delete(table.id);
-                      else next.add(table.id);
-                      return next;
-                    });
-                  }}
-                  onUpdateTable={(patch) => updateTable(table.id, patch)}
-                  onRemoveTable={() => removeTable(table.id)}
-                  onGuestClick={(g) => setEditingGuestId(g.id)}
-                />
-              ))}
+              {tablesToRender.map((table) =>
+                viewMode === 'floor' ? (
+                  <FloorTable
+                    key={table.id}
+                    table={table}
+                    guests={guestsByTable.get(table.id) ?? []}
+                    matchedIds={matchedIds}
+                    highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
+                    onUpdateTable={(patch) => updateTable(table.id, patch)}
+                    onRemoveTable={() => removeTable(table.id)}
+                    onGuestClick={(g) => setEditingGuestId(g.id)}
+                  />
+                ) : (
+                  <TableCard
+                    key={table.id}
+                    table={table}
+                    guests={guestsByTable.get(table.id) ?? []}
+                    matchedIds={matchedIds}
+                    linkBadges={linkBadges}
+                    highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
+                    collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
+                    onToggleCollapse={() => {
+                      if (isSearching) return;
+                      setCollapsedTableIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(table.id)) next.delete(table.id);
+                        else next.add(table.id);
+                        return next;
+                      });
+                    }}
+                    onUpdateTable={(patch) => updateTable(table.id, patch)}
+                    onRemoveTable={() => removeTable(table.id)}
+                    onGuestClick={(g) => setEditingGuestId(g.id)}
+                  />
+                )
+              )}
             </div>
           </div>
         </main>
@@ -524,6 +602,18 @@ export default function App() {
       )}
 
       {addingGuest && <AddGuestModal onAdd={addGuest} onClose={() => setAddingGuest(false)} />}
+
+      {settingsOpen && (
+        <SettingsModal
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onMarkAllComing={handleMarkAllComing}
+          onMarkAllPending={handleMarkAllPending}
+          onUnseatAll={handleUnseatAll}
+          onReset={handleReset}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
       {toast && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">

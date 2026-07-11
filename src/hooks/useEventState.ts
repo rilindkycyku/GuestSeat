@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { EventState, Guest, Table } from '../types';
+import type { EventState, Guest, RsvpStatus, Table } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
 import { getDefaultEventState } from '../lib/defaultEvent';
 import { clearState, loadState, saveState } from '../lib/storage';
@@ -150,6 +150,28 @@ export function useEventState() {
     });
   }, []);
 
+  const setAllRsvp = useCallback((rsvp: RsvpStatus | undefined) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => ({ ...g, rsvp })),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const unseatAll = useCallback(() => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => ({ ...g, tableId: null })),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
   const unlinkGuests = useCallback((guestIdA: string, guestIdB: string) => {
     setState((prev) => {
       if (!prev) return prev;
@@ -183,5 +205,7 @@ export function useEventState() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    setAllRsvp,
+    unseatAll,
   };
 }
