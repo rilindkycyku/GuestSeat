@@ -28,6 +28,12 @@ function sideLabel(table: Table | undefined, t: Translator): string {
   return t(`tables.side.${table.side}`);
 }
 
+function rsvpLabel(g: Guest, t: Translator): string {
+  if (g.rsvp === 'confirmed') return t('rsvp.confirmed');
+  if (g.rsvp === 'declined') return t('rsvp.declined');
+  return t('rsvp.pending');
+}
+
 export function exportAsJson(state: EventState): void {
   downloadBlob(JSON.stringify(state, null, 2), `${slug(state.eventName)}-seating.json`, 'application/json');
 }
@@ -41,6 +47,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
     t('export.fields.table'),
     t('export.fields.capacity'),
     t('export.fields.side'),
+    t('export.fields.rsvp'),
     t('export.fields.linkedWith'),
     t('export.fields.notes'),
   ];
@@ -59,6 +66,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
         g.tableId ? (table ? tableDisplayName(table, t) : t('export.fields.unknownTable')) : t('export.fields.unseated'),
         table ? String(table.capacity) : '',
         sideLabel(table, t),
+        rsvpLabel(g, t),
         linked,
         g.notes ?? '',
       ];
@@ -93,6 +101,10 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     }
   }
 
+  const confirmedTotal = state.guests.filter((g) => g.rsvp === 'confirmed').length;
+  const declinedTotal = state.guests.filter((g) => g.rsvp === 'declined').length;
+  const hasRsvp = confirmedTotal > 0 || declinedTotal > 0;
+
   doc.setFontSize(15);
   doc.text(state.eventName, marginX, marginTop + 5);
   doc.setFontSize(8.5);
@@ -106,9 +118,20 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     marginX,
     marginTop + 10
   );
+  if (hasRsvp) {
+    doc.text(
+      t('export.rsvpSummary', {
+        confirmed: confirmedTotal,
+        declined: declinedTotal,
+        pending: state.guests.length - confirmedTotal - declinedTotal,
+      }),
+      marginX,
+      marginTop + 14.5
+    );
+  }
   doc.setTextColor(0);
 
-  const columnY: number[] = new Array(columnCount).fill(marginTop + 16);
+  const columnY: number[] = new Array(columnCount).fill(marginTop + (hasRsvp ? 20 : 16));
 
   const pickColumn = () => columnY.indexOf(Math.min(...columnY));
 
@@ -148,7 +171,10 @@ export function exportAsPdf(state: EventState, t: Translator): void {
       tableWidth: columnWidth,
       head: [],
       body: sorted.length
-        ? sorted.map((g, i) => [`${i + 1}. ${fullName(g)}${g.notes ? ` — ${g.notes}` : ''}`])
+        ? sorted.map((g, i) => {
+            const marker = g.rsvp === 'declined' ? ` (${t('rsvp.declinedShort')})` : '';
+            return [`${i + 1}. ${fullName(g)}${marker}${g.notes ? ` — ${g.notes}` : ''}`];
+          })
         : [[t('export.noGuestsSeated')]],
       styles: { fontSize: 7.3, cellPadding: 0.8, textColor: [40, 40, 40] },
       theme: 'plain',

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Guest, Table } from '../types';
+import type { Guest, RsvpStatus, Table } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 
@@ -37,6 +37,7 @@ export function GuestEditorModal({
   const [surname, setSurname] = useState(guest.surname ?? '');
   const [notes, setNotes] = useState(guest.notes ?? '');
   const [tableId, setTableId] = useState<string>(guest.tableId ?? '');
+  const [rsvp, setRsvp] = useState<RsvpStatus | undefined>(guest.rsvp);
   const [linkSearch, setLinkSearch] = useState('');
 
   // Keep the table selector in sync when linking auto-seats this guest elsewhere.
@@ -71,6 +72,7 @@ export function GuestEditorModal({
       surname: surname.trim() || undefined,
       notes: notes.trim() || undefined,
       tableId: tableId || null,
+      rsvp,
     });
     onClose();
   };
@@ -101,6 +103,30 @@ export function GuestEditorModal({
           onChange={(e) => setSurname(e.target.value)}
           className="w-full mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
         />
+
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('rsvp.label')}</label>
+        <div className="grid grid-cols-3 gap-1.5 mb-3">
+          {(
+            [
+              { value: undefined, label: t('rsvp.pending'), active: 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white' },
+              { value: 'confirmed', label: t('rsvp.confirmed'), active: 'bg-emerald-500 text-white' },
+              { value: 'declined', label: t('rsvp.declined'), active: 'bg-red-500 text-white' },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => setRsvp(opt.value)}
+              className={`px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
+                rsvp === opt.value
+                  ? opt.active
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
 
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('guestEditor.table')}</label>
         <select
