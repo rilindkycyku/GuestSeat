@@ -1257,6 +1257,11 @@
       "linkedGuestIds": [
         "g_ch2c4nxzmrf4ir0h"
       ]
+    },
+    {
+      "id": "g_aohavtwtmrg3ogv1",
+      "name": "Diellza",
+      "tableId": "t_3lrni4f1mrf4ir0h"
     }
   ],
   "tables": [
@@ -1359,7 +1364,7 @@
     {
       "id": "t_3lrni4f1mrf4ir0h",
       "name": "Tavolina 17",
-      "capacity": 10,
+      "capacity": 11,
       "side": "groom"
     },
     {
@@ -1381,5 +1386,5 @@
       "side": "groom"
     }
   ],
-  "updatedAt": "2026-07-10T19:05:09.003Z"
+  "updatedAt": "2026-07-11T08:26:36.035Z"
 }
