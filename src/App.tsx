@@ -552,6 +552,7 @@ export default function App() {
                     table={table}
                     guests={guestsByTable.get(table.id) ?? []}
                     matchedIds={matchedIds}
+                    linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onUpdateTable={(patch) => updateTable(table.id, patch)}
                     onRemoveTable={() => removeTable(table.id)}

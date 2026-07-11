@@ -10,6 +10,7 @@ interface FloorTableProps {
   table: Table;
   guests: Guest[];
   matchedIds: Set<string> | null;
+  linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
   onUpdateTable: (patch: Partial<Table>) => void;
   onRemoveTable: () => void;
@@ -20,6 +21,14 @@ function initials(g: Guest): string {
   const first = g.name[0] ?? '';
   const second = g.surname?.[0] ?? g.name[1] ?? '';
   return (first + second).toUpperCase();
+}
+
+function shortName(g: Guest): string {
+  return g.surname ? `${g.name} ${g.surname[0]}.` : g.name;
+}
+
+function fullName(g: Guest): string {
+  return g.surname ? `${g.name} ${g.surname}` : g.name;
 }
 
 function SeatDot({
@@ -64,9 +73,9 @@ function SeatDot({
       onClick={onClick}
       data-testid="floor-seat"
       data-guest-id={guest.id}
-      title={`${guest.surname ? `${guest.name} ${guest.surname}` : guest.name}${rsvpTitle}`}
-      className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full border-2 flex items-center justify-center
-        text-[10px] font-bold cursor-grab active:cursor-grabbing touch-pan-y select-none transition-shadow hover:shadow-md
+      title={`${fullName(guest)}${rsvpTitle}`}
+      className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 flex items-center justify-center
+        text-[9px] font-bold cursor-grab active:cursor-grabbing touch-pan-y select-none transition-shadow hover:shadow-md
         ${isDragging ? 'opacity-40' : ''}
         ${ring}
         ${
@@ -89,6 +98,7 @@ export function FloorTable({
   table,
   guests,
   matchedIds,
+  linkBadges,
   highlighted,
   onUpdateTable,
   onRemoveTable,
@@ -99,7 +109,7 @@ export function FloorTable({
   const displayName = tableDisplayName(table, t);
   const isOverCapacity = guests.length > table.capacity;
 
-  // Linked guests sit next to each other around the table.
+  // Linked guests sit next to each other around the table; the name list uses the same order.
   const orderedGuests = useMemo(() => groupLinkedWithin(guests).flat(), [guests]);
 
   const seatCount = Math.max(table.capacity, guests.length);
@@ -108,8 +118,8 @@ export function FloorTable({
       Array.from({ length: seatCount }, (_, i) => {
         const angle = (2 * Math.PI * i) / seatCount - Math.PI / 2;
         return {
-          x: 50 + 41 * Math.cos(angle),
-          y: 50 + 41 * Math.sin(angle),
+          x: 50 + 42 * Math.cos(angle),
+          y: 50 + 42 * Math.sin(angle),
           guest: orderedGuests[i],
         };
       }),
@@ -125,7 +135,7 @@ export function FloorTable({
       data-testid="table-card"
       data-table-id={table.id}
       data-table-side={table.side ?? ''}
-      className={`relative rounded-2xl border-2 p-2 transition-all bg-white dark:bg-slate-900 shadow-sm hover:shadow-md scroll-mt-24 ${
+      className={`flex flex-col rounded-2xl border-2 p-3 transition-all bg-white dark:bg-slate-900 shadow-sm hover:shadow-md scroll-mt-24 ${
         isOver
           ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30'
           : highlighted
@@ -133,61 +143,62 @@ export function FloorTable({
             : 'border-slate-200 dark:border-slate-800'
       }`}
     >
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-0.5" title={t('tables.setSide')}>
-        <button
-          onClick={() => onUpdateTable({ side: table.side === 'groom' ? undefined : 'groom' })}
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-            table.side === 'groom'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
-              : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-          }`}
-        >
-          {t('tables.side.groom')}
-        </button>
-        <button
-          onClick={() => onUpdateTable({ side: table.side === 'bride' ? undefined : 'bride' })}
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-            table.side === 'bride'
-              ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300'
-              : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-          }`}
-        >
-          {t('tables.side.bride')}
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-0.5" title={t('tables.setSide')}>
+          <button
+            onClick={() => onUpdateTable({ side: table.side === 'groom' ? undefined : 'groom' })}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+              table.side === 'groom'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
+                : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
+            }`}
+          >
+            {t('tables.side.groom')}
+          </button>
+          <button
+            onClick={() => onUpdateTable({ side: table.side === 'bride' ? undefined : 'bride' })}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+              table.side === 'bride'
+                ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300'
+                : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
+            }`}
+          >
+            {t('tables.side.bride')}
+          </button>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}
+            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+            title={t('tables.decreaseCapacity')}
+          >
+            −
+          </button>
+          <button
+            onClick={() => onUpdateTable({ capacity: table.capacity + 1 })}
+            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+            title={t('tables.increaseCapacity')}
+          >
+            +
+          </button>
+          <button
+            onClick={() => {
+              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
+                onRemoveTable();
+              }
+            }}
+            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
+            title={t('tables.removeTable')}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-        <button
-          onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}
-          className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-          title={t('tables.decreaseCapacity')}
-        >
-          −
-        </button>
-        <button
-          onClick={() => onUpdateTable({ capacity: table.capacity + 1 })}
-          className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-          title={t('tables.increaseCapacity')}
-        >
-          +
-        </button>
-        <button
-          onClick={() => {
-            if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
-              onRemoveTable();
-            }
-          }}
-          className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
-          title={t('tables.removeTable')}
-        >
-          ✕
-        </button>
-      </div>
-
-      <div className="relative aspect-square mt-4">
+      <div className="relative aspect-square w-full max-w-[220px] mx-auto my-2">
         {/* The table itself */}
         <div
-          className={`absolute inset-[26%] rounded-full border-4 flex flex-col items-center justify-center text-center px-2 ${
+          className={`absolute inset-[27%] rounded-full border-4 flex flex-col items-center justify-center text-center px-2 ${
             table.side ? SIDE_RING[table.side] : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
           }`}
         >
@@ -223,11 +234,58 @@ export function FloorTable({
             <div
               key={`empty-${i}`}
               style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700"
             />
           )
         )}
       </div>
+
+      {/* Readable guest list — always visible, no clicking required */}
+      {orderedGuests.length > 0 ? (
+        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-t border-slate-100 dark:border-slate-800 pt-2">
+          {orderedGuests.map((g) => {
+            const isMatch = matchedIds ? matchedIds.has(g.id) : false;
+            const badge = linkBadges.get(g.id);
+            return (
+              <button
+                key={g.id}
+                onClick={() => onGuestClick(g)}
+                data-testid="floor-name"
+                title={`${fullName(g)}${rsvpTitle(g)}`}
+                className={`flex items-center gap-1.5 min-w-0 text-left rounded-md px-1.5 py-1 text-xs transition-colors ${
+                  isMatch
+                    ? 'bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-300'
+                    : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span
+                  className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                    g.rsvp === 'confirmed' ? 'bg-emerald-500' : g.rsvp === 'declined' ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                />
+                <span
+                  className={`truncate ${
+                    g.rsvp === 'declined'
+                      ? 'text-slate-400 dark:text-slate-500 line-through'
+                      : 'text-slate-700 dark:text-slate-200'
+                  }`}
+                >
+                  {shortName(g)}
+                </span>
+                {badge && (
+                  <span title={badge.title} className="ml-auto shrink-0 text-[9px] opacity-70">
+                    {badge.status === 'together' ? '🔗' : '🔗⚠️'}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-2 border-t border-slate-100 dark:border-slate-800 select-none">
+          {t('tables.dropHere')}
+        </p>
+      )}
     </div>
   );
 }
