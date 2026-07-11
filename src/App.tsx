@@ -234,6 +234,8 @@ export default function App() {
 
   const totalGuests = state.guests.length;
   const totalSeated = state.guests.filter((g) => g.tableId).length;
+  const confirmedCount = state.guests.filter((g) => g.rsvp === 'confirmed').length;
+  const declinedCount = state.guests.filter((g) => g.rsvp === 'declined').length;
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
@@ -266,6 +268,21 @@ export default function App() {
               <span className="text-[11px] sm:text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 shrink-0">
                 {totalSeated}/{totalGuests}
               </span>
+              {(confirmedCount > 0 || declinedCount > 0) && (
+                <span
+                  className="hidden sm:inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-medium shrink-0"
+                  title={t('rsvp.label')}
+                >
+                  <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {confirmedCount}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 text-red-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    {declinedCount}
+                  </span>
+                </span>
+              )}
             </div>
 
             <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
@@ -313,7 +330,7 @@ export default function App() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) void handleImportFile(file, 'merge');
+                if (file) void handleImportFile(file, 'replace');
                 e.target.value = '';
               }}
             />

@@ -1,4 +1,4 @@
-import type { Guest, Table, TableSide } from '../types';
+import type { Guest, RsvpStatus, Table, TableSide } from '../types';
 import { translations } from './i18n';
 import { ImportError, makeId } from './importGuests';
 
@@ -61,12 +61,62 @@ function parseCsvRows(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
 }
 
-// Recognize "Unseated"/"Groom"/"Bride" labels regardless of which language they were exported in.
+// Recognize "Unseated"/"Groom"/"Bride"/RSVP labels regardless of which language they were exported in.
 const UNSEATED_VALUES = new Set(Object.values(translations).map((d) => d.export.fields.unseated));
 const SIDE_VALUES: Record<string, TableSide> = {};
+const RSVP_VALUES: Record<string, RsvpStatus> = {};
 for (const dict of Object.values(translations)) {
   SIDE_VALUES[dict.tables.side.groom] = 'groom';
   SIDE_VALUES[dict.tables.side.bride] = 'bride';
+  RSVP_VALUES[dict.rsvp.confirmed] = 'confirmed';
+  RSVP_VALUES[dict.rsvp.declined] = 'declined';
+}
+
+type ColumnField = 'name' | 'surname' | 'table' | 'capacity' | 'side' | 'rsvp' | 'linked' | 'notes';
+
+// Map every localized export-column header back to a field key, so import is order-independent
+// and tolerates older exports that lack newer columns (e.g. RSVP).
+const HEADER_TO_FIELD = new Map<string, ColumnField>();
+for (const dict of Object.values(translations)) {
+  const f = dict.export.fields;
+  const pairs: [string, ColumnField][] = [
+    [f.name, 'name'],
+    [f.surname, 'surname'],
+    [f.table, 'table'],
+    [f.capacity, 'capacity'],
+    [f.side, 'side'],
+    [f.rsvp, 'rsvp'],
+    [f.linkedWith, 'linked'],
+    [f.notes, 'notes'],
+  ];
+  for (const [label, field] of pairs) HEADER_TO_FIELD.set(label.trim().toLowerCase(), field);
+}
+
+/** Resolves column indices from a header row; falls back to the historical fixed order if unrecognized. */
+function resolveColumns(header: string[]): Record<ColumnField, number> {
+  const cols: Record<ColumnField, number> = {
+    name: -1,
+    surname: -1,
+    table: -1,
+    capacity: -1,
+    side: -1,
+    rsvp: -1,
+    linked: -1,
+    notes: -1,
+  };
+  let matched = 0;
+  header.forEach((cell, i) => {
+    const field = HEADER_TO_FIELD.get(cell.trim().toLowerCase());
+    if (field && cols[field] === -1) {
+      cols[field] = i;
+      matched += 1;
+    }
+  });
+  if (matched < 2) {
+    // Unrecognized header — assume the legacy fixed layout (no RSVP column).
+    return { name: 0, surname: 1, table: 2, capacity: 3, side: 4, rsvp: -1, linked: 5, notes: 6 };
+  }
+  return cols;
 }
 
 interface ParsedRow {
@@ -75,50 +125,54 @@ interface ParsedRow {
   tableName: string | null;
   capacity?: number;
   side?: TableSide;
+  rsvp?: RsvpStatus;
   linkedNames: string[];
   notes: string;
 }
 
 /**
- * Imports a CSV previously produced by this app's own CSV export (Name, Surname, Table,
- * Table capacity, Side, Linked with, Notes columns — in that order). The first row is always
- * treated as a header and skipped. Tables are reconstructed from the Table/Table capacity/Side
- * columns, and mutual links are resolved by matching full names across rows.
+ * Imports a CSV previously produced by this app's own CSV export. Columns are located by their
+ * (localized) header names, so column order and newer/older column sets are both tolerated; an
+ * unrecognized header falls back to the historical fixed layout. Tables are reconstructed from
+ * the Table/Table capacity/Side columns, attendance from the Attendance column, and mutual links
+ * are resolved by matching full names across rows.
  */
 export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table[]; eventName?: string } {
   const rows = parseCsvRows(text);
+  const col = resolveColumns(rows[0] ?? []);
   const dataRows = rows.slice(1);
+  const cell = (cols: string[], idx: number) => (idx >= 0 ? (cols[idx] ?? '').trim() : '');
 
   const tableOrder: string[] = [];
   const tableInfoByName = new Map<string, { capacity?: number; side?: TableSide }>();
   const parsedRows: ParsedRow[] = [];
 
   for (const cols of dataRows) {
-    const [nameCell, surnameCell, tableCell, capacityCell, sideCell, linkedCell, notesCell] = cols;
-    const name = (nameCell ?? '').trim();
+    const name = cell(cols, col.name);
     if (!name) continue;
 
-    const tableCellTrim = (tableCell ?? '').trim();
+    const tableCellTrim = cell(cols, col.table);
     const tableName = !tableCellTrim || UNSEATED_VALUES.has(tableCellTrim) ? null : tableCellTrim;
 
     if (tableName && !tableInfoByName.has(tableName)) {
       tableOrder.push(tableName);
-      const capacityNum = Number.parseInt((capacityCell ?? '').trim(), 10);
+      const capacityNum = Number.parseInt(cell(cols, col.capacity), 10);
       tableInfoByName.set(tableName, {
         capacity: Number.isFinite(capacityNum) && capacityNum > 0 ? capacityNum : undefined,
-        side: SIDE_VALUES[(sideCell ?? '').trim()],
+        side: SIDE_VALUES[cell(cols, col.side)],
       });
     }
 
     parsedRows.push({
       name,
-      surname: (surnameCell ?? '').trim(),
+      surname: cell(cols, col.surname),
       tableName,
-      linkedNames: (linkedCell ?? '')
+      rsvp: RSVP_VALUES[cell(cols, col.rsvp)],
+      linkedNames: cell(cols, col.linked)
         .split(';')
         .map((s) => s.trim())
         .filter(Boolean),
-      notes: (notesCell ?? '').trim(),
+      notes: cell(cols, col.notes),
     });
   }
 
@@ -148,6 +202,7 @@ export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table
     surname: r.surname || undefined,
     notes: r.notes || undefined,
     tableId: r.tableName ? (tableIdByName.get(r.tableName) ?? null) : null,
+    rsvp: r.rsvp,
   }));
 
   // Resolve "Linked with" names to guest ids, skipping ambiguous (duplicate full-name) matches.

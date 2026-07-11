@@ -1,3 +1,6 @@
+/** Whether a guest has responded that they are attending. Absent = no response yet (pending). */
+export type RsvpStatus = 'confirmed' | 'declined';
+
 export interface Guest {
   id: string;
   /** Primary, required identifier for a guest. */
@@ -12,6 +15,8 @@ export interface Guest {
   tableId: string | null;
   /** IDs of other guests this guest is linked to (couples, families, plus-ones). Always mutual. */
   linkedGuestIds?: string[];
+  /** RSVP / attendance response. Absent means no response yet (pending). */
+  rsvp?: RsvpStatus;
 }
 
 export type TableSide = 'groom' | 'bride';
