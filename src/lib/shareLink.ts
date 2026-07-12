@@ -13,14 +13,25 @@ import { makeId } from './importGuests';
  * indices, and every field name is stripped. This shrinks a ~200-guest list roughly 3× versus
  * the raw JSON, which is the difference between a link that fits in a QR code and one that
  * doesn't. Ids are regenerated on decode; they only need to be internally consistent.
+ *
+ * The compressed bytes are then encoded with {@link toBase42} rather than base64. base42 uses
+ * only characters from QR's *alphanumeric* set (digits, upper-case letters, a few symbols),
+ * which lets the QR encoder use its high-capacity alphanumeric mode (~4,296 chars) instead of
+ * byte mode (~2,953) — worth ~45% more data, enough to push a ~500-guest list into a single
+ * scannable QR with no server. The alphabet is also URL-fragment-safe, so the same string
+ * lives directly in the link. See {@link toQrPayloadUrl} for the matching QR-side trick.
  */
 
 const HASH_KEY = 's';
 
-// Payload markers (first character of the encoded string).
-const MARK_COMPACT_GZIP = 'z'; // compact array form, gzip-compressed (current default)
-const MARK_FULL_GZIP = 'c'; // legacy: full EventState JSON, gzip-compressed
-const MARK_FULL_PLAIN = 'u'; // full EventState JSON, uncompressed (no CompressionStream support)
+// Payload markers (first character of the encoded string). Current markers are upper-case so
+// they sit inside QR alphanumeric mode alongside the base42 body; the lower-case markers are
+// older base64 payloads we still decode for links shared before the base42 switch.
+const MARK_COMPACT_GZIP_B42 = 'A'; // compact array form, gzip-compressed, base42 (current default)
+const MARK_FULL_PLAIN_B42 = 'B'; // full EventState JSON, uncompressed, base42 (no CompressionStream)
+const MARK_COMPACT_GZIP = 'z'; // legacy: compact array form, gzip-compressed, base64
+const MARK_FULL_GZIP = 'c'; // legacy: full EventState JSON, gzip-compressed, base64
+// (legacy 'u' = full JSON, uncompressed base64 — still decoded, handled by the default branch)
 
 const COMPACT_VERSION = 1;
 
@@ -116,18 +127,69 @@ function fromCompact(data: CompactState): EventState | null {
 const hasCompression =
   typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
 
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = '';
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
 function fromBase64Url(value: string): Uint8Array<ArrayBuffer> {
   const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
   const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
+}
+
+// 42 characters that are BOTH in QR's alphanumeric set and safe to drop straight into a URL
+// fragment (no space, %, or + — which a URL parser would mangle). Two bytes map to three
+// base42 chars (little-endian), a trailing odd byte to two — the same scheme as RFC 9285
+// base45, narrowed to a URL-safe alphabet (42³ = 74088 ≥ 65536, so two bytes still fit).
+const B42_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:/*$';
+const B42_REVERSE: Record<string, number> = {};
+for (let i = 0; i < B42_ALPHABET.length; i++) B42_REVERSE[B42_ALPHABET[i]] = i;
+
+function toBase42(bytes: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 2) {
+    if (i + 1 < bytes.length) {
+      let v = bytes[i] * 256 + bytes[i + 1];
+      out += B42_ALPHABET[v % 42];
+      v = Math.floor(v / 42);
+      out += B42_ALPHABET[v % 42];
+      out += B42_ALPHABET[Math.floor(v / 42)];
+    } else {
+      const v = bytes[i];
+      out += B42_ALPHABET[v % 42];
+      out += B42_ALPHABET[Math.floor(v / 42)];
+    }
+  }
+  return out;
+}
+
+function fromBase42(text: string): Uint8Array<ArrayBuffer> {
+  const out: number[] = [];
+  let i = 0;
+  for (; i + 3 <= text.length; i += 3) {
+    const v = B42_REVERSE[text[i]] + B42_REVERSE[text[i + 1]] * 42 + B42_REVERSE[text[i + 2]] * 1764;
+    out.push(Math.floor(v / 256), v % 256);
+  }
+  if (text.length - i === 2) {
+    out.push(B42_REVERSE[text[i]] + B42_REVERSE[text[i + 1]] * 42);
+  }
+  const bytes = new Uint8Array(out.length);
+  bytes.set(out);
+  return bytes;
+}
+
+/**
+ * Rewrite a share link into the exact string to encode in a QR code. Hosts and schemes are
+ * case-insensitive, so upper-casing them keeps the whole prefix inside QR alphanumeric mode
+ * (the base42 fragment is already upper-case), which — together with base42 — is what lets a
+ * big list fit. The returned string opens to the same page; only the QR uses it, the copyable
+ * link stays in its normal lower-case form.
+ */
+export function toQrPayloadUrl(link: string): string {
+  try {
+    const u = new URL(link);
+    return `${u.protocol}//${u.host}`.toUpperCase() + u.pathname + u.search + u.hash;
+  } catch {
+    return link;
+  }
 }
 
 async function gzip(text: string): Promise<Uint8Array> {
@@ -145,9 +207,10 @@ async function gunzip(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
 export async function encodeStateToLink(state: EventState): Promise<string> {
   // Compact + gzip when the browser supports it — the only form small enough to fit a big
   // list into a QR code. Fall back to plain full JSON only when CompressionStream is missing.
+  // Either way the bytes are base42-encoded so the QR can use its alphanumeric mode.
   const payload = hasCompression
-    ? MARK_COMPACT_GZIP + toBase64Url(await gzip(JSON.stringify(toCompact(state))))
-    : MARK_FULL_PLAIN + toBase64Url(new TextEncoder().encode(JSON.stringify(state)));
+    ? MARK_COMPACT_GZIP_B42 + toBase42(await gzip(JSON.stringify(toCompact(state))))
+    : MARK_FULL_PLAIN_B42 + toBase42(new TextEncoder().encode(JSON.stringify(state)));
   const url = new URL(window.location.href);
   url.hash = `${HASH_KEY}=${payload}`;
   return url.toString();
@@ -157,12 +220,16 @@ export async function encodeStateToLink(state: EventState): Promise<string> {
 export async function decodeSharedState(payload: string): Promise<EventState | null> {
   try {
     const marker = payload[0];
-    const bytes = fromBase64Url(payload.slice(1));
-    const json =
-      marker === MARK_COMPACT_GZIP || marker === MARK_FULL_GZIP ? await gunzip(bytes) : new TextDecoder().decode(bytes);
+    const body = payload.slice(1);
+    // base42 markers ('A'/'B') are the current form; the base64 markers ('z'/'c'/'u') decode
+    // links shared before the switch. Compact payloads ('A'/'z') are gzip-compressed.
+    const isB42 = marker === MARK_COMPACT_GZIP_B42 || marker === MARK_FULL_PLAIN_B42;
+    const bytes = isB42 ? fromBase42(body) : fromBase64Url(body);
+    const compressed = marker === MARK_COMPACT_GZIP_B42 || marker === MARK_COMPACT_GZIP || marker === MARK_FULL_GZIP;
+    const json = compressed ? await gunzip(bytes) : new TextDecoder().decode(bytes);
     const parsed = JSON.parse(json);
-    if (marker === MARK_COMPACT_GZIP) return fromCompact(parsed as CompactState);
-    // Legacy full-JSON payloads ('c' / 'u').
+    if (marker === MARK_COMPACT_GZIP_B42 || marker === MARK_COMPACT_GZIP) return fromCompact(parsed as CompactState);
+    // Full-JSON payloads ('B' / legacy 'c' / 'u').
     if (!parsed || !Array.isArray(parsed.guests) || !Array.isArray(parsed.tables)) return null;
     return parsed as EventState;
   } catch {

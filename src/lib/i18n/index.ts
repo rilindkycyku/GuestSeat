@@ -28,7 +28,10 @@ export function createTranslator(lang: Language) {
 }
 
 export function detectInitialLanguage(): Language {
+  // A saved choice always wins, so anyone who switches to English stays in English.
   const stored = localStorage.getItem('guestseat.language');
   if (stored === 'en' || stored === 'sq') return stored;
-  return navigator.language.toLowerCase().startsWith('sq') ? 'sq' : 'en';
+  // GuestSeat is Albanian-first, so new visitors start in Albanian regardless of the phone's
+  // language — this keeps shared links, exports and the UI in Albanian by default.
+  return 'sq';
 }
