@@ -1,14 +1,17 @@
 import { useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { Guest, Table, TableSide } from '../types';
+import type { Guest, Table, TableSide, TableTag } from '../types';
 import { GuestChip } from './GuestChip';
+import { TableTagPicker } from './TableTagPicker';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
+import { TAG_COLORS } from '../lib/tagColors';
 
 interface TableCardProps {
   table: Table;
   guests: Guest[];
+  tags: TableTag[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
@@ -17,6 +20,8 @@ interface TableCardProps {
   onUpdateTable: (patch: Partial<Table>) => void;
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
+  onToggleTag: (tagId: string) => void;
+  onCreateTag: (label: string) => void;
 }
 
 const SIDE_STYLES: Record<TableSide, string> = {
@@ -27,6 +32,7 @@ const SIDE_STYLES: Record<TableSide, string> = {
 export function TableCard({
   table,
   guests,
+  tags,
   matchedIds,
   linkBadges,
   highlighted,
@@ -35,6 +41,8 @@ export function TableCard({
   onUpdateTable,
   onRemoveTable,
   onGuestClick,
+  onToggleTag,
+  onCreateTag,
 }: TableCardProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
@@ -42,6 +50,7 @@ export function TableCard({
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
   const guestGroups = useMemo(() => groupLinkedWithin(guests), [guests]);
+  const assignedTags = useMemo(() => tags.filter((tag) => table.tagIds?.includes(tag.id)), [tags, table.tagIds]);
 
   const setSide = (side: TableSide | undefined) => {
     onUpdateTable({ side });
@@ -127,6 +136,22 @@ export function TableCard({
                 >
                   {t('tables.side.bride')}
                 </button>
+              </div>
+              <div className="flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                {assignedTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+                <TableTagPicker
+                  tags={tags}
+                  tableTagIds={table.tagIds ?? []}
+                  onToggle={onToggleTag}
+                  onCreateTag={onCreateTag}
+                />
               </div>
             </div>
           </span>

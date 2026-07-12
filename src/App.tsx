@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
@@ -18,10 +18,17 @@ import {
   saveCollapsedTableIds,
   loadViewMode,
   saveViewMode,
+  loadTableColumns,
+  saveTableColumns,
   type ViewMode,
+  type TableColumns,
 } from './lib/storage';
 import { tableDisplayName } from './lib/tableDisplay';
+import { TAG_COLORS } from './lib/tagColors';
 import type { Guest, TableSide } from './types';
+
+/** A table-list filter: everything, one wedding side, or one custom tag. */
+type TableFilter = { kind: 'all' } | { kind: 'side'; side: TableSide } | { kind: 'tag'; tagId: string };
 
 export default function App() {
   const {
@@ -41,6 +48,10 @@ export default function App() {
     unlinkGuests,
     setAllRsvp,
     unseatAll,
+    addTag,
+    updateTag,
+    removeTag,
+    toggleTableTag,
   } = useEventState();
   const { t } = useLanguage();
 
@@ -51,8 +62,9 @@ export default function App() {
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sideFilter, setSideFilter] = useState<'all' | TableSide>('all');
+  const [tableFilter, setTableFilter] = useState<TableFilter>({ kind: 'all' });
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
+  const [tableColumns, setTableColumns] = useState<TableColumns>(() => loadTableColumns());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +75,10 @@ export default function App() {
   useEffect(() => {
     saveViewMode(viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    saveTableColumns(tableColumns);
+  }, [tableColumns]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -97,11 +113,14 @@ export default function App() {
     return map;
   }, [state, guestById, t]);
 
+  const tags = useMemo(() => state?.tags ?? [], [state]);
+
   const filteredTables = useMemo(() => {
     if (!state) return [];
-    if (sideFilter === 'all') return state.tables;
-    return state.tables.filter((tb) => tb.side === sideFilter);
-  }, [state, sideFilter]);
+    if (tableFilter.kind === 'all') return state.tables;
+    if (tableFilter.kind === 'side') return state.tables.filter((tb) => tb.side === tableFilter.side);
+    return state.tables.filter((tb) => tb.tagIds?.includes(tableFilter.tagId));
+  }, [state, tableFilter]);
 
   const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
 
@@ -113,6 +132,23 @@ export default function App() {
     }
     return counts;
   }, [state]);
+
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const tb of state?.tables ?? []) {
+      for (const id of tb.tagIds ?? []) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return counts;
+  }, [state]);
+
+  // Create a tag and immediately apply it to the table the user is tagging.
+  const createTagForTable = useCallback(
+    (tableId: string, label: string) => {
+      const id = addTag(label);
+      toggleTableTag(tableId, id);
+    },
+    [addTag, toggleTableTag]
+  );
 
   const seatedCount = useMemo(() => {
     const m = new Map<string, number>();
@@ -449,9 +485,9 @@ export default function App() {
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <button
-                    onClick={() => setSideFilter('all')}
+                    onClick={() => setTableFilter({ kind: 'all' })}
                     className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                      sideFilter === 'all'
+                      tableFilter.kind === 'all'
                         ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                     }`}
@@ -459,9 +495,9 @@ export default function App() {
                     {t('tables.filter.all')}
                   </button>
                   <button
-                    onClick={() => setSideFilter('groom')}
+                    onClick={() => setTableFilter({ kind: 'side', side: 'groom' })}
                     className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                      sideFilter === 'groom'
+                      tableFilter.kind === 'side' && tableFilter.side === 'groom'
                         ? 'bg-blue-600 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                     }`}
@@ -469,15 +505,32 @@ export default function App() {
                     {t('tables.filter.groom')} ({sideCounts.groom})
                   </button>
                   <button
-                    onClick={() => setSideFilter('bride')}
+                    onClick={() => setTableFilter({ kind: 'side', side: 'bride' })}
                     className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                      sideFilter === 'bride'
+                      tableFilter.kind === 'side' && tableFilter.side === 'bride'
                         ? 'bg-pink-600 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                     }`}
                   >
                     {t('tables.filter.bride')} ({sideCounts.bride})
                   </button>
+                  {tags.map((tag) => {
+                    const active = tableFilter.kind === 'tag' && tableFilter.tagId === tag.id;
+                    return (
+                      <button
+                        key={tag.id}
+                        onClick={() => setTableFilter({ kind: 'tag', tagId: tag.id })}
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                          active
+                            ? TAG_COLORS[tag.color].chip + ' ring-1 ring-inset ring-current'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                        {tag.label} ({tagCounts.get(tag.id) ?? 0})
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   {!isSearching && viewMode === 'list' && filteredTables.length > 0 && (
@@ -523,7 +576,11 @@ export default function App() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4">
+            <div
+              className={`grid gap-2 sm:gap-4 ${
+                tableColumns === 1 ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 xl:grid-cols-3'
+              }`}
+            >
               {state.tables.length === 0 && (
                 <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
                   <p className="mb-3">{t('tables.noTablesYet')}</p>
@@ -551,18 +608,22 @@ export default function App() {
                     key={table.id}
                     table={table}
                     guests={guestsByTable.get(table.id) ?? []}
+                    tags={tags}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onUpdateTable={(patch) => updateTable(table.id, patch)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
+                    onToggleTag={(tagId) => toggleTableTag(table.id, tagId)}
+                    onCreateTag={(label) => createTagForTable(table.id, label)}
                   />
                 ) : (
                   <TableCard
                     key={table.id}
                     table={table}
                     guests={guestsByTable.get(table.id) ?? []}
+                    tags={tags}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
@@ -579,6 +640,8 @@ export default function App() {
                     onUpdateTable={(patch) => updateTable(table.id, patch)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
+                    onToggleTag={(tagId) => toggleTableTag(table.id, tagId)}
+                    onCreateTag={(label) => createTagForTable(table.id, label)}
                   />
                 )
               )}
@@ -608,6 +671,12 @@ export default function App() {
         <SettingsModal
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          tableColumns={tableColumns}
+          onTableColumnsChange={setTableColumns}
+          tags={tags}
+          onAddTag={addTag}
+          onUpdateTag={updateTag}
+          onRemoveTag={removeTag}
           onMarkAllComing={handleMarkAllComing}
           onMarkAllPending={handleMarkAllPending}
           onUnseatAll={handleUnseatAll}

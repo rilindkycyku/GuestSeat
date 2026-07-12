@@ -21,6 +21,16 @@ export interface Guest {
 
 export type TableSide = 'groom' | 'bride';
 
+/** Preset color a custom tag can use. Maps to Tailwind classes in lib/tagColors.ts. */
+export type TagColor = 'rose' | 'amber' | 'emerald' | 'sky' | 'violet' | 'orange' | 'teal' | 'slate';
+
+/** A user-defined, event-level label that can be applied to any number of tables. */
+export interface TableTag {
+  id: string;
+  label: string;
+  color: TagColor;
+}
+
 export interface Table {
   id: string;
   /** Stored name — used verbatim once the user manually renames the table. */
@@ -28,6 +38,8 @@ export interface Table {
   capacity: number;
   /** Which side of the wedding this table belongs to, if categorized. */
   side?: TableSide;
+  /** IDs of custom tags (see EventState.tags) applied to this table. */
+  tagIds?: string[];
   /**
    * If set, this table's display name is auto-generated as `${namePrefix} ${autoSuffix}`
    * in the active language (e.g. "Table A" / "Tavolina A"), overriding `name`. Cleared as
@@ -42,6 +54,8 @@ export interface EventState {
   eventName: string;
   guests: Guest[];
   tables: Table[];
+  /** User-defined tags available to apply to tables. */
+  tags?: TableTag[];
   updatedAt: string;
 }
 

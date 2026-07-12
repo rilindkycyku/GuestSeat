@@ -1,11 +1,20 @@
+import { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
-import type { ViewMode } from '../lib/storage';
+import type { TableColumns, ViewMode } from '../lib/storage';
 import type { Language } from '../lib/i18n';
+import type { TableTag, TagColor } from '../types';
+import { TAG_COLORS, TAG_COLOR_ORDER } from '../lib/tagColors';
 
 interface SettingsModalProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  tableColumns: TableColumns;
+  onTableColumnsChange: (cols: TableColumns) => void;
+  tags: TableTag[];
+  onAddTag: (label: string) => void;
+  onUpdateTag: (tagId: string, patch: Partial<Omit<TableTag, 'id'>>) => void;
+  onRemoveTag: (tagId: string) => void;
   onMarkAllComing: () => void;
   onMarkAllPending: () => void;
   onUnseatAll: () => void;
@@ -52,9 +61,98 @@ function Segmented<T extends string>({
   );
 }
 
+function TagManager({
+  tags,
+  onAddTag,
+  onUpdateTag,
+  onRemoveTag,
+}: Pick<SettingsModalProps, 'tags' | 'onAddTag' | 'onUpdateTag' | 'onRemoveTag'>) {
+  const { t } = useLanguage();
+  const [draft, setDraft] = useState('');
+  const [openColorId, setOpenColorId] = useState<string | null>(null);
+
+  const add = () => {
+    const label = draft.trim();
+    if (!label) return;
+    onAddTag(label);
+    setDraft('');
+  };
+
+  const fieldClass =
+    'flex-1 min-w-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
+
+  return (
+    <div className="space-y-2">
+      {tags.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500">{t('tags.settingsHint')}</p>}
+      {tags.map((tag) => (
+        <div key={tag.id} className="flex items-center gap-2">
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setOpenColorId(openColorId === tag.id ? null : tag.id)}
+              title={t('tags.chooseColor')}
+              className={`w-7 h-7 rounded-full ${TAG_COLORS[tag.color].dot} ring-2 ring-white dark:ring-slate-900 shadow`}
+            />
+            {openColorId === tag.id && (
+              <div className="absolute left-0 top-full mt-1 z-10 grid grid-cols-4 gap-1.5 w-36 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
+                {TAG_COLOR_ORDER.map((c: TagColor) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      onUpdateTag(tag.id, { color: c });
+                      setOpenColorId(null);
+                    }}
+                    className={`w-6 h-6 rounded-full ${TAG_COLORS[c].dot} ${
+                      c === tag.color ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 ring-slate-400' : ''
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <input
+            value={tag.label}
+            onChange={(e) => onUpdateTag(tag.id, { label: e.target.value })}
+            className={fieldClass}
+          />
+          <button
+            onClick={() => onRemoveTag(tag.id)}
+            title={t('tags.deleteTag')}
+            className="w-8 h-8 shrink-0 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40 flex items-center justify-center"
+          >
+            🗑
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 pt-1">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') add();
+          }}
+          placeholder={t('tags.newTagPlaceholder')}
+          className={fieldClass}
+        />
+        <button
+          onClick={add}
+          className="shrink-0 rounded-lg bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 hover:bg-indigo-500"
+        >
+          {t('tags.addTag')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsModal({
   viewMode,
   onViewModeChange,
+  tableColumns,
+  onTableColumnsChange,
+  tags,
+  onAddTag,
+  onUpdateTag,
+  onRemoveTag,
   onMarkAllComing,
   onMarkAllPending,
   onUnseatAll,
@@ -87,14 +185,34 @@ export function SettingsModal({
         </div>
 
         <Section title={t('settings.view')}>
-          <Segmented
-            value={viewMode}
-            options={[
-              { value: 'list', label: `☰ ${t('settings.viewList')}` },
-              { value: 'floor', label: `◯ ${t('settings.viewFloor')}` },
-            ]}
-            onChange={onViewModeChange}
-          />
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">{t('settings.layout')}</p>
+              <Segmented
+                value={viewMode}
+                options={[
+                  { value: 'list', label: `☰ ${t('settings.viewList')}` },
+                  { value: 'floor', label: `◯ ${t('settings.viewFloor')}` },
+                ]}
+                onChange={onViewModeChange}
+              />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">{t('settings.columns')}</p>
+              <Segmented
+                value={String(tableColumns)}
+                options={[
+                  { value: '1', label: t('settings.columnsOne') },
+                  { value: '2', label: t('settings.columnsTwo') },
+                ]}
+                onChange={(v) => onTableColumnsChange(v === '1' ? 1 : 2)}
+              />
+            </div>
+          </div>
+        </Section>
+
+        <Section title={t('tags.title')}>
+          <TagManager tags={tags} onAddTag={onAddTag} onUpdateTag={onUpdateTag} onRemoveTag={onRemoveTag} />
         </Section>
 
         <Section title={t('settings.attendance')}>
