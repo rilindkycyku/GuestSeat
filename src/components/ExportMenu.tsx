@@ -17,7 +17,7 @@ export function ExportMenu({
   onShowInvitation?: () => void;
   onShowQr?: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -120,7 +120,7 @@ export function ExportMenu({
           </button>
           <button
             onClick={() => {
-              void exportAsPdf(state, t);
+              void exportAsPdf(state, t, lang);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"

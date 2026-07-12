@@ -89,19 +89,20 @@ export function exportAsCsv(state: EventState, t: Translator): void {
 }
 
 /**
- * A print-ready seating list, styled to echo the physical invitation: each A4 page is
- * divided into a 2×2 grid of cream, gold-framed "quarter cards", and the seating list
- * flows through them (top-left → top-right → bottom-left → bottom-right), continuing onto
- * further pages as needed. The first card carries the event title, a summary, and a QR code
- * that opens the live list on a phone.
+ * A print-ready seating list, styled to echo the physical invitation. Every A4 page sits
+ * inside a cream sheet with a gold double frame. The first page opens with a full-width
+ * header — the event title, the couple's names, the venue and date, a summary and a QR code
+ * that opens the live list on a phone — and the seating list then flows underneath it through
+ * three columns, continuing onto further (header-less) framed pages as needed.
  */
-export async function exportAsPdf(state: EventState, t: Translator): Promise<void> {
+export async function exportAsPdf(state: EventState, t: Translator, lang: Language): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const details = state.details ?? {};
   const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Palette echoing the invitation: warm cream cards, gold hairlines, serif ink.
+  // Palette echoing the invitation: warm cream sheet, gold hairlines, serif ink.
   const ink: [number, number, number] = [51, 51, 51];
   const muted: [number, number, number] = [120, 120, 120];
   const body: [number, number, number] = [60, 55, 45];
@@ -109,30 +110,28 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
   const goldSoft: [number, number, number] = [206, 183, 142];
   const cream: [number, number, number] = [250, 247, 241];
 
-  // 2×2 grid of quarter-page cards.
-  const margin = 8;
-  const gutter = 5;
-  const pad = 5;
-  const cardW = (pageWidth - margin * 2 - gutter) / 2;
-  const cardH = (pageHeight - margin * 2 - gutter) / 2;
-  const contentW = cardW - pad * 2;
-  const cardRects = [
-    { x: margin, y: margin },
-    { x: margin + cardW + gutter, y: margin },
-    { x: margin, y: margin + cardH + gutter },
-    { x: margin + cardW + gutter, y: margin + cardH + gutter },
-  ];
+  // Full-width layout: a framed cream sheet with three flowing columns beneath the header.
+  const frameOuter = 8;
+  const frameInner = 10;
+  const marginX = 15;
+  const contentWidth = pageWidth - marginX * 2;
+  const columnCount = 3;
+  const gap = 6;
+  const columnWidth = (contentWidth - gap * (columnCount - 1)) / columnCount;
+  const topLimit = frameInner + 6;
+  const bottomLimit = pageHeight - frameInner - 5;
 
-  const drawCardFrames = () => {
-    for (const c of cardRects) {
-      doc.setFillColor(...cream);
-      doc.setDrawColor(...gold);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(c.x, c.y, cardW, cardH, 2.5, 2.5, 'FD');
-      doc.setDrawColor(...goldSoft);
-      doc.setLineWidth(0.15);
-      doc.roundedRect(c.x + 1.4, c.y + 1.4, cardW - 2.8, cardH - 2.8, 2, 2, 'S');
-    }
+  // Draw the cream sheet and its gold double frame. Runs on every page so continuation pages
+  // keep the same look as the first.
+  const drawFrame = () => {
+    doc.setFillColor(...cream);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(frameOuter, frameOuter, pageWidth - frameOuter * 2, pageHeight - frameOuter * 2, 4, 4, 'S');
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(frameInner, frameInner, pageWidth - frameInner * 2, pageHeight - frameInner * 2, 3, 3, 'S');
   };
 
   // A QR code for the live share link, so anyone with the printout can scan to open the
@@ -161,53 +160,79 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
   const declinedTotal = state.guests.filter((g) => g.rsvp === 'declined').length;
   const hasRsvp = confirmedTotal > 0 || declinedTotal > 0;
 
-  // Flow cursor: which card we're filling and how far down it we are.
-  let card = 0;
-  let y = 0;
-  const contentX = () => cardRects[card].x + pad;
-  const contentBottom = () => cardRects[card].y + cardH - pad;
-  const advanceCard = () => {
-    if (card >= cardRects.length - 1) {
-      doc.addPage();
-      drawCardFrames();
-      card = 0;
-    } else {
-      card += 1;
-    }
-    y = cardRects[card].y + pad;
-  };
-  /** Move to the next card if `h` mm won't fit in the remaining height of the current one. */
-  const ensure = (h: number) => {
-    if (y + h > contentBottom()) advanceCard();
+  // Per-column flow cursors; a column is "full" once it reaches the bottom limit.
+  const columnY: number[] = new Array(columnCount).fill(topLimit);
+  const colX = (i: number) => marginX + i * (columnWidth + gap);
+  const pickColumn = () => columnY.indexOf(Math.min(...columnY));
+  const newPage = () => {
+    doc.addPage();
+    drawFrame();
+    columnY.fill(topLimit);
   };
 
-  drawCardFrames();
-  y = cardRects[0].y + pad;
+  // ---- Page 1 header (full width) --------------------------------------------------------
+  drawFrame();
 
-  // Card header: title, gold rule, summary, and the QR code.
-  const headCx = contentX() + contentW / 2;
-  doc.setFont('times', 'normal');
-  doc.setFontSize(13);
-  doc.setTextColor(...gold);
-  for (const line of doc.splitTextToSize(state.eventName, contentW) as string[]) {
-    doc.text(line, headCx, y + 4, { align: 'center' });
-    y += 5.4;
+  // QR code, top-right inside the frame, so the title can run along the left.
+  let qrBottom = frameInner + 6;
+  if (shareQr) {
+    const qr = 22;
+    const qrX = pageWidth - marginX - qr;
+    const qrY = frameInner + 6;
+    doc.addImage(shareQr, 'PNG', qrX, qrY, qr, qr);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(...muted);
+    doc.text(t('share.scanToOpen'), qrX + qr / 2, qrY + qr + 2.6, { align: 'center' });
+    qrBottom = qrY + qr + 4;
   }
-  y += 1.5;
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.4);
-  doc.line(headCx - 14, y, headCx + 14, y);
-  y += 4;
+
+  // Header text runs left-aligned, kept clear of the QR block on the right.
+  const textMaxWidth = contentWidth - (shareQr ? 30 : 0);
+  let hy = frameInner + 8;
+
+  doc.setFont('times', 'normal');
+  doc.setFontSize(22);
+  doc.setTextColor(...gold);
+  for (const line of doc.splitTextToSize(state.eventName, textMaxWidth) as string[]) {
+    doc.text(line, marginX, hy + 6);
+    hy += 8.5;
+  }
+  hy += 1;
+
+  const names = [details.brideName?.trim(), details.groomName?.trim()].filter(Boolean) as string[];
+  if (names.length) {
+    doc.setFont('times', 'italic');
+    doc.setFontSize(12.5);
+    doc.setTextColor(...ink);
+    doc.text(names.join('  &  '), marginX, hy + 4, { maxWidth: textMaxWidth });
+    hy += 7;
+  }
+
+  const dateStr = details.date ? formatEventDate(details.date, lang) : '';
+  const whenLine = [dateStr, details.time?.trim()].filter(Boolean).join(' · ');
+  const whereLine = [details.venue?.trim(), details.address?.trim()].filter(Boolean).join(', ');
+  const metaLine = [whereLine, whenLine].filter(Boolean).join('   ·   ');
+  if (metaLine) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...ink);
+    for (const line of doc.splitTextToSize(metaLine, textMaxWidth) as string[]) {
+      doc.text(line, marginX, hy + 3.6);
+      hy += 4.8;
+    }
+    hy += 1;
+  }
+
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
+  doc.setFontSize(7.5);
   doc.setTextColor(...muted);
   doc.text(
     t('export.summary', { guests: state.guests.length, tables: tables.length, date: new Date().toLocaleDateString() }),
-    headCx,
-    y,
-    { align: 'center' }
+    marginX,
+    hy + 3
   );
-  y += 3.4;
+  hy += 3.8;
   if (hasRsvp) {
     doc.text(
       t('export.rsvpSummary', {
@@ -215,59 +240,67 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
         declined: declinedTotal,
         pending: state.guests.length - confirmedTotal - declinedTotal,
       }),
-      headCx,
-      y,
-      { align: 'center' }
+      marginX,
+      hy + 3
     );
-    y += 3.4;
+    hy += 3.8;
   }
-  if (shareQr) {
-    const qr = 20;
-    doc.addImage(shareQr, 'PNG', headCx - qr / 2, y + 1, qr, qr);
-    y += qr + 3;
-    doc.setFontSize(6);
-    doc.setTextColor(...muted);
-    doc.text(t('share.scanToOpen'), headCx, y, { align: 'center' });
-    y += 2;
-  }
-  y += 3;
 
+  // Gold double rule closing the header, then columns start below the taller of text / QR.
+  const headerBottom = Math.max(hy + 3.5, qrBottom);
+  doc.setDrawColor(...gold);
+  doc.setLineWidth(0.5);
+  doc.line(marginX, headerBottom, pageWidth - marginX, headerBottom);
+  doc.setDrawColor(...goldSoft);
+  doc.setLineWidth(0.15);
+  doc.line(marginX, headerBottom + 0.8, pageWidth - marginX, headerBottom + 0.8);
+  columnY.fill(headerBottom + 6);
+
+  // ---- Section headings & table blocks ---------------------------------------------------
   const drawSectionHeading = (label: string) => {
-    // Reserve enough room that the heading lands on the same card as the start of its first
-    // table block — otherwise a section title can dangle alone at the foot of a card.
-    ensure(22);
+    // A section heading spans all columns. If it (plus a little of its first block) can't fit
+    // on the current page, start a fresh one so the title never dangles alone at the foot.
+    let sy = Math.max(...columnY);
+    if (sy + 14 > bottomLimit) {
+      newPage();
+      sy = topLimit;
+    }
     doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(11);
     doc.setTextColor(...gold);
-    doc.text(label.toUpperCase(), contentX(), y + 3.5);
+    doc.text(label.toUpperCase(), marginX, sy + 4);
     doc.setDrawColor(...goldSoft);
     doc.setLineWidth(0.3);
-    doc.line(contentX(), y + 5.4, contentX() + contentW, y + 5.4);
+    doc.line(marginX, sy + 6, pageWidth - marginX, sy + 6);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...ink);
-    y += 8.5;
+    columnY.fill(sy + 10);
   };
 
   const drawBlock = (heading: string, guests: Guest[]) => {
     const sorted = [...guests].sort((a, b) => fullName(a).localeCompare(fullName(b)));
     // Measure the heading up front: long headings (e.g. tables with custom tags) wrap to
     // several lines, so the guest list must start below the last line, not a fixed offset.
-    doc.setFontSize(7.6);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    const headingLines = doc.splitTextToSize(heading, contentW) as string[];
-    const headingLineHeight = 3.3;
-    const headingHeight = 2.8 + (headingLines.length - 1) * headingLineHeight + 1.4;
-    const estHeight = headingHeight + Math.max(sorted.length, 1) * 3.4 + 3;
-    ensure(estHeight);
-    const x = contentX();
-    const startY = y;
+    const headingLines = doc.splitTextToSize(heading, columnWidth) as string[];
+    const headingLineHeight = 3.5;
+    const headingHeight = 3 + (headingLines.length - 1) * headingLineHeight + 1.5;
+    const estHeight = headingHeight + Math.max(sorted.length, 1) * 3.6 + 3;
+    let colIndex = pickColumn();
+    if (columnY[colIndex] + estHeight > bottomLimit) {
+      newPage();
+      colIndex = 0;
+    }
+    const x = colX(colIndex);
+    const startY = columnY[colIndex];
     doc.setTextColor(...ink);
-    doc.text(headingLines, x, startY + 2.8);
+    doc.text(headingLines, x, startY + 3);
     doc.setFont('helvetica', 'normal');
     autoTable(doc, {
       startY: startY + headingHeight,
       margin: { left: x },
-      tableWidth: contentW,
+      tableWidth: columnWidth,
       head: [],
       body: sorted.length
         ? sorted.map((g, i) => {
@@ -275,12 +308,12 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
             return [`${i + 1}. ${fullName(g)}${marker}${g.notes ? ` — ${g.notes}` : ''}`];
           })
         : [[t('export.noGuestsSeated')]],
-      styles: { fontSize: 7, cellPadding: 0.6, textColor: body },
+      styles: { fontSize: 7.3, cellPadding: 0.7, textColor: body },
       theme: 'plain',
       showHead: false,
     });
     // @ts-expect-error autoTable attaches this at runtime
-    y = doc.lastAutoTable.finalY + 3;
+    columnY[colIndex] = doc.lastAutoTable.finalY + 4;
   };
 
   const sortedTables = [...tables].sort((a, b) =>
