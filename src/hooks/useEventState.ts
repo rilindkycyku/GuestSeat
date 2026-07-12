@@ -2,13 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import type { EventDetails, EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
-import { getDefaultEventState } from '../lib/defaultEvent';
 import { clearState, loadState, saveState } from '../lib/storage';
 
 export function useEventState() {
-  // Seed with the saved state, falling back to the bundled default guest list so the
-  // app opens straight to the seating chart without requiring an upload.
-  const [state, setState] = useState<EventState | null>(() => loadState() ?? getDefaultEventState());
+  // Seed only with the user's saved state. When there's nothing saved this is null, which
+  // lets the app open on the onboarding screen so each user starts with their own list.
+  const [state, setState] = useState<EventState | null>(() => loadState());
 
   useEffect(() => {
     if (state) saveState(state);
@@ -32,7 +31,8 @@ export function useEventState() {
 
   const resetAll = useCallback(() => {
     clearState();
-    setState(getDefaultEventState());
+    // Clear back to the onboarding screen rather than reseeding any bundled list.
+    setState(null);
   }, []);
 
   // Replace the whole event with a snapshot received via a share link. Guest/table IDs, tags
