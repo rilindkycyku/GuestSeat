@@ -88,28 +88,61 @@ export function exportAsCsv(state: EventState, t: Translator): void {
   downloadBlob(csv, `${slug(state.eventName)}-seating.csv`, 'text/csv');
 }
 
+/**
+ * A print-ready seating list, styled to echo the physical invitation: each A4 page is
+ * divided into a 2×2 grid of cream, gold-framed "quarter cards", and the seating list
+ * flows through them (top-left → top-right → bottom-left → bottom-right), continuing onto
+ * further pages as needed. The first card carries the event title, a summary, and a QR code
+ * that opens the live list on a phone.
+ */
 export async function exportAsPdf(state: EventState, t: Translator): Promise<void> {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginX = 10;
-  const marginTop = 10;
-  const bottomLimit = pageHeight - 10;
-  const columnCount = 3;
-  const gap = 4;
-  const columnWidth = (pageWidth - marginX * 2 - gap * (columnCount - 1)) / columnCount;
 
-  // A QR code for the live share link, so anyone with the printout can scan to
-  // open the seating list (and event details) on their phone. Best-effort: if it
-  // can't be built we simply omit it rather than failing the whole export.
+  // Palette echoing the invitation: warm cream cards, gold hairlines, serif ink.
+  const ink: [number, number, number] = [51, 51, 51];
+  const muted: [number, number, number] = [120, 120, 120];
+  const body: [number, number, number] = [60, 55, 45];
+  const gold: [number, number, number] = [176, 141, 87];
+  const goldSoft: [number, number, number] = [206, 183, 142];
+  const cream: [number, number, number] = [250, 247, 241];
+
+  // 2×2 grid of quarter-page cards.
+  const margin = 8;
+  const gutter = 5;
+  const pad = 5;
+  const cardW = (pageWidth - margin * 2 - gutter) / 2;
+  const cardH = (pageHeight - margin * 2 - gutter) / 2;
+  const contentW = cardW - pad * 2;
+  const cardRects = [
+    { x: margin, y: margin },
+    { x: margin + cardW + gutter, y: margin },
+    { x: margin, y: margin + cardH + gutter },
+    { x: margin + cardW + gutter, y: margin + cardH + gutter },
+  ];
+
+  const drawCardFrames = () => {
+    for (const c of cardRects) {
+      doc.setFillColor(...cream);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(c.x, c.y, cardW, cardH, 2.5, 2.5, 'FD');
+      doc.setDrawColor(...goldSoft);
+      doc.setLineWidth(0.15);
+      doc.roundedRect(c.x + 1.4, c.y + 1.4, cardW - 2.8, cardH - 2.8, 2, 2, 'S');
+    }
+  };
+
+  // A QR code for the live share link, so anyone with the printout can scan to open the
+  // seating list on their phone. Best-effort: omit it rather than failing the export.
   let shareQr: string | null = null;
   try {
     shareQr = (await buildShareQr(state)).dataUrl;
   } catch {
     shareQr = null;
   }
-  const qrSize = 20;
 
   const tables: Table[] = state.tables;
   const guestsByTable = new Map<string, Guest[]>();
@@ -128,19 +161,53 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
   const declinedTotal = state.guests.filter((g) => g.rsvp === 'declined').length;
   const hasRsvp = confirmedTotal > 0 || declinedTotal > 0;
 
-  doc.setFontSize(15);
-  doc.text(state.eventName, marginX, marginTop + 5);
-  doc.setFontSize(8.5);
-  doc.setTextColor(120);
+  // Flow cursor: which card we're filling and how far down it we are.
+  let card = 0;
+  let y = 0;
+  const contentX = () => cardRects[card].x + pad;
+  const contentBottom = () => cardRects[card].y + cardH - pad;
+  const advanceCard = () => {
+    if (card >= cardRects.length - 1) {
+      doc.addPage();
+      drawCardFrames();
+      card = 0;
+    } else {
+      card += 1;
+    }
+    y = cardRects[card].y + pad;
+  };
+  /** Move to the next card if `h` mm won't fit in the remaining height of the current one. */
+  const ensure = (h: number) => {
+    if (y + h > contentBottom()) advanceCard();
+  };
+
+  drawCardFrames();
+  y = cardRects[0].y + pad;
+
+  // Card header: title, gold rule, summary, and the QR code.
+  const headCx = contentX() + contentW / 2;
+  doc.setFont('times', 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(...gold);
+  for (const line of doc.splitTextToSize(state.eventName, contentW) as string[]) {
+    doc.text(line, headCx, y + 4, { align: 'center' });
+    y += 5.4;
+  }
+  y += 1.5;
+  doc.setDrawColor(...gold);
+  doc.setLineWidth(0.4);
+  doc.line(headCx - 14, y, headCx + 14, y);
+  y += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...muted);
   doc.text(
-    t('export.summary', {
-      guests: state.guests.length,
-      tables: tables.length,
-      date: new Date().toLocaleDateString(),
-    }),
-    marginX,
-    marginTop + 10
+    t('export.summary', { guests: state.guests.length, tables: tables.length, date: new Date().toLocaleDateString() }),
+    headCx,
+    y,
+    { align: 'center' }
   );
+  y += 3.4;
   if (hasRsvp) {
     doc.text(
       t('export.rsvpSummary', {
@@ -148,66 +215,59 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
         declined: declinedTotal,
         pending: state.guests.length - confirmedTotal - declinedTotal,
       }),
-      marginX,
-      marginTop + 14.5
+      headCx,
+      y,
+      { align: 'center' }
     );
+    y += 3.4;
   }
-  doc.setTextColor(0);
-
   if (shareQr) {
-    const qrX = pageWidth - marginX - qrSize;
-    doc.addImage(shareQr, 'PNG', qrX, marginTop, qrSize, qrSize);
+    const qr = 20;
+    doc.addImage(shareQr, 'PNG', headCx - qr / 2, y + 1, qr, qr);
+    y += qr + 3;
     doc.setFontSize(6);
-    doc.setTextColor(120);
-    doc.text(t('share.scanToOpen'), qrX + qrSize / 2, marginTop + qrSize + 2, { align: 'center' });
-    doc.setTextColor(0);
+    doc.setTextColor(...muted);
+    doc.text(t('share.scanToOpen'), headCx, y, { align: 'center' });
+    y += 2;
   }
+  y += 3;
 
-  const textBlockBottom = marginTop + (hasRsvp ? 20 : 16);
-  const qrBlockBottom = shareQr ? marginTop + qrSize + 5 : 0;
-  const columnY: number[] = new Array(columnCount).fill(Math.max(textBlockBottom, qrBlockBottom));
-
-  const pickColumn = () => columnY.indexOf(Math.min(...columnY));
-
-  const drawSectionHeading = (label: string, color: [number, number, number]) => {
-    let y = Math.max(...columnY);
-    if (y + 8 > bottomLimit) {
-      doc.addPage();
-      y = marginTop;
-    }
-    doc.setFontSize(10.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...color);
-    doc.text(label, marginX, y + 4);
-    doc.setTextColor(0);
+  const drawSectionHeading = (label: string) => {
+    // Reserve enough room that the heading lands on the same card as the start of its first
+    // table block — otherwise a section title can dangle alone at the foot of a card.
+    ensure(22);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...gold);
+    doc.text(label.toUpperCase(), contentX(), y + 3.5);
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.3);
+    doc.line(contentX(), y + 5.4, contentX() + contentW, y + 5.4);
     doc.setFont('helvetica', 'normal');
-    columnY.fill(y + 9);
+    doc.setTextColor(...ink);
+    y += 8.5;
   };
 
   const drawBlock = (heading: string, guests: Guest[]) => {
     const sorted = [...guests].sort((a, b) => fullName(a).localeCompare(fullName(b)));
     // Measure the heading up front: long headings (e.g. tables with custom tags) wrap to
     // several lines, so the guest list must start below the last line, not a fixed offset.
-    doc.setFontSize(8.5);
+    doc.setFontSize(7.6);
     doc.setFont('helvetica', 'bold');
-    const headingLines = doc.splitTextToSize(heading, columnWidth) as string[];
-    const headingLineHeight = 3.6;
-    const headingHeight = 3 + (headingLines.length - 1) * headingLineHeight + 1.5;
-    const estHeight = headingHeight + 2.5 + Math.max(sorted.length, 1) * 3.7 + 3;
-    let colIndex = pickColumn();
-    if (columnY[colIndex] + estHeight > bottomLimit) {
-      doc.addPage();
-      columnY.fill(marginTop);
-      colIndex = 0;
-    }
-    const x = marginX + colIndex * (columnWidth + gap);
-    const startY = columnY[colIndex];
-    doc.text(headingLines, x, startY + 3);
+    const headingLines = doc.splitTextToSize(heading, contentW) as string[];
+    const headingLineHeight = 3.3;
+    const headingHeight = 2.8 + (headingLines.length - 1) * headingLineHeight + 1.4;
+    const estHeight = headingHeight + Math.max(sorted.length, 1) * 3.4 + 3;
+    ensure(estHeight);
+    const x = contentX();
+    const startY = y;
+    doc.setTextColor(...ink);
+    doc.text(headingLines, x, startY + 2.8);
     doc.setFont('helvetica', 'normal');
     autoTable(doc, {
       startY: startY + headingHeight,
       margin: { left: x },
-      tableWidth: columnWidth,
+      tableWidth: contentW,
       head: [],
       body: sorted.length
         ? sorted.map((g, i) => {
@@ -215,26 +275,26 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
             return [`${i + 1}. ${fullName(g)}${marker}${g.notes ? ` — ${g.notes}` : ''}`];
           })
         : [[t('export.noGuestsSeated')]],
-      styles: { fontSize: 7.3, cellPadding: 0.8, textColor: [40, 40, 40] },
+      styles: { fontSize: 7, cellPadding: 0.6, textColor: body },
       theme: 'plain',
       showHead: false,
     });
     // @ts-expect-error autoTable attaches this at runtime
-    columnY[colIndex] = doc.lastAutoTable.finalY + 4;
+    y = doc.lastAutoTable.finalY + 3;
   };
 
   const sortedTables = [...tables].sort((a, b) =>
     tableDisplayName(a, t).localeCompare(tableDisplayName(b, t), undefined, { numeric: true })
   );
-  const sections: { label: string; color: [number, number, number]; tables: Table[] }[] = [
-    { label: t('tables.filter.groom'), color: [37, 99, 235], tables: sortedTables.filter((tb) => tb.side === 'groom') },
-    { label: t('tables.filter.bride'), color: [219, 39, 119], tables: sortedTables.filter((tb) => tb.side === 'bride') },
-    { label: t('export.ungroupedHeading'), color: [79, 70, 229], tables: sortedTables.filter((tb) => !tb.side) },
+  const sections: { label: string; tables: Table[] }[] = [
+    { label: t('tables.filter.groom'), tables: sortedTables.filter((tb) => tb.side === 'groom') },
+    { label: t('tables.filter.bride'), tables: sortedTables.filter((tb) => tb.side === 'bride') },
+    { label: t('export.ungroupedHeading'), tables: sortedTables.filter((tb) => !tb.side) },
   ];
 
   for (const section of sections) {
     if (section.tables.length === 0) continue;
-    drawSectionHeading(section.label, section.color);
+    drawSectionHeading(section.label);
     for (const table of section.tables) {
       const guests = guestsByTable.get(table.id) ?? [];
       const side = sideLabel(table, t);
@@ -247,7 +307,7 @@ export async function exportAsPdf(state: EventState, t: Translator): Promise<voi
   }
 
   if (unseated.length) {
-    drawSectionHeading(t('unseated.title'), [100, 116, 139]);
+    drawSectionHeading(t('unseated.title'));
     drawBlock(t('export.unseatedHeading', { count: unseated.length }), unseated);
   }
 
@@ -356,19 +416,14 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
     centered(details.invitationNote.trim(), 11.5, { style: 'italic', color: ink, gap: 6, lineHeight: 5.5 });
   }
 
-  // QR code + caption, anchored toward the bottom of the page.
-  try {
-    const { dataUrl } = await buildShareQr(state);
-    const qrSize = 32;
-    const qrY = Math.max(y + 4, pageHeight - frame - qrSize - 18);
-    doc.addImage(dataUrl, 'PNG', cx - qrSize / 2, qrY, qrSize, qrSize);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...muted);
-    doc.text(t('invitation.qrCaption'), cx, qrY + qrSize + 5, { align: 'center' });
-  } catch {
-    // No network / compression support — invitation still prints without the QR.
-  }
+  // A small gold flourish anchored toward the foot of the invitation. The seating-list QR
+  // deliberately lives only on the seating list and the in-app share sheet, not here — an
+  // invitation shouldn't expose the whole guest list to whoever it's handed to.
+  const flourishY = Math.max(y + 6, pageHeight - frame - 16);
+  doc.setFont('times', 'italic');
+  doc.setFontSize(13);
+  doc.setTextColor(...gold);
+  doc.text('~', cx, flourishY, { align: 'center' });
 
   doc.save(`${slug(state.eventName)}-invitation.pdf`);
 }
