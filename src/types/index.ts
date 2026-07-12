@@ -50,12 +50,45 @@ export interface Table {
 
 export type TableNamingMode = 'letters' | 'numbers';
 
+/** A single line on the invitation's schedule (e.g. "16:00 — Ceremony"). */
+export interface AgendaItem {
+  id: string;
+  /** Free-form time label, e.g. "16:00" or "4 PM". Optional. */
+  time?: string;
+  /** What happens then, e.g. "Ceremony", "Dinner", "First dance". */
+  title: string;
+}
+
+/**
+ * Human-facing details about the event itself, used to render a printable
+ * invitation for guests. All fields are optional — the invitation simply omits
+ * whatever isn't filled in.
+ */
+export interface EventDetails {
+  brideName?: string;
+  groomName?: string;
+  /** Venue name, e.g. "Emerald Hall". */
+  venue?: string;
+  /** Street address / location line under the venue. */
+  address?: string;
+  /** Event date as an ISO `YYYY-MM-DD` string (from an <input type="date">). */
+  date?: string;
+  /** Start time as an `HH:mm` string (from an <input type="time">). */
+  time?: string;
+  /** Ordered schedule shown on the invitation. */
+  agenda?: AgendaItem[];
+  /** Free-form message to guests, e.g. "We would be honored by your presence." */
+  invitationNote?: string;
+}
+
 export interface EventState {
   eventName: string;
   guests: Guest[];
   tables: Table[];
   /** User-defined tags available to apply to tables. */
   tags?: TableTag[];
+  /** Optional wedding/event details used to build a guest invitation. */
+  details?: EventDetails;
   updatedAt: string;
 }
 

@@ -11,6 +11,8 @@ import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
+import { InvitationModal } from './components/InvitationModal';
+import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
 import { ImportError, parseImportedJson } from './lib/importGuests';
@@ -41,6 +43,7 @@ export default function App() {
     loadSharedState,
     resetAll,
     setEventName,
+    updateEventDetails,
     addTable,
     updateTable,
     removeTable,
@@ -72,6 +75,8 @@ export default function App() {
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [invitationOpen, setInvitationOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -481,7 +486,12 @@ export default function App() {
               >
                 {t('header.import')}
               </button>
-              <ExportMenu state={state} onToast={showToast} />
+              <ExportMenu
+                state={state}
+                onToast={showToast}
+                onShowInvitation={() => setInvitationOpen(true)}
+                onShowQr={() => setQrOpen(true)}
+              />
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
@@ -565,7 +575,19 @@ export default function App() {
               >
                 {t('header.import')}
               </button>
-              <ExportMenu state={state} fullWidth onToast={showToast} />
+              <ExportMenu
+                state={state}
+                fullWidth
+                onToast={showToast}
+                onShowInvitation={() => {
+                  setInvitationOpen(true);
+                  setMenuOpen(false);
+                }}
+                onShowQr={() => {
+                  setQrOpen(true);
+                  setMenuOpen(false);
+                }}
+              />
             </div>
           )}
         </header>
@@ -771,10 +793,26 @@ export default function App() {
 
       {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
 
+      {invitationOpen && (
+        <InvitationModal
+          state={state}
+          onChange={updateEventDetails}
+          onShowQr={() => setQrOpen(true)}
+          onToast={showToast}
+          onClose={() => setInvitationOpen(false)}
+        />
+      )}
+
+      {qrOpen && <QrModal state={state} onToast={showToast} onClose={() => setQrOpen(false)} />}
+
       {settingsOpen && (
         <SettingsModal
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onEditInvitation={() => {
+            setSettingsOpen(false);
+            setInvitationOpen(true);
+          }}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
           systemTags={systemTags}

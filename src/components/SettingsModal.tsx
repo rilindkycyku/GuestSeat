@@ -20,6 +20,7 @@ interface SettingsModalProps {
   onMarkAllPending: () => void;
   onUnseatAll: () => void;
   onReset: () => void;
+  onEditInvitation: () => void;
   onClose: () => void;
 }
 
@@ -172,6 +173,7 @@ export function SettingsModal({
   onMarkAllPending,
   onUnseatAll,
   onReset,
+  onEditInvitation,
   onClose,
 }: SettingsModalProps) {
   const { t, lang, setLang } = useLanguage();
@@ -198,6 +200,15 @@ export function SettingsModal({
             ✕
           </button>
         </div>
+
+        <Section title={t('invitation.title')}>
+          <button onClick={onEditInvitation} className={actionButton}>
+            💌 {t('invitation.editDetails')}
+            <span className="block text-xs font-normal text-slate-400 dark:text-slate-500 mt-0.5">
+              {t('invitation.editDetailsDesc')}
+            </span>
+          </button>
+        </Section>
 
         <Section title={t('settings.view')}>
           <div className="space-y-3">
