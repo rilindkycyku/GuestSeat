@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EventState } from '../types';
 import { qrDataUrl, QrTooLargeError } from '../lib/qr';
-import { encodeStateToLink } from '../lib/shareLink';
+import { encodeStateToLink, toQrPayloadUrl } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 
 /**
@@ -38,7 +38,7 @@ export function QrModal({
         if (cancelled) return;
         setLink(url);
         try {
-          const png = await qrDataUrl(url);
+          const png = await qrDataUrl(toQrPayloadUrl(url));
           if (cancelled) return;
           setDataUrl(png);
           setStatus('ready');

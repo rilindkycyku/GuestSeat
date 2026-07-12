@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import type { EventState } from '../types';
-import { encodeStateToLink } from './shareLink';
+import { encodeStateToLink, toQrPayloadUrl } from './shareLink';
 
 /** A share link plus a QR-code PNG (data URL) that encodes it. */
 export interface ShareQr {
@@ -10,7 +10,8 @@ export interface ShareQr {
 
 /**
  * Thrown when the text simply won't fit in a QR code. Share links embed the whole
- * event state in the URL, so large guest lists overflow a QR's ~2.9 KB ceiling —
+ * event state in the URL; the base42 encoding lets the QR use its alphanumeric mode
+ * (~4,296 chars, good for ~500 guests), but the very largest lists still overflow —
  * callers should fall back to sharing the link directly (copy / WhatsApp).
  */
 export class QrTooLargeError extends Error {
@@ -46,6 +47,8 @@ export async function qrDataUrl(text: string, options?: QRCode.QRCodeToDataURLOp
  */
 export async function buildShareQr(state: EventState): Promise<ShareQr> {
   const link = await encodeStateToLink(state);
-  const dataUrl = await qrDataUrl(link);
+  // Encode the upper-cased URL so the QR uses its higher-capacity alphanumeric mode; the
+  // returned `link` stays in normal form for copying / sharing.
+  const dataUrl = await qrDataUrl(toQrPayloadUrl(link));
   return { link, dataUrl };
 }
