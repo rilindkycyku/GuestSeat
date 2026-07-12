@@ -160,14 +160,46 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
   const declinedTotal = state.guests.filter((g) => g.rsvp === 'declined').length;
   const hasRsvp = confirmedTotal > 0 || declinedTotal > 0;
 
+  const names = [details.brideName?.trim(), details.groomName?.trim()].filter(Boolean) as string[];
+
   // Per-column flow cursors; a column is "full" once it reaches the bottom limit.
   const columnY: number[] = new Array(columnCount).fill(topLimit);
   const colX = (i: number) => marginX + i * (columnWidth + gap);
   const pickColumn = () => columnY.indexOf(Math.min(...columnY));
+
+  // A compact running header for continuation pages: the event title (with the couple's
+  // names alongside) and a gold rule, so every page is clearly identified. Returns the y at
+  // which the columns should resume beneath it.
+  const drawRunningHeader = (): number => {
+    let ry = frameInner + 6;
+    const titleLines = doc.splitTextToSize(state.eventName, contentWidth * (names.length ? 0.62 : 1)) as string[];
+    if (names.length) {
+      doc.setFont('times', 'italic');
+      doc.setFontSize(11);
+      doc.setTextColor(...ink);
+      doc.text(names.join('  &  '), pageWidth - marginX, ry + 5, { align: 'right', maxWidth: contentWidth * 0.34 });
+    }
+    doc.setFont('times', 'normal');
+    doc.setFontSize(15);
+    doc.setTextColor(...gold);
+    for (const line of titleLines) {
+      doc.text(line, marginX, ry + 5);
+      ry += 6.5;
+    }
+    ry += 1.5;
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.4);
+    doc.line(marginX, ry, pageWidth - marginX, ry);
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.12);
+    doc.line(marginX, ry + 0.7, pageWidth - marginX, ry + 0.7);
+    return ry + 5;
+  };
+
   const newPage = () => {
     doc.addPage();
     drawFrame();
-    columnY.fill(topLimit);
+    columnY.fill(drawRunningHeader());
   };
 
   // ---- Page 1 header (full width) --------------------------------------------------------
@@ -200,7 +232,6 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
   }
   hy += 1;
 
-  const names = [details.brideName?.trim(), details.groomName?.trim()].filter(Boolean) as string[];
   if (names.length) {
     doc.setFont('times', 'italic');
     doc.setFontSize(12.5);
@@ -263,7 +294,7 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     let sy = Math.max(...columnY);
     if (sy + 14 > bottomLimit) {
       newPage();
-      sy = topLimit;
+      sy = columnY[0];
     }
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
