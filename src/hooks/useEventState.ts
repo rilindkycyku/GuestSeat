@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { EventState, Guest, RsvpStatus, Table } from '../types';
+import type { EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
+import { TAG_COLOR_ORDER } from '../lib/tagColors';
 import { getDefaultEventState } from '../lib/defaultEvent';
 import { clearState, loadState, saveState } from '../lib/storage';
 
@@ -172,6 +173,61 @@ export function useEventState() {
     });
   }, []);
 
+  const addTag = useCallback((label: string, color?: TagColor): string => {
+    const id = makeId('tag');
+    setState((prev) => {
+      const base = prev ?? makeEventState();
+      const existing = base.tags ?? [];
+      // Cycle through the palette so consecutive new tags get distinct colors by default.
+      const nextColor = color ?? TAG_COLOR_ORDER[existing.length % TAG_COLOR_ORDER.length];
+      const newTag: TableTag = { id, label: label.trim() || 'Tag', color: nextColor };
+      return { ...base, tags: [...existing, newTag], updatedAt: new Date().toISOString() };
+    });
+    return id;
+  }, []);
+
+  const updateTag = useCallback((tagId: string, patch: Partial<Omit<TableTag, 'id'>>) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tags: (prev.tags ?? []).map((tag) => (tag.id === tagId ? { ...tag, ...patch } : tag)),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const removeTag = useCallback((tagId: string) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tags: (prev.tags ?? []).filter((tag) => tag.id !== tagId),
+        // Drop the tag from any table that carried it.
+        tables: prev.tables.map((tb) =>
+          tb.tagIds?.includes(tagId) ? { ...tb, tagIds: tb.tagIds.filter((id) => id !== tagId) } : tb
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const toggleTableTag = useCallback((tableId: string, tagId: string) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tables: prev.tables.map((tb) => {
+          if (tb.id !== tableId) return tb;
+          const current = tb.tagIds ?? [];
+          const next = current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId];
+          return { ...tb, tagIds: next };
+        }),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
   const unlinkGuests = useCallback((guestIdA: string, guestIdB: string) => {
     setState((prev) => {
       if (!prev) return prev;
@@ -207,5 +263,9 @@ export function useEventState() {
     unlinkGuests,
     setAllRsvp,
     unseatAll,
+    addTag,
+    updateTag,
+    removeTag,
+    toggleTableTag,
   };
 }

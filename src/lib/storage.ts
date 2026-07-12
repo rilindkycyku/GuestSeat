@@ -63,3 +63,20 @@ export function saveViewMode(mode: ViewMode): void {
     // storage full or unavailable — silently skip persistence
   }
 }
+
+/** How many table columns to show on narrow (phone) screens. Wider screens always add more. */
+export type TableColumns = 1 | 2;
+
+const COLUMNS_KEY = 'guestseat.tableColumns.v1';
+
+export function loadTableColumns(): TableColumns {
+  return localStorage.getItem(COLUMNS_KEY) === '1' ? 1 : 2;
+}
+
+export function saveTableColumns(cols: TableColumns): void {
+  try {
+    localStorage.setItem(COLUMNS_KEY, String(cols));
+  } catch {
+    // storage full or unavailable — silently skip persistence
+  }
+}

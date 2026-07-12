@@ -1,20 +1,25 @@
 import { useMemo } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import type { Guest, Table, TableSide } from '../types';
+import type { Guest, Table, TableSide, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
+import { TAG_COLORS } from '../lib/tagColors';
+import { TableTagPicker } from './TableTagPicker';
 
 interface FloorTableProps {
   table: Table;
   guests: Guest[];
+  tags: TableTag[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
   onUpdateTable: (patch: Partial<Table>) => void;
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
+  onToggleTag: (tagId: string) => void;
+  onCreateTag: (label: string) => void;
 }
 
 function initials(g: Guest): string {
@@ -97,17 +102,21 @@ const SIDE_RING: Record<TableSide, string> = {
 export function FloorTable({
   table,
   guests,
+  tags,
   matchedIds,
   linkBadges,
   highlighted,
   onUpdateTable,
   onRemoveTable,
   onGuestClick,
+  onToggleTag,
+  onCreateTag,
 }: FloorTableProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
   const displayName = tableDisplayName(table, t);
   const isOverCapacity = guests.length > table.capacity;
+  const assignedTags = useMemo(() => tags.filter((tag) => table.tagIds?.includes(tag.id)), [tags, table.tagIds]);
 
   const editCapacity = () => {
     const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
@@ -150,28 +159,44 @@ export function FloorTable({
             : 'border-slate-200 dark:border-slate-800'
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-0.5" title={t('tables.setSide')}>
-          <button
-            onClick={() => onUpdateTable({ side: table.side === 'groom' ? undefined : 'groom' })}
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-              table.side === 'groom'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
-                : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-            }`}
-          >
-            {t('tables.side.groom')}
-          </button>
-          <button
-            onClick={() => onUpdateTable({ side: table.side === 'bride' ? undefined : 'bride' })}
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-              table.side === 'bride'
-                ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300'
-                : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-            }`}
-          >
-            {t('tables.side.bride')}
-          </button>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1 flex-wrap min-w-0">
+          <div className="flex items-center gap-0.5" title={t('tables.setSide')}>
+            <button
+              onClick={() => onUpdateTable({ side: table.side === 'groom' ? undefined : 'groom' })}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+                table.side === 'groom'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
+                  : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
+              }`}
+            >
+              {t('tables.side.groom')}
+            </button>
+            <button
+              onClick={() => onUpdateTable({ side: table.side === 'bride' ? undefined : 'bride' })}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+                table.side === 'bride'
+                  ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300'
+                  : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
+              }`}
+            >
+              {t('tables.side.bride')}
+            </button>
+          </div>
+          {assignedTags.map((tag) => (
+            <span
+              key={tag.id}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+            >
+              {tag.label}
+            </span>
+          ))}
+          <TableTagPicker
+            tags={tags}
+            tableTagIds={table.tagIds ?? []}
+            onToggle={onToggleTag}
+            onCreateTag={onCreateTag}
+          />
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
