@@ -90,6 +90,8 @@ export const sq = {
     dropHere: 'Lësho të ftuarit këtu',
     decreaseCapacity: 'Zvogëlo kapacitetin',
     increaseCapacity: 'Rrit kapacitetin',
+    editCapacity: 'Ndrysho kapacitetin',
+    capacityPrompt: 'Vende në këtë tavolinë:',
     removeTable: 'Hiq tavolinën',
     removeTableConfirm: "Të hiqet {{name}}? Të ftuarit e ulur do të bëhen pa vend.",
     collapseTable: 'Mbylle tavolinën',

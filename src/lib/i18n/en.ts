@@ -88,6 +88,8 @@ export const en = {
     dropHere: 'Drop guests here',
     decreaseCapacity: 'Decrease capacity',
     increaseCapacity: 'Increase capacity',
+    editCapacity: 'Edit capacity',
+    capacityPrompt: 'Seats at this table:',
     removeTable: 'Remove table',
     removeTableConfirm: 'Remove {{name}}? Seated guests will become unseated.',
     collapseTable: 'Collapse table',

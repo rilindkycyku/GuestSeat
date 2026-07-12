@@ -523,9 +523,9 @@ export default function App() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4">
               {state.tables.length === 0 && (
-                <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
                   <p className="mb-3">{t('tables.noTablesYet')}</p>
                   <button
                     onClick={() => addTable(t('tables.namePrefix'))}
@@ -536,12 +536,12 @@ export default function App() {
                 </div>
               )}
               {state.tables.length > 0 && filteredTables.length === 0 && (
-                <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
                   <p>{t('tables.noTablesForFilter')}</p>
                 </div>
               )}
               {isSearching && filteredTables.length > 0 && tablesToRender.length === 0 && (
-                <div className="sm:col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
                   <p>{t('tables.noSearchMatches')}</p>
                 </div>
               )}

@@ -47,6 +47,13 @@ export function TableCard({
     onUpdateTable({ side });
   };
 
+  const editCapacity = () => {
+    const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
+    if (input === null) return;
+    const n = parseInt(input, 10);
+    if (Number.isFinite(n) && n >= 1) onUpdateTable({ capacity: n });
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -85,11 +92,16 @@ export function TableCard({
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-slate-800 dark:text-white truncate">{displayName}</span>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <span
-                className={`text-xs font-medium ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  editCapacity();
+                }}
+                title={t('tables.editCapacity')}
+                className={`text-xs font-medium rounded px-1 -mx-1 hover:bg-slate-100 dark:hover:bg-slate-800 ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
               >
                 {t('tables.seats', { seated: guests.length, capacity: table.capacity })}
-              </span>
+              </button>
               <div
                 className="flex items-center gap-0.5"
                 onClick={(e) => e.stopPropagation()}
@@ -120,20 +132,6 @@ export function TableCard({
           </span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}
-            className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title={t('tables.decreaseCapacity')}
-          >
-            −
-          </button>
-          <button
-            onClick={() => onUpdateTable({ capacity: table.capacity + 1 })}
-            className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title={t('tables.increaseCapacity')}
-          >
-            +
-          </button>
           <button
             onClick={() => {
               if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {

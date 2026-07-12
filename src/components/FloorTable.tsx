@@ -109,6 +109,13 @@ export function FloorTable({
   const displayName = tableDisplayName(table, t);
   const isOverCapacity = guests.length > table.capacity;
 
+  const editCapacity = () => {
+    const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
+    if (input === null) return;
+    const n = parseInt(input, 10);
+    if (Number.isFinite(n) && n >= 1) onUpdateTable({ capacity: n });
+  };
+
   // Linked guests sit next to each other around the table; the name list uses the same order.
   const orderedGuests = useMemo(() => groupLinkedWithin(guests).flat(), [guests]);
 
@@ -168,20 +175,6 @@ export function FloorTable({
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={() => onUpdateTable({ capacity: Math.max(1, table.capacity - 1) })}
-            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title={t('tables.decreaseCapacity')}
-          >
-            −
-          </button>
-          <button
-            onClick={() => onUpdateTable({ capacity: table.capacity + 1 })}
-            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-            title={t('tables.increaseCapacity')}
-          >
-            +
-          </button>
-          <button
             onClick={() => {
               if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
                 onRemoveTable();
@@ -205,8 +198,10 @@ export function FloorTable({
           <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight max-w-full truncate">
             {displayName}
           </span>
-          <span
-            className={`text-[10px] font-medium ${
+          <button
+            onClick={editCapacity}
+            title={t('tables.editCapacity')}
+            className={`text-[10px] font-medium rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-700/60 ${
               isOverCapacity
                 ? 'text-red-500'
                 : guests.length >= table.capacity
@@ -215,7 +210,7 @@ export function FloorTable({
             }`}
           >
             {guests.length}/{table.capacity}
-          </span>
+          </button>
         </div>
 
         {/* Seats around the table */}
