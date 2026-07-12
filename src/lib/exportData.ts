@@ -162,7 +162,14 @@ export function exportAsPdf(state: EventState, t: Translator): void {
 
   const drawBlock = (heading: string, guests: Guest[]) => {
     const sorted = [...guests].sort((a, b) => fullName(a).localeCompare(fullName(b)));
-    const estHeight = 7 + Math.max(sorted.length, 1) * 3.7 + 3;
+    // Measure the heading up front: long headings (e.g. tables with custom tags) wrap to
+    // several lines, so the guest list must start below the last line, not a fixed offset.
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    const headingLines = doc.splitTextToSize(heading, columnWidth) as string[];
+    const headingLineHeight = 3.6;
+    const headingHeight = 3 + (headingLines.length - 1) * headingLineHeight + 1.5;
+    const estHeight = headingHeight + 2.5 + Math.max(sorted.length, 1) * 3.7 + 3;
     let colIndex = pickColumn();
     if (columnY[colIndex] + estHeight > bottomLimit) {
       doc.addPage();
@@ -171,12 +178,10 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     }
     const x = marginX + colIndex * (columnWidth + gap);
     const startY = columnY[colIndex];
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(heading, x, startY + 3, { maxWidth: columnWidth });
+    doc.text(headingLines, x, startY + 3);
     doc.setFont('helvetica', 'normal');
     autoTable(doc, {
-      startY: startY + 4.5,
+      startY: startY + headingHeight,
       margin: { left: x },
       tableWidth: columnWidth,
       head: [],
