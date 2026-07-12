@@ -1,8 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AgendaItem, EventDetails, EventState, InvitationTemplate } from '../types';
 import { makeId } from '../lib/importGuests';
-import { exportInvitationPdf, INVITATION_TEMPLATES } from '../lib/invitationPdf';
+import { exportInvitationPdf, INVITATION_TEMPLATES, iconForAgenda, type IconKind } from '../lib/invitationPdf';
 import { useLanguage } from '../hooks/useLanguage';
+
+/** Emoji shown next to a schedule row in the editor, echoing the icon the PDF draws for it. */
+const ICON_EMOJI: Record<IconKind, string> = {
+  cocktail: '🍸',
+  arch: '💒',
+  bride: '👰',
+  dinner: '🍽️',
+  cake: '🎂',
+  rings: '💍',
+  heart: '💗',
+};
+
+/**
+ * The program points a wedding invitation starts with — pre-filled but fully editable and
+ * removable. Each `key` resolves to a localized title (see `invitation.defaults.*`) and maps,
+ * via keyword, to one of the drawn icons. Times are sensible starting points.
+ */
+const DEFAULT_AGENDA_KEYS = [
+  { key: 'cocktail', time: '16:00' },
+  { key: 'entrance', time: '16:30' },
+  { key: 'ceremony', time: '17:00' },
+  { key: 'dinner', time: '19:00' },
+  { key: 'cake', time: '21:00' },
+  { key: 'party', time: '22:00' },
+] as const;
 
 /**
  * Editor for the guest-facing invitation: bride & groom, venue, date/time,
@@ -28,15 +53,45 @@ export function InvitationModal({
   const template: InvitationTemplate = details.invitationTemplate ?? 'classic';
   const [busy, setBusy] = useState(false);
 
-  const fieldClass =
-    'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
+  // `fieldBase` carries everything but the width, so inputs inside a flex row can size themselves
+  // (a fixed `w-16`, or `flex-1`) without `w-full` overriding them — that override is exactly what
+  // used to push the schedule's delete buttons off the screen.
+  const fieldBase =
+    'rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
+  const fieldClass = `w-full ${fieldBase}`;
   const labelClass = 'block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1';
 
   const setAgenda = (next: AgendaItem[]) => onChange({ agenda: next });
   const addAgendaItem = () => setAgenda([...agenda, { id: makeId('a'), time: '', title: '' }]);
+  const addAgendaTitle = (title: string, time = '') => setAgenda([...agenda, { id: makeId('a'), time, title }]);
   const updateAgendaItem = (id: string, patch: Partial<AgendaItem>) =>
     setAgenda(agenda.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   const removeAgendaItem = (id: string) => setAgenda(agenda.filter((item) => item.id !== id));
+
+  // Seed the default program the first time the invitation is opened. We key off `agenda` being
+  // *undefined* (never touched) rather than empty — so once a couple deletes points down to none,
+  // reopening the editor won't silently bring the defaults back.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+    const patch: Partial<EventDetails> = {};
+    if (details.agenda === undefined) {
+      patch.agenda = DEFAULT_AGENDA_KEYS.map(({ key, time }) => ({ id: makeId('a'), time, title: t(`invitation.defaults.${key}`) }));
+    }
+    if (details.introMessage === undefined) {
+      patch.introMessage = t('invitation.introMessageDefault');
+    }
+    if (Object.keys(patch).length) onChange(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "Quick add" chips for any default point not already on the schedule (matched by its icon, so
+  // an edited "Darka i vonë" still counts as dinner). Lets a couple re-add what they removed.
+  const presentIcons = new Set(agenda.map(iconForAgenda));
+  const suggestions = DEFAULT_AGENDA_KEYS.map(({ key, time }) => ({ key, time, title: t(`invitation.defaults.${key}`) })).filter(
+    (d) => !presentIcons.has(iconForAgenda({ id: d.key, title: d.title })),
+  );
 
   const downloadPdf = async () => {
     setBusy(true);
@@ -66,6 +121,17 @@ export function InvitationModal({
         </div>
 
         <div className="space-y-4">
+          <div>
+            <label className={labelClass}>{t('invitation.introMessage')}</label>
+            <textarea
+              value={details.introMessage ?? ''}
+              onChange={(e) => onChange({ introMessage: e.target.value })}
+              placeholder={t('invitation.introMessagePlaceholder')}
+              rows={3}
+              className={`${fieldClass} resize-none`}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>{t('invitation.brideName')}</label>
@@ -131,17 +197,20 @@ export function InvitationModal({
             <div className="space-y-2">
               {agenda.map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
+                  <span aria-hidden className="w-6 shrink-0 text-center text-lg leading-none">
+                    {ICON_EMOJI[iconForAgenda(item)]}
+                  </span>
                   <input
                     value={item.time ?? ''}
                     onChange={(e) => updateAgendaItem(item.id, { time: e.target.value })}
                     placeholder={t('invitation.timePlaceholder')}
-                    className={`${fieldClass} w-20 shrink-0`}
+                    className={`${fieldBase} w-16 shrink-0`}
                   />
                   <input
                     value={item.title}
                     onChange={(e) => updateAgendaItem(item.id, { title: e.target.value })}
                     placeholder={t('invitation.agendaPlaceholder')}
-                    className={fieldClass}
+                    className={`${fieldBase} min-w-0 flex-1`}
                   />
                   <button
                     onClick={() => removeAgendaItem(item.id)}
@@ -152,11 +221,26 @@ export function InvitationModal({
                   </button>
                 </div>
               ))}
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => addAgendaTitle(s.title, s.time)}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500"
+                    >
+                      <span aria-hidden>{ICON_EMOJI[iconForAgenda({ id: s.key, title: s.title })]}</span>
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 onClick={addAgendaItem}
                 className="w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-sm py-2 hover:border-indigo-400 hover:text-indigo-500"
               >
-                + {t('invitation.addAgendaItem')}
+                + {t('invitation.addOther')}
               </button>
               <p className="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">{t('invitation.timelineHint')}</p>
             </div>
@@ -171,6 +255,28 @@ export function InvitationModal({
               rows={3}
               className={`${fieldClass} resize-none`}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>{t('invitation.hostFamily')}</label>
+              <input
+                value={details.hostFamily ?? ''}
+                onChange={(e) => onChange({ hostFamily: e.target.value })}
+                placeholder={t('invitation.hostFamilyPlaceholder')}
+                className={fieldClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{t('invitation.rsvpPhone')}</label>
+              <input
+                type="tel"
+                value={details.rsvpPhone ?? ''}
+                onChange={(e) => onChange({ rsvpPhone: e.target.value })}
+                placeholder={t('invitation.rsvpPhonePlaceholder')}
+                className={fieldClass}
+              />
+            </div>
           </div>
 
           <div>

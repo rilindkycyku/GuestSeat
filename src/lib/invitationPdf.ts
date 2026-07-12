@@ -26,10 +26,10 @@ export const INVITATION_TEMPLATES: InvitationTemplateMeta[] = [
 // classic invitation card: a welcome cocktail, the ceremony arch, the bride's entrance,
 // dinner, the cake, and the rings. Each maps a schedule item to a recognisable glyph.
 
-type IconKind = 'cocktail' | 'arch' | 'bride' | 'dinner' | 'cake' | 'rings' | 'heart';
+export type IconKind = 'cocktail' | 'arch' | 'bride' | 'dinner' | 'cake' | 'rings' | 'heart';
 
 /** Choose the glyph that best fits a schedule line, by keyword (Albanian + English). */
-function iconForAgenda(item: AgendaItem): IconKind {
+export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
   if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje', 'gotë', 'gote')) return 'cocktail';
@@ -149,6 +149,9 @@ interface Content {
   agenda: AgendaItem[];
   note: string;
   scheduleHeading: string;
+  hostLine: string;
+  rsvpPrompt: string;
+  rsvpPhone: string;
 }
 
 /** A small decorative bracket + dot in each corner, for the romantic design. */
@@ -295,6 +298,15 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content, t: Transl
     centered(c.note, 11.5, { style: 'italic', font: style.nameFont, color: style.ink, gap: 6, lineHeight: 5.5 });
   }
 
+  // Sign-off ("With respect, the … family") and the RSVP prompt with a phone number.
+  if (c.hostLine) {
+    centered(c.hostLine.toUpperCase(), 10, { font: 'helvetica', color: style.accent, gap: c.rsvpPhone || c.rsvpPrompt ? 6 : 6, lineHeight: 4.6, spacing: 0.4 });
+  }
+  if (c.rsvpPhone || c.rsvpPrompt) {
+    if (c.rsvpPrompt) centered(c.rsvpPrompt, 9.5, { font: 'helvetica', color: style.muted, gap: c.rsvpPhone ? 2 : 6, lineHeight: 4.4 });
+    if (c.rsvpPhone) centered(c.rsvpPhone, 12, { font: 'helvetica', style: 'bold', color: style.ink, gap: 6, lineHeight: 5.5 });
+  }
+
   // Closing flourish toward the foot.
   const flourishY = Math.max(y + 4, pageH - frameM - 20);
   if (style.separator === 'heart' || style.corners) {
@@ -334,8 +346,10 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
       : dateStr
     : details.time ?? '';
 
+  const introMessage = details.introMessage?.trim();
+  const hostFamily = details.hostFamily?.trim();
   const content: Content = {
-    intro: t('invitation.intro'),
+    intro: introMessage || t('invitation.intro'),
     brideName: details.brideName?.trim() ?? '',
     groomName: details.groomName?.trim() ?? '',
     eventName: state.eventName,
@@ -345,6 +359,9 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
     agenda: (details.agenda ?? []).filter((a) => a.title.trim() || a.time?.trim()),
     note: details.invitationNote?.trim() ?? '',
     scheduleHeading: t('invitation.scheduleHeading'),
+    hostLine: hostFamily ? `${t('invitation.respectPrefix')} ${hostFamily}` : '',
+    rsvpPrompt: details.rsvpPhone?.trim() ? t('invitation.rsvpPrompt') : '',
+    rsvpPhone: details.rsvpPhone?.trim() ?? '',
   };
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
