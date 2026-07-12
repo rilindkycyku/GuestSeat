@@ -232,13 +232,7 @@ export function GuestEditorModal({
 
         <div className="flex items-center justify-between gap-2">
           <button
-            onClick={() => {
-              const fullNameStr = guest.surname ? `${guest.name} ${guest.surname}` : guest.name;
-              if (confirm(t('guestEditor.deleteConfirm', { name: fullNameStr }))) {
-                onDelete();
-                onClose();
-              }
-            }}
+            onClick={onDelete}
             className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
           >
             {t('common.delete')}

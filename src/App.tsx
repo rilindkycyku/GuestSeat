@@ -12,6 +12,7 @@ import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
 import { CapacityModal } from './components/CapacityModal';
+import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
 import {
@@ -67,6 +68,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
   const [tableColumns, setTableColumns] = useState<TableColumns>(() => loadTableColumns());
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -303,28 +305,68 @@ export default function App() {
 
   const guestCount = state?.guests.length ?? 0;
 
+  const askConfirm = (opts: ConfirmOptions) => setConfirmState(opts);
+
   const handleMarkAllComing = () => {
-    if (!confirm(t('settings.markAllComingConfirm', { count: guestCount }))) return;
-    setAllRsvp('confirmed');
-    showToast(t('settings.markedAllComing'));
+    askConfirm({
+      message: t('settings.markAllComingConfirm', { count: guestCount }),
+      confirmLabel: t('settings.markAllComing'),
+      onConfirm: () => {
+        setAllRsvp('confirmed');
+        showToast(t('settings.markedAllComing'));
+      },
+    });
   };
 
   const handleMarkAllPending = () => {
-    if (!confirm(t('settings.markAllPendingConfirm', { count: guestCount }))) return;
-    setAllRsvp(undefined);
-    showToast(t('settings.markedAllPending'));
+    askConfirm({
+      message: t('settings.markAllPendingConfirm', { count: guestCount }),
+      confirmLabel: t('settings.markAllPending'),
+      onConfirm: () => {
+        setAllRsvp(undefined);
+        showToast(t('settings.markedAllPending'));
+      },
+    });
   };
 
   const handleUnseatAll = () => {
-    if (!confirm(t('settings.unseatAllConfirm'))) return;
-    unseatAll();
-    showToast(t('settings.unseatedAll'));
+    askConfirm({
+      message: t('settings.unseatAllConfirm'),
+      confirmLabel: t('settings.unseatAll'),
+      danger: true,
+      onConfirm: () => {
+        unseatAll();
+        showToast(t('settings.unseatedAll'));
+      },
+    });
   };
 
   const handleReset = () => {
-    if (!confirm(t('header.resetConfirm'))) return;
-    resetAll();
-    setSettingsOpen(false);
+    askConfirm({
+      message: t('header.resetConfirm'),
+      confirmLabel: t('settings.resetData'),
+      danger: true,
+      onConfirm: () => {
+        resetAll();
+        setSettingsOpen(false);
+      },
+    });
+  };
+
+  // Remove a table, confirming first only when it still has seated guests.
+  const handleRemoveTable = (tableId: string) => {
+    const table = tableById.get(tableId);
+    const occupied = (seatedCount.get(tableId) ?? 0) > 0;
+    if (!table || !occupied) {
+      removeTable(tableId);
+      return;
+    }
+    askConfirm({
+      message: t('tables.removeTableConfirm', { name: tableDisplayName(table, t) }),
+      confirmLabel: t('tables.removeTable'),
+      danger: true,
+      onConfirm: () => removeTable(tableId),
+    });
   };
 
   if (!state) {
@@ -618,7 +660,7 @@ export default function App() {
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onEditCapacity={() => setCapacityTableId(table.id)}
-                    onRemoveTable={() => removeTable(table.id)}
+                    onRemoveTable={() => handleRemoveTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
                     onCreateTag={(label) => createTagForTable(table.id, label)}
@@ -644,7 +686,7 @@ export default function App() {
                       });
                     }}
                     onEditCapacity={() => setCapacityTableId(table.id)}
-                    onRemoveTable={() => removeTable(table.id)}
+                    onRemoveTable={() => handleRemoveTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
                     onCreateTag={(label) => createTagForTable(table.id, label)}
@@ -663,7 +705,19 @@ export default function App() {
           allGuests={state.guests}
           seatedCount={seatedCount}
           onSave={(patch) => updateGuest(editingGuest.id, patch)}
-          onDelete={() => removeGuest(editingGuest.id)}
+          onDelete={() =>
+            askConfirm({
+              message: t('guestEditor.deleteConfirm', {
+                name: editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name,
+              }),
+              confirmLabel: t('common.delete'),
+              danger: true,
+              onConfirm: () => {
+                removeGuest(editingGuest.id);
+                setEditingGuestId(null);
+              },
+            })
+          }
           onClose={() => setEditingGuestId(null)}
           onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
@@ -680,6 +734,8 @@ export default function App() {
           onClose={() => setCapacityTableId(null)}
         />
       )}
+
+      {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
 
       {settingsOpen && (
         <SettingsModal

@@ -118,11 +118,7 @@ export function TableCard({
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={() => {
-              if (guests.length === 0 || confirm(t('tables.removeTableConfirm', { name: displayName }))) {
-                onRemoveTable();
-              }
-            }}
+            onClick={onRemoveTable}
             className="w-7 h-7 sm:w-6 sm:h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
             title={t('tables.removeTable')}
           >
