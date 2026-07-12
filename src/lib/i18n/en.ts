@@ -61,7 +61,8 @@ export const en = {
     chooseFile: 'Choose file…',
     viewExample: 'View example',
     downloadExample: 'Download example',
-    tryExample: '…or just try it with the example list',
+    tryDemo: 'Load a demo list',
+    tryDemoHint: 'See a full sample — tables, tags, linked couples, unseated guests & invitation details — no setup needed.',
     exampleTitle: 'Example format',
     exampleExplanation:
       'Each key becomes a <strong>table</strong> (e.g. "A" → Table A), and its names are seated at that table automatically. Only <strong>name</strong> is required — surnames are optional and can be added later in the app. A flat array of names, or objects like {{sample}}, also works (those come in unseated).',
