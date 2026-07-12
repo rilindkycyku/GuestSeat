@@ -3,7 +3,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Guest, Table, TableSide, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
-import { tableDisplayName } from '../lib/tableDisplay';
+import { tableDisplayName, tableShortName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
 import { TAG_COLORS } from '../lib/tagColors';
 import { TableTagPicker } from './TableTagPicker';
@@ -196,12 +196,13 @@ export function FloorTable({
       <div className="relative aspect-square w-full max-w-[220px] mx-auto my-2">
         {/* The table itself */}
         <div
-          className={`absolute inset-[27%] rounded-full border-4 flex flex-col items-center justify-center text-center px-2 ${
+          title={displayName}
+          className={`absolute inset-[27%] rounded-full border-4 flex flex-col items-center justify-center text-center px-1.5 ${
             table.side ? SIDE_RING[table.side] : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
           }`}
         >
           <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight max-w-full truncate">
-            {displayName}
+            {tableShortName(table, t)}
           </span>
           <button
             onClick={editCapacity}
