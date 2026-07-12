@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { EventState, Guest, Table, TableTag } from '../types';
 import { tableDisplayName, type Translator } from './tableDisplay';
 import { buildShareQr } from './qr';
@@ -316,43 +315,68 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     columnY.fill(sy + 10);
   };
 
+  // Height a single column offers below a running header — used to decide whether an
+  // oversized block (a very large table, or a long unseated list) must flow across columns
+  // rather than sit as one piece.
+  const usableColumnHeight = bottomLimit - (frameInner + 26);
+  const rowLineHeight = 3.7;
+
+  // Render one table/section block: a bold heading followed by a numbered guest list. Small
+  // blocks are placed whole into the shortest column; a block taller than a full column flows
+  // row by row into the next column (and onto framed continuation pages) so nothing ever
+  // spills onto a bare, frame-less page.
   const drawBlock = (heading: string, guests: Guest[]) => {
     const sorted = [...guests].sort((a, b) => fullName(a).localeCompare(fullName(b)));
-    // Measure the heading up front: long headings (e.g. tables with custom tags) wrap to
-    // several lines, so the guest list must start below the last line, not a fixed offset.
+    const rows = sorted.length
+      ? sorted.map((g, i) => {
+          const marker = g.rsvp === 'declined' ? ` (${t('rsvp.declinedShort')})` : '';
+          return `${i + 1}. ${fullName(g)}${marker}${g.notes ? ` — ${g.notes}` : ''}`;
+        })
+      : [t('export.noGuestsSeated')];
+
+    // Measure the heading up front: long headings (custom tags) wrap to several lines.
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     const headingLines = doc.splitTextToSize(heading, columnWidth) as string[];
-    const headingLineHeight = 3.5;
-    const headingHeight = 3 + (headingLines.length - 1) * headingLineHeight + 1.5;
-    const estHeight = headingHeight + Math.max(sorted.length, 1) * 3.6 + 3;
+    const headingHeight = headingLines.length * 3.6 + 1.9;
+    const blockHeight = headingHeight + rows.length * rowLineHeight + 3;
+
+    // Advance from column `cur` to the next one on the page, or to a fresh framed page.
+    const advanceColumn = (cur: number): number => {
+      if (cur < columnCount - 1) return cur + 1;
+      newPage();
+      return 0;
+    };
+
     let colIndex = pickColumn();
-    if (columnY[colIndex] + estHeight > bottomLimit) {
+    const fitsWhole = columnY[colIndex] + blockHeight <= bottomLimit;
+    if (!fitsWhole && blockHeight <= usableColumnHeight) {
+      // Won't fit here but fits in an empty column — move the whole block to a fresh page.
       newPage();
       colIndex = 0;
+    } else if (!fitsWhole) {
+      // Taller than a whole column: keep the heading with at least its first rows, then flow.
+      const keepTogether = headingHeight + Math.min(rows.length, 3) * rowLineHeight;
+      if (columnY[colIndex] + keepTogether > bottomLimit) colIndex = advanceColumn(colIndex);
     }
-    const x = colX(colIndex);
-    const startY = columnY[colIndex];
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
     doc.setTextColor(...ink);
-    doc.text(headingLines, x, startY + 3);
+    doc.text(headingLines, colX(colIndex), columnY[colIndex] + 3);
+    columnY[colIndex] += headingHeight;
+
     doc.setFont('helvetica', 'normal');
-    autoTable(doc, {
-      startY: startY + headingHeight,
-      margin: { left: x },
-      tableWidth: columnWidth,
-      head: [],
-      body: sorted.length
-        ? sorted.map((g, i) => {
-            const marker = g.rsvp === 'declined' ? ` (${t('rsvp.declinedShort')})` : '';
-            return [`${i + 1}. ${fullName(g)}${marker}${g.notes ? ` — ${g.notes}` : ''}`];
-          })
-        : [[t('export.noGuestsSeated')]],
-      styles: { fontSize: 7.3, cellPadding: 0.7, textColor: body },
-      theme: 'plain',
-      showHead: false,
-    });
-    // @ts-expect-error autoTable attaches this at runtime
-    columnY[colIndex] = doc.lastAutoTable.finalY + 4;
+    doc.setFontSize(7.6);
+    doc.setTextColor(...body);
+    for (const row of rows) {
+      const wrapped = doc.splitTextToSize(row, columnWidth) as string[];
+      const rowHeight = wrapped.length * rowLineHeight;
+      while (columnY[colIndex] + rowHeight > bottomLimit) colIndex = advanceColumn(colIndex);
+      doc.text(wrapped, colX(colIndex), columnY[colIndex] + 2.7);
+      columnY[colIndex] += rowHeight;
+    }
+    columnY[colIndex] += 3;
   };
 
   const sortedTables = [...tables].sort((a, b) =>
