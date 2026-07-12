@@ -169,6 +169,7 @@ export const sq = {
       capacity: 'Kapaciteti i tavolinës',
       notes: 'Shënime',
       side: 'Pala',
+      tags: 'Etiketat',
       unseated: 'Pa vend',
       unknownTable: 'Tavolinë e panjohur',
       linkedWith: 'I lidhur me',
