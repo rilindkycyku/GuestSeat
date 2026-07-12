@@ -25,6 +25,7 @@ import {
   type ViewMode,
   type TableColumns,
 } from './lib/storage';
+import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { TAG_COLORS } from './lib/tagColors';
 import type { Guest, Table, TableSide, TableTag } from './types';
@@ -37,6 +38,7 @@ export default function App() {
     state,
     loadFromImport,
     mergeFromImport,
+    loadSharedState,
     resetAll,
     setEventName,
     addTable,
@@ -307,6 +309,38 @@ export default function App() {
 
   const askConfirm = (opts: ConfirmOptions) => setConfirmState(opts);
 
+  // On first load, detect a shared list in the URL (#s=...) and offer to load it — this is how
+  // a guest list arrives via a share link instead of a manually imported JSON file.
+  const sharedHandledRef = useRef(false);
+  useEffect(() => {
+    if (sharedHandledRef.current) return;
+    const param = readShareParam();
+    if (!param) return;
+    sharedHandledRef.current = true;
+    let cancelled = false;
+    void decodeSharedState(param).then((shared) => {
+      if (cancelled) return;
+      clearShareParam();
+      if (!shared) {
+        showToast(t('share.invalid'));
+        return;
+      }
+      askConfirm({
+        message: t('share.receivedConfirm', { name: shared.eventName, count: shared.guests.length }),
+        confirmLabel: t('share.load'),
+        onConfirm: () => {
+          loadSharedState(shared);
+          showToast(t('share.loaded', { count: shared.guests.length }));
+        },
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Runs once on mount; the ref guards against React StrictMode's double-invoke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleMarkAllComing = () => {
     askConfirm({
       message: t('settings.markAllComingConfirm', { count: guestCount }),
@@ -447,7 +481,7 @@ export default function App() {
               >
                 {t('header.import')}
               </button>
-              <ExportMenu state={state} />
+              <ExportMenu state={state} onToast={showToast} />
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
@@ -531,7 +565,7 @@ export default function App() {
               >
                 {t('header.import')}
               </button>
-              <ExportMenu state={state} fullWidth />
+              <ExportMenu state={state} fullWidth onToast={showToast} />
             </div>
           )}
         </header>

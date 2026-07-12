@@ -178,6 +178,19 @@ export const en = {
     unseatedHeading: 'Unseated ({{count}})',
     ungroupedHeading: 'Other Tables',
   },
+  share: {
+    share: 'Share list…',
+    shareDesc: 'Send via WhatsApp, email…',
+    shareText: 'Here is the seating list for {{name}}',
+    copyLink: 'Copy share link',
+    copyLinkDesc: 'Paste it anywhere to share',
+    copied: 'Share link copied to clipboard.',
+    failed: 'Could not create a share link.',
+    receivedConfirm: 'Someone shared "{{name}}" with you ({{count}} guests). Load it? This replaces your current list.',
+    load: 'Load shared list',
+    loaded: 'Loaded shared list with {{count}} guests.',
+    invalid: 'That share link could not be read.',
+  },
 };
 
 export type TranslationDict = typeof en;

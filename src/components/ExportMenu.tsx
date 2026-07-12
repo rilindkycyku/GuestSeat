@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EventState } from '../types';
 import { exportAsCsv, exportAsJson, exportAsPdf } from '../lib/exportData';
+import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 
-export function ExportMenu({ state, fullWidth }: { state: EventState; fullWidth?: boolean }) {
+export function ExportMenu({
+  state,
+  fullWidth,
+  onToast,
+}: {
+  state: EventState;
+  fullWidth?: boolean;
+  onToast?: (msg: string) => void;
+}) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   useEffect(() => {
     if (!open) return;
@@ -16,6 +26,35 @@ export function ExportMenu({ state, fullWidth }: { state: EventState; fullWidth?
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  const copyLink = async () => {
+    setOpen(false);
+    try {
+      const url = await encodeStateToLink(state);
+      await navigator.clipboard.writeText(url);
+      onToast?.(t('share.copied'));
+    } catch {
+      onToast?.(t('share.failed'));
+    }
+  };
+
+  // Native share sheet (WhatsApp, email, AirDrop…) carrying the auto-load link; falls back to copy.
+  const shareLink = async () => {
+    setOpen(false);
+    try {
+      const url = await encodeStateToLink(state);
+      await navigator.share({ title: state.eventName, text: t('share.shareText', { name: state.eventName }), url });
+    } catch (err) {
+      // AbortError = the user dismissed the share sheet; stay silent for that.
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      try {
+        await navigator.clipboard.writeText(await encodeStateToLink(state));
+        onToast?.(t('share.copied'));
+      } catch {
+        onToast?.(t('share.failed'));
+      }
+    }
+  };
 
   return (
     <div className={`relative ${fullWidth ? 'w-full' : ''}`} ref={ref}>
@@ -28,14 +67,28 @@ export function ExportMenu({ state, fullWidth }: { state: EventState; fullWidth?
       </button>
       {open && (
         <div
-          className={`absolute mt-1 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20 ${fullWidth ? 'left-0' : 'right-0'}`}
+          className={`absolute mt-1 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20 ${fullWidth ? 'left-0' : 'right-0'}`}
         >
+          {canShare && (
+            <button
+              onClick={() => void shareLink()}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              {t('share.share')} <span className="text-slate-400 text-xs block">{t('share.shareDesc')}</span>
+            </button>
+          )}
+          <button
+            onClick={() => void copyLink()}
+            className={`w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 ${canShare ? 'border-t border-slate-100 dark:border-slate-800' : ''}`}
+          >
+            {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
+          </button>
           <button
             onClick={() => {
               exportAsJson(state);
               setOpen(false);
             }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
           >
             {t('export.json')} <span className="text-slate-400 text-xs block">{t('export.jsonDesc')}</span>
           </button>

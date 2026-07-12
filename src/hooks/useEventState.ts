@@ -35,6 +35,12 @@ export function useEventState() {
     setState(getDefaultEventState());
   }, []);
 
+  // Replace the whole event with a snapshot received via a share link. Guest/table IDs, tags
+  // and seating all come through intact, so the recipient sees an exact copy of the sender's list.
+  const loadSharedState = useCallback((shared: EventState) => {
+    setState({ ...shared, updatedAt: new Date().toISOString() });
+  }, []);
+
   const setEventName = useCallback((eventName: string) => {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
   }, []);
@@ -250,6 +256,7 @@ export function useEventState() {
     state,
     loadFromImport,
     mergeFromImport,
+    loadSharedState,
     resetAll,
     setEventName,
     addTable,

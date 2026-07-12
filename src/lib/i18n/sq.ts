@@ -180,4 +180,17 @@ export const sq = {
     unseatedHeading: 'Pa vend ({{count}})',
     ungroupedHeading: 'Tavolina të tjera',
   },
+  share: {
+    share: 'Ndaj listën…',
+    shareDesc: 'Dërgo me WhatsApp, email…',
+    shareText: 'Kjo është lista e vendeve për {{name}}',
+    copyLink: 'Kopjo lidhjen e ndarjes',
+    copyLinkDesc: 'Ngjite kudo për ta ndarë',
+    copied: 'Lidhja u kopjua në clipboard.',
+    failed: 'Nuk u krijua dot një lidhje ndarjeje.',
+    receivedConfirm: 'Dikush ndau "{{name}}" me ju ({{count}} të ftuar). Ta ngarkoj? Kjo zëvendëson listën tuaj aktuale.',
+    load: 'Ngarko listën e ndarë',
+    loaded: 'U ngarkua lista e ndarë me {{count}} të ftuar.',
+    invalid: 'Kjo lidhje ndarjeje nuk u lexua dot.',
+  },
 } satisfies TranslationDict;
