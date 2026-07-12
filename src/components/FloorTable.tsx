@@ -12,6 +12,7 @@ interface FloorTableProps {
   table: Table;
   guests: Guest[];
   tags: TableTag[];
+  assignedTagIds: string[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
@@ -103,6 +104,7 @@ export function FloorTable({
   table,
   guests,
   tags,
+  assignedTagIds,
   matchedIds,
   linkBadges,
   highlighted,
@@ -116,7 +118,7 @@ export function FloorTable({
   const { setNodeRef, isOver } = useDroppable({ id: table.id });
   const displayName = tableDisplayName(table, t);
   const isOverCapacity = guests.length > table.capacity;
-  const assignedTags = useMemo(() => tags.filter((tag) => table.tagIds?.includes(tag.id)), [tags, table.tagIds]);
+  const assignedTags = useMemo(() => tags.filter((tag) => assignedTagIds.includes(tag.id)), [tags, assignedTagIds]);
 
   const editCapacity = () => {
     const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
@@ -161,28 +163,6 @@ export function FloorTable({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1 flex-wrap min-w-0">
-          <div className="flex items-center gap-0.5" title={t('tables.setSide')}>
-            <button
-              onClick={() => onUpdateTable({ side: table.side === 'groom' ? undefined : 'groom' })}
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-                table.side === 'groom'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
-                  : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-              }`}
-            >
-              {t('tables.side.groom')}
-            </button>
-            <button
-              onClick={() => onUpdateTable({ side: table.side === 'bride' ? undefined : 'bride' })}
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-                table.side === 'bride'
-                  ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300'
-                  : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
-              }`}
-            >
-              {t('tables.side.bride')}
-            </button>
-          </div>
           {assignedTags.map((tag) => (
             <span
               key={tag.id}
@@ -193,7 +173,7 @@ export function FloorTable({
           ))}
           <TableTagPicker
             tags={tags}
-            tableTagIds={table.tagIds ?? []}
+            tableTagIds={assignedTagIds}
             onToggle={onToggleTag}
             onCreateTag={onCreateTag}
           />

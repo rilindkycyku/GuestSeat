@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { Guest, Table, TableSide, TableTag } from '../types';
+import type { Guest, Table, TableTag } from '../types';
 import { GuestChip } from './GuestChip';
 import { TableTagPicker } from './TableTagPicker';
 import { useLanguage } from '../hooks/useLanguage';
@@ -12,6 +12,7 @@ interface TableCardProps {
   table: Table;
   guests: Guest[];
   tags: TableTag[];
+  assignedTagIds: string[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
@@ -24,15 +25,11 @@ interface TableCardProps {
   onCreateTag: (label: string) => void;
 }
 
-const SIDE_STYLES: Record<TableSide, string> = {
-  groom: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
-  bride: 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300',
-};
-
 export function TableCard({
   table,
   guests,
   tags,
+  assignedTagIds,
   matchedIds,
   linkBadges,
   highlighted,
@@ -50,11 +47,7 @@ export function TableCard({
   const isFull = guests.length >= table.capacity;
   const isOverCapacity = guests.length > table.capacity;
   const guestGroups = useMemo(() => groupLinkedWithin(guests), [guests]);
-  const assignedTags = useMemo(() => tags.filter((tag) => table.tagIds?.includes(tag.id)), [tags, table.tagIds]);
-
-  const setSide = (side: TableSide | undefined) => {
-    onUpdateTable({ side });
-  };
+  const assignedTags = useMemo(() => tags.filter((tag) => assignedTagIds.includes(tag.id)), [tags, assignedTagIds]);
 
   const editCapacity = () => {
     const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
@@ -111,32 +104,6 @@ export function TableCard({
               >
                 {t('tables.seats', { seated: guests.length, capacity: table.capacity })}
               </button>
-              <div
-                className="flex items-center gap-0.5"
-                onClick={(e) => e.stopPropagation()}
-                title={t('tables.setSide')}
-              >
-                <button
-                  onClick={() => setSide(table.side === 'groom' ? undefined : 'groom')}
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-                    table.side === 'groom'
-                      ? SIDE_STYLES.groom
-                      : 'text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500'
-                  }`}
-                >
-                  {t('tables.side.groom')}
-                </button>
-                <button
-                  onClick={() => setSide(table.side === 'bride' ? undefined : 'bride')}
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-                    table.side === 'bride'
-                      ? SIDE_STYLES.bride
-                      : 'text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500'
-                  }`}
-                >
-                  {t('tables.side.bride')}
-                </button>
-              </div>
               <div className="flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
                 {assignedTags.map((tag) => (
                   <span
@@ -148,7 +115,7 @@ export function TableCard({
                 ))}
                 <TableTagPicker
                   tags={tags}
-                  tableTagIds={table.tagIds ?? []}
+                  tableTagIds={assignedTagIds}
                   onToggle={onToggleTag}
                   onCreateTag={onCreateTag}
                 />

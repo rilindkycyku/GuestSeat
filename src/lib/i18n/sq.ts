@@ -55,6 +55,7 @@ export const sq = {
     chooseColor: 'Zgjidh ngjyrën',
     newTagPlaceholder: 'Etiketë e re…',
     noneYet: 'Ende s\'ka etiketa',
+    builtIn: 'I integruar',
   },
   onboarding: {
     tagline: 'Importoni listën e të ftuarve në JSON për të filluar renditjen e tavolinave dhe vendeve.',
