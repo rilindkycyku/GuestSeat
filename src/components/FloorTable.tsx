@@ -16,7 +16,7 @@ interface FloorTableProps {
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
-  onUpdateTable: (patch: Partial<Table>) => void;
+  onEditCapacity: () => void;
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
   onToggleTag: (tagId: string) => void;
@@ -108,7 +108,7 @@ export function FloorTable({
   matchedIds,
   linkBadges,
   highlighted,
-  onUpdateTable,
+  onEditCapacity,
   onRemoveTable,
   onGuestClick,
   onToggleTag,
@@ -119,13 +119,6 @@ export function FloorTable({
   const displayName = tableDisplayName(table, t);
   const isOverCapacity = guests.length > table.capacity;
   const assignedTags = useMemo(() => tags.filter((tag) => assignedTagIds.includes(tag.id)), [tags, assignedTagIds]);
-
-  const editCapacity = () => {
-    const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
-    if (input === null) return;
-    const n = parseInt(input, 10);
-    if (Number.isFinite(n) && n >= 1) onUpdateTable({ capacity: n });
-  };
 
   // Linked guests sit next to each other around the table; the name list uses the same order.
   const orderedGuests = useMemo(() => groupLinkedWithin(guests).flat(), [guests]);
@@ -205,7 +198,7 @@ export function FloorTable({
             {tableShortName(table, t)}
           </span>
           <button
-            onClick={editCapacity}
+            onClick={onEditCapacity}
             title={t('tables.editCapacity')}
             className={`text-[10px] font-medium rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-700/60 ${
               isOverCapacity

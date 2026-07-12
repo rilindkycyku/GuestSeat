@@ -18,7 +18,7 @@ interface TableCardProps {
   highlighted: boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
-  onUpdateTable: (patch: Partial<Table>) => void;
+  onEditCapacity: () => void;
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
   onToggleTag: (tagId: string) => void;
@@ -35,7 +35,7 @@ export function TableCard({
   highlighted,
   collapsed,
   onToggleCollapse,
-  onUpdateTable,
+  onEditCapacity,
   onRemoveTable,
   onGuestClick,
   onToggleTag,
@@ -48,13 +48,6 @@ export function TableCard({
   const isOverCapacity = guests.length > table.capacity;
   const guestGroups = useMemo(() => groupLinkedWithin(guests), [guests]);
   const assignedTags = useMemo(() => tags.filter((tag) => assignedTagIds.includes(tag.id)), [tags, assignedTagIds]);
-
-  const editCapacity = () => {
-    const input = window.prompt(t('tables.capacityPrompt'), String(table.capacity));
-    if (input === null) return;
-    const n = parseInt(input, 10);
-    if (Number.isFinite(n) && n >= 1) onUpdateTable({ capacity: n });
-  };
 
   return (
     <div
@@ -97,7 +90,7 @@ export function TableCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  editCapacity();
+                  onEditCapacity();
                 }}
                 title={t('tables.editCapacity')}
                 className={`text-xs font-medium rounded px-1 -mx-1 hover:bg-slate-100 dark:hover:bg-slate-800 ${isOverCapacity ? 'text-red-500' : isFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}

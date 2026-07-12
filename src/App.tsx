@@ -11,6 +11,7 @@ import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
+import { CapacityModal } from './components/CapacityModal';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
 import {
@@ -65,6 +66,7 @@ export default function App() {
   const [tableFilter, setTableFilter] = useState<TableFilter>({ kind: 'all' });
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
   const [tableColumns, setTableColumns] = useState<TableColumns>(() => loadTableColumns());
+  const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +97,8 @@ export default function App() {
   const guestById = useMemo(() => new Map((state?.guests ?? []).map((g) => [g.id, g])), [state]);
 
   const editingGuest = editingGuestId ? (guestById.get(editingGuestId) ?? null) : null;
+
+  const capacityTable = capacityTableId ? (tableById.get(capacityTableId) ?? null) : null;
 
   const linkBadges = useMemo(() => {
     const map = new Map<string, { status: 'together' | 'apart'; title: string }>();
@@ -613,7 +617,7 @@ export default function App() {
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
-                    onUpdateTable={(patch) => updateTable(table.id, patch)}
+                    onEditCapacity={() => setCapacityTableId(table.id)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
@@ -639,7 +643,7 @@ export default function App() {
                         return next;
                       });
                     }}
-                    onUpdateTable={(patch) => updateTable(table.id, patch)}
+                    onEditCapacity={() => setCapacityTableId(table.id)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
@@ -668,6 +672,14 @@ export default function App() {
       )}
 
       {addingGuest && <AddGuestModal onAdd={addGuest} onClose={() => setAddingGuest(false)} />}
+
+      {capacityTable && (
+        <CapacityModal
+          table={capacityTable}
+          onSave={(capacity) => updateTable(capacityTable.id, { capacity })}
+          onClose={() => setCapacityTableId(null)}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsModal
