@@ -25,10 +25,10 @@ import {
 } from './lib/storage';
 import { tableDisplayName } from './lib/tableDisplay';
 import { TAG_COLORS } from './lib/tagColors';
-import type { Guest, TableSide } from './types';
+import type { Guest, Table, TableSide, TableTag } from './types';
 
-/** A table-list filter: everything, one wedding side, or one custom tag. */
-type TableFilter = { kind: 'all' } | { kind: 'side'; side: TableSide } | { kind: 'tag'; tagId: string };
+/** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
+type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
 
 export default function App() {
   const {
@@ -113,35 +113,55 @@ export default function App() {
     return map;
   }, [state, guestById, t]);
 
-  const tags = useMemo(() => state?.tags ?? [], [state]);
+  const customTags = useMemo(() => state?.tags ?? [], [state]);
+
+  // Groom & Bride are always-present, non-removable "system" tags backed by the table's
+  // single `side` field; custom tags live in state.tags. Both show up in the same lists.
+  const systemTags: TableTag[] = useMemo(
+    () => [
+      { id: 'groom', label: t('tables.side.groom'), color: 'sky' },
+      { id: 'bride', label: t('tables.side.bride'), color: 'rose' },
+    ],
+    [t]
+  );
+
+  const allTags = useMemo(() => [...systemTags, ...customTags], [systemTags, customTags]);
+
+  // The tag ids applied to a table, merging the wedding side with its custom tags.
+  const assignedIdsFor = useCallback((tb: Table) => [...(tb.side ? [tb.side] : []), ...(tb.tagIds ?? [])], []);
 
   const filteredTables = useMemo(() => {
     if (!state) return [];
     if (tableFilter.kind === 'all') return state.tables;
-    if (tableFilter.kind === 'side') return state.tables.filter((tb) => tb.side === tableFilter.side);
-    return state.tables.filter((tb) => tb.tagIds?.includes(tableFilter.tagId));
+    const id = tableFilter.tagId;
+    return state.tables.filter((tb) => tb.side === id || tb.tagIds?.includes(id));
   }, [state, tableFilter]);
 
   const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
 
-  const sideCounts = useMemo(() => {
-    const counts = { groom: 0, bride: 0 };
-    for (const tb of state?.tables ?? []) {
-      if (tb.side === 'groom') counts.groom += 1;
-      else if (tb.side === 'bride') counts.bride += 1;
-    }
-    return counts;
-  }, [state]);
-
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const tb of state?.tables ?? []) {
+      if (tb.side) counts.set(tb.side, (counts.get(tb.side) ?? 0) + 1);
       for (const id of tb.tagIds ?? []) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     return counts;
   }, [state]);
 
-  // Create a tag and immediately apply it to the table the user is tagging.
+  // Toggle a tag on a table. Groom/Bride map to the mutually-exclusive `side`; custom tags stack.
+  const toggleTag = useCallback(
+    (tableId: string, tagId: string) => {
+      if (tagId === 'groom' || tagId === 'bride') {
+        const current = state?.tables.find((tb) => tb.id === tableId)?.side;
+        updateTable(tableId, { side: current === tagId ? undefined : (tagId as TableSide) });
+      } else {
+        toggleTableTag(tableId, tagId);
+      }
+    },
+    [state, updateTable, toggleTableTag]
+  );
+
+  // Create a custom tag and immediately apply it to the table the user is tagging.
   const createTagForTable = useCallback(
     (tableId: string, label: string) => {
       const id = addTag(label);
@@ -494,27 +514,7 @@ export default function App() {
                   >
                     {t('tables.filter.all')}
                   </button>
-                  <button
-                    onClick={() => setTableFilter({ kind: 'side', side: 'groom' })}
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                      tableFilter.kind === 'side' && tableFilter.side === 'groom'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {t('tables.filter.groom')} ({sideCounts.groom})
-                  </button>
-                  <button
-                    onClick={() => setTableFilter({ kind: 'side', side: 'bride' })}
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                      tableFilter.kind === 'side' && tableFilter.side === 'bride'
-                        ? 'bg-pink-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {t('tables.filter.bride')} ({sideCounts.bride})
-                  </button>
-                  {tags.map((tag) => {
+                  {allTags.map((tag) => {
                     const active = tableFilter.kind === 'tag' && tableFilter.tagId === tag.id;
                     return (
                       <button
@@ -608,14 +608,15 @@ export default function App() {
                     key={table.id}
                     table={table}
                     guests={guestsByTable.get(table.id) ?? []}
-                    tags={tags}
+                    tags={allTags}
+                    assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onUpdateTable={(patch) => updateTable(table.id, patch)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
-                    onToggleTag={(tagId) => toggleTableTag(table.id, tagId)}
+                    onToggleTag={(tagId) => toggleTag(table.id, tagId)}
                     onCreateTag={(label) => createTagForTable(table.id, label)}
                   />
                 ) : (
@@ -623,7 +624,8 @@ export default function App() {
                     key={table.id}
                     table={table}
                     guests={guestsByTable.get(table.id) ?? []}
-                    tags={tags}
+                    tags={allTags}
+                    assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
@@ -640,7 +642,7 @@ export default function App() {
                     onUpdateTable={(patch) => updateTable(table.id, patch)}
                     onRemoveTable={() => removeTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
-                    onToggleTag={(tagId) => toggleTableTag(table.id, tagId)}
+                    onToggleTag={(tagId) => toggleTag(table.id, tagId)}
                     onCreateTag={(label) => createTagForTable(table.id, label)}
                   />
                 )
@@ -673,7 +675,8 @@ export default function App() {
           onViewModeChange={setViewMode}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
-          tags={tags}
+          systemTags={systemTags}
+          tags={customTags}
           onAddTag={addTag}
           onUpdateTag={updateTag}
           onRemoveTag={removeTag}

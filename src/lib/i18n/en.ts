@@ -53,6 +53,7 @@ export const en = {
     chooseColor: 'Choose color',
     newTagPlaceholder: 'New tag…',
     noneYet: 'No tags yet',
+    builtIn: 'Built-in',
   },
   onboarding: {
     tagline: 'Import your guest list JSON to start arranging tables and seats.',

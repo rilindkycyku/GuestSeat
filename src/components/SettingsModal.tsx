@@ -11,6 +11,7 @@ interface SettingsModalProps {
   onViewModeChange: (mode: ViewMode) => void;
   tableColumns: TableColumns;
   onTableColumnsChange: (cols: TableColumns) => void;
+  systemTags: TableTag[];
   tags: TableTag[];
   onAddTag: (label: string) => void;
   onUpdateTag: (tagId: string, patch: Partial<Omit<TableTag, 'id'>>) => void;
@@ -62,11 +63,12 @@ function Segmented<T extends string>({
 }
 
 function TagManager({
+  systemTags,
   tags,
   onAddTag,
   onUpdateTag,
   onRemoveTag,
-}: Pick<SettingsModalProps, 'tags' | 'onAddTag' | 'onUpdateTag' | 'onRemoveTag'>) {
+}: Pick<SettingsModalProps, 'systemTags' | 'tags' | 'onAddTag' | 'onUpdateTag' | 'onRemoveTag'>) {
   const { t } = useLanguage();
   const [draft, setDraft] = useState('');
   const [openColorId, setOpenColorId] = useState<string | null>(null);
@@ -83,7 +85,18 @@ function TagManager({
 
   return (
     <div className="space-y-2">
-      {tags.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500">{t('tags.settingsHint')}</p>}
+      {/* Built-in Groom/Bride tags: always present, cannot be renamed or removed. */}
+      {systemTags.map((tag) => (
+        <div key={tag.id} className="flex items-center gap-2">
+          <span className={`shrink-0 w-7 h-7 rounded-full ${TAG_COLORS[tag.color].dot} ring-2 ring-white dark:ring-slate-900 shadow`} />
+          <span className="flex-1 min-w-0 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 truncate">
+            {tag.label}
+          </span>
+          <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800">
+            {t('tags.builtIn')}
+          </span>
+        </div>
+      ))}
       {tags.map((tag) => (
         <div key={tag.id} className="flex items-center gap-2">
           <div className="relative shrink-0">
@@ -123,6 +136,7 @@ function TagManager({
           </button>
         </div>
       ))}
+      {tags.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 pt-0.5">{t('tags.settingsHint')}</p>}
       <div className="flex items-center gap-2 pt-1">
         <input
           value={draft}
@@ -149,6 +163,7 @@ export function SettingsModal({
   onViewModeChange,
   tableColumns,
   onTableColumnsChange,
+  systemTags,
   tags,
   onAddTag,
   onUpdateTag,
@@ -212,7 +227,13 @@ export function SettingsModal({
         </Section>
 
         <Section title={t('tags.title')}>
-          <TagManager tags={tags} onAddTag={onAddTag} onUpdateTag={onUpdateTag} onRemoveTag={onRemoveTag} />
+          <TagManager
+            systemTags={systemTags}
+            tags={tags}
+            onAddTag={onAddTag}
+            onUpdateTag={onUpdateTag}
+            onRemoveTag={onRemoveTag}
+          />
         </Section>
 
         <Section title={t('settings.attendance')}>
