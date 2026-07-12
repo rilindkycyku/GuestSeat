@@ -8,10 +8,14 @@ export function ExportMenu({
   state,
   fullWidth,
   onToast,
+  onShowInvitation,
+  onShowQr,
 }: {
   state: EventState;
   fullWidth?: boolean;
   onToast?: (msg: string) => void;
+  onShowInvitation?: () => void;
+  onShowQr?: () => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -83,6 +87,28 @@ export function ExportMenu({
           >
             {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
           </button>
+          {onShowInvitation && (
+            <button
+              onClick={() => {
+                onShowInvitation();
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+            >
+              {t('export.invitation')} <span className="text-slate-400 text-xs block">{t('export.invitationDesc')}</span>
+            </button>
+          )}
+          {onShowQr && (
+            <button
+              onClick={() => {
+                onShowQr();
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+            >
+              {t('export.qr')} <span className="text-slate-400 text-xs block">{t('export.qrDesc')}</span>
+            </button>
+          )}
           <button
             onClick={() => {
               exportAsJson(state);
@@ -94,7 +120,7 @@ export function ExportMenu({
           </button>
           <button
             onClick={() => {
-              exportAsPdf(state, t);
+              void exportAsPdf(state, t);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"

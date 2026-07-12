@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { EventState, Guest, Table, TableTag } from '../types';
 import { tableDisplayName, type Translator } from './tableDisplay';
+import { buildShareQr } from './qr';
+import type { Language } from './i18n';
 
 function downloadBlob(content: BlobPart, filename: string, type: string): void {
   const blob = new Blob([content], { type });
@@ -86,7 +88,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
   downloadBlob(csv, `${slug(state.eventName)}-seating.csv`, 'text/csv');
 }
 
-export function exportAsPdf(state: EventState, t: Translator): void {
+export async function exportAsPdf(state: EventState, t: Translator): Promise<void> {
   const doc = new jsPDF();
   const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -97,6 +99,17 @@ export function exportAsPdf(state: EventState, t: Translator): void {
   const columnCount = 3;
   const gap = 4;
   const columnWidth = (pageWidth - marginX * 2 - gap * (columnCount - 1)) / columnCount;
+
+  // A QR code for the live share link, so anyone with the printout can scan to
+  // open the seating list (and event details) on their phone. Best-effort: if it
+  // can't be built we simply omit it rather than failing the whole export.
+  let shareQr: string | null = null;
+  try {
+    shareQr = (await buildShareQr(state)).dataUrl;
+  } catch {
+    shareQr = null;
+  }
+  const qrSize = 20;
 
   const tables: Table[] = state.tables;
   const guestsByTable = new Map<string, Guest[]>();
@@ -141,7 +154,18 @@ export function exportAsPdf(state: EventState, t: Translator): void {
   }
   doc.setTextColor(0);
 
-  const columnY: number[] = new Array(columnCount).fill(marginTop + (hasRsvp ? 20 : 16));
+  if (shareQr) {
+    const qrX = pageWidth - marginX - qrSize;
+    doc.addImage(shareQr, 'PNG', qrX, marginTop, qrSize, qrSize);
+    doc.setFontSize(6);
+    doc.setTextColor(120);
+    doc.text(t('share.scanToOpen'), qrX + qrSize / 2, marginTop + qrSize + 2, { align: 'center' });
+    doc.setTextColor(0);
+  }
+
+  const textBlockBottom = marginTop + (hasRsvp ? 20 : 16);
+  const qrBlockBottom = shareQr ? marginTop + qrSize + 5 : 0;
+  const columnY: number[] = new Array(columnCount).fill(Math.max(textBlockBottom, qrBlockBottom));
 
   const pickColumn = () => columnY.indexOf(Math.min(...columnY));
 
@@ -228,4 +252,123 @@ export function exportAsPdf(state: EventState, t: Translator): void {
   }
 
   doc.save(`${slug(state.eventName)}-seating.pdf`);
+}
+
+/** Format an ISO `YYYY-MM-DD` date into a long, localized, human string. */
+function formatEventDate(iso: string, lang: Language): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d);
+  const locale = lang === 'sq' ? 'sq-AL' : 'en-US';
+  try {
+    return date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return date.toLocaleDateString();
+  }
+}
+
+/**
+ * A single-page, print-ready invitation for guests: bride & groom, date/time,
+ * venue and location, the schedule, a personal note, and a QR code that opens
+ * the live seating list on a phone. Every field is optional — the layout simply
+ * skips whatever the couple hasn't filled in.
+ */
+export async function exportInvitationPdf(state: EventState, t: Translator, lang: Language): Promise<void> {
+  const details = state.details ?? {};
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const cx = pageWidth / 2;
+
+  const ink: [number, number, number] = [51, 51, 51];
+  const muted: [number, number, number] = [120, 120, 120];
+  const gold: [number, number, number] = [176, 141, 87];
+
+  // Decorative double frame.
+  const frame = 12;
+  doc.setDrawColor(...gold);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(frame, frame, pageWidth - frame * 2, pageHeight - frame * 2, 4, 4);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(frame + 2.5, frame + 2.5, pageWidth - (frame + 2.5) * 2, pageHeight - (frame + 2.5) * 2, 3, 3);
+
+  const contentWidth = pageWidth - frame * 2 - 20;
+  let y = frame + 22;
+
+  const centered = (text: string, size: number, opts?: { font?: 'times' | 'helvetica'; style?: string; color?: [number, number, number]; gap?: number; lineHeight?: number }) => {
+    const { font = 'times', style = 'normal', color = ink, gap = 6, lineHeight = size * 0.52 } = opts ?? {};
+    doc.setFont(font, style);
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(text, contentWidth) as string[];
+    for (const line of lines) {
+      doc.text(line, cx, y, { align: 'center' });
+      y += lineHeight;
+    }
+    y += gap;
+  };
+
+  const rule = (width = 40) => {
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.4);
+    doc.line(cx - width / 2, y, cx + width / 2, y);
+    y += 8;
+  };
+
+  const hasNames = !!(details.brideName || details.groomName);
+
+  centered(t('invitation.intro'), 10, { font: 'helvetica', color: muted, gap: 8, lineHeight: 4.5 });
+
+  if (hasNames) {
+    if (details.brideName) centered(details.brideName, 30, { gap: 2 });
+    if (details.brideName && details.groomName) centered('&', 16, { color: gold, style: 'italic', gap: 2 });
+    if (details.groomName) centered(details.groomName, 30, { gap: 6 });
+  } else {
+    centered(state.eventName, 26, { gap: 6 });
+  }
+
+  rule();
+
+  if (details.date) {
+    const dateStr = formatEventDate(details.date, lang);
+    const withTime = details.time ? `${dateStr} · ${details.time}` : dateStr;
+    centered(withTime, 13, { font: 'helvetica', gap: 3, lineHeight: 6 });
+  } else if (details.time) {
+    centered(details.time, 13, { font: 'helvetica', gap: 3, lineHeight: 6 });
+  }
+
+  if (details.venue) centered(details.venue, 14, { style: 'bold', gap: details.address ? 1 : 6 });
+  if (details.address) centered(details.address, 10, { font: 'helvetica', color: muted, gap: 6, lineHeight: 5 });
+
+  const agenda = (details.agenda ?? []).filter((a) => a.title.trim() || a.time?.trim());
+  if (agenda.length) {
+    rule(30);
+    centered(t('invitation.scheduleHeading').toUpperCase(), 9, { font: 'helvetica', color: gold, gap: 5, lineHeight: 4 });
+    for (const item of agenda) {
+      const line = item.time?.trim() ? `${item.time.trim()}   ${item.title.trim()}` : item.title.trim();
+      centered(line, 11, { font: 'helvetica', gap: 2.5, lineHeight: 5 });
+    }
+    y += 4;
+  }
+
+  if (details.invitationNote?.trim()) {
+    rule(30);
+    centered(details.invitationNote.trim(), 11.5, { style: 'italic', color: ink, gap: 6, lineHeight: 5.5 });
+  }
+
+  // QR code + caption, anchored toward the bottom of the page.
+  try {
+    const { dataUrl } = await buildShareQr(state);
+    const qrSize = 32;
+    const qrY = Math.max(y + 4, pageHeight - frame - qrSize - 18);
+    doc.addImage(dataUrl, 'PNG', cx - qrSize / 2, qrY, qrSize, qrSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(t('invitation.qrCaption'), cx, qrY + qrSize + 5, { align: 'center' });
+  } catch {
+    // No network / compression support — invitation still prints without the QR.
+  }
+
+  doc.save(`${slug(state.eventName)}-invitation.pdf`);
 }

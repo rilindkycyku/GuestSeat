@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
+import type { EventDetails, EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
 import { getDefaultEventState } from '../lib/defaultEvent';
@@ -43,6 +43,18 @@ export function useEventState() {
 
   const setEventName = useCallback((eventName: string) => {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
+  }, []);
+
+  // Merge a patch into the event's invitation details (bride/groom, venue, date, agenda…).
+  const updateEventDetails = useCallback((patch: Partial<EventDetails>) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        details: { ...prev.details, ...patch },
+        updatedAt: new Date().toISOString(),
+      };
+    });
   }, []);
 
   const addTable = useCallback((namePrefix = 'Table') => {
@@ -259,6 +271,7 @@ export function useEventState() {
     loadSharedState,
     resetAll,
     setEventName,
+    updateEventDetails,
     addTable,
     updateTable,
     removeTable,
