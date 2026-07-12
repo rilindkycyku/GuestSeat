@@ -1,7 +1,19 @@
 import type { EventState, Guest, ImportGuestEntry, ImportShape, Table, TableNamingMode } from '../types';
 
+// Ids only need to be unique within a single event (guests, tables, tags, agenda items) —
+// they're opaque keys and cross-references, never parsed. We keep them short so exported
+// JSON stays readable: a one-letter type prefix, a short per-session salt, and a running
+// counter, giving ids like `gk3f`, `gk3f1`, `tk3f2` instead of `g_nkup0jehmrhxy20s`.
+//
+// The counter guarantees every id made in this session is distinct; the random salt keeps
+// ids from separate sessions apart if two lists are ever combined. (Note: share links and
+// QR codes don't carry ids at all — they're stripped and regenerated on load — so id length
+// has no effect on link/QR size; this is purely to keep exports and data tidy.)
+const idSalt = Math.random().toString(36).slice(2, 5);
+let idSeq = 0;
+
 function makeId(prefix: string): string {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+  return `${prefix}${idSalt}${(idSeq++).toString(36)}`;
 }
 
 function normalizeEntry(entry: ImportGuestEntry, group?: string): Guest | null {
