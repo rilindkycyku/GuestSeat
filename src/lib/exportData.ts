@@ -90,10 +90,12 @@ export function exportAsCsv(state: EventState, t: Translator): void {
 
 /**
  * A print-ready seating list, styled to echo the physical invitation. Every A4 page sits
- * inside a cream sheet with a gold double frame. The first page opens with a full-width
- * header — the event title, the couple's names, the venue and date, a summary and a QR code
- * that opens the live list on a phone — and the seating list then flows underneath it through
- * three columns, continuing onto further (header-less) framed pages as needed.
+ * inside a cream sheet with a gold double frame. Each part — the groom's tables, the bride's
+ * tables, and the unseated guests — begins on its own page led by a full-width header (the
+ * event title, the couple's names, the venue and date, a summary and a QR code that opens the
+ * live list on a phone), so the parts can be printed separately and each stands on its own.
+ * The list then flows through three columns; any overflow continues onto further framed pages
+ * that carry a compact running header (title and couple's names).
  */
 export async function exportAsPdf(state: EventState, t: Translator, lang: Language): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -202,90 +204,96 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     columnY.fill(drawRunningHeader());
   };
 
-  // ---- Page 1 header (full width) --------------------------------------------------------
-  drawFrame();
-
-  // QR code, top-right inside the frame, so the title can run along the left.
-  let qrBottom = frameInner + 6;
-  if (shareQr) {
-    const qr = 22;
-    const qrX = pageWidth - marginX - qr;
-    const qrY = frameInner + 6;
-    doc.addImage(shareQr, 'PNG', qrX, qrY, qr, qr);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(...muted);
-    doc.text(t('share.scanToOpen'), qrX + qr / 2, qrY + qr + 2.6, { align: 'center' });
-    qrBottom = qrY + qr + 4;
-  }
-
-  // Header text runs left-aligned, kept clear of the QR block on the right.
-  const textMaxWidth = contentWidth - (shareQr ? 30 : 0);
-  let hy = frameInner + 8;
-
-  doc.setFont('times', 'normal');
-  doc.setFontSize(22);
-  doc.setTextColor(...gold);
-  for (const line of doc.splitTextToSize(state.eventName, textMaxWidth) as string[]) {
-    doc.text(line, marginX, hy + 6);
-    hy += 8.5;
-  }
-  hy += 1;
-
-  if (names.length) {
-    doc.setFont('times', 'italic');
-    doc.setFontSize(12.5);
-    doc.setTextColor(...ink);
-    doc.text(names.join('  &  '), marginX, hy + 4, { maxWidth: textMaxWidth });
-    hy += 7;
-  }
-
   const dateStr = details.date ? formatEventDate(details.date, lang) : '';
   const whenLine = [dateStr, details.time?.trim()].filter(Boolean).join(' · ');
   const whereLine = [details.venue?.trim(), details.address?.trim()].filter(Boolean).join(', ');
   const metaLine = [whereLine, whenLine].filter(Boolean).join('   ·   ');
-  if (metaLine) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...ink);
-    for (const line of doc.splitTextToSize(metaLine, textMaxWidth) as string[]) {
-      doc.text(line, marginX, hy + 3.6);
-      hy += 4.8;
+
+  // The full-width header — title, couple, venue & date, summary and share QR. It leads the
+  // very first page, and also the first page of every part below, so each part (groom / bride
+  // / unseated) can be printed on its own and still stand as a complete, titled document.
+  const drawFullHeader = () => {
+    // QR code, top-right inside the frame, so the title can run along the left.
+    let qrBottom = frameInner + 6;
+    if (shareQr) {
+      const qr = 22;
+      const qrX = pageWidth - marginX - qr;
+      const qrY = frameInner + 6;
+      doc.addImage(shareQr, 'PNG', qrX, qrY, qr, qr);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6);
+      doc.setTextColor(...muted);
+      doc.text(t('share.scanToOpen'), qrX + qr / 2, qrY + qr + 2.6, { align: 'center' });
+      qrBottom = qrY + qr + 4;
+    }
+
+    // Header text runs left-aligned, kept clear of the QR block on the right.
+    const textMaxWidth = contentWidth - (shareQr ? 30 : 0);
+    let hy = frameInner + 8;
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    doc.setTextColor(...gold);
+    for (const line of doc.splitTextToSize(state.eventName, textMaxWidth) as string[]) {
+      doc.text(line, marginX, hy + 6);
+      hy += 8.5;
     }
     hy += 1;
-  }
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...muted);
-  doc.text(
-    t('export.summary', { guests: state.guests.length, tables: tables.length, date: new Date().toLocaleDateString() }),
-    marginX,
-    hy + 3
-  );
-  hy += 3.8;
-  if (hasRsvp) {
+    if (names.length) {
+      doc.setFont('times', 'italic');
+      doc.setFontSize(12.5);
+      doc.setTextColor(...ink);
+      doc.text(names.join('  &  '), marginX, hy + 4, { maxWidth: textMaxWidth });
+      hy += 7;
+    }
+
+    if (metaLine) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...ink);
+      for (const line of doc.splitTextToSize(metaLine, textMaxWidth) as string[]) {
+        doc.text(line, marginX, hy + 3.6);
+        hy += 4.8;
+      }
+      hy += 1;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
     doc.text(
-      t('export.rsvpSummary', {
-        confirmed: confirmedTotal,
-        declined: declinedTotal,
-        pending: state.guests.length - confirmedTotal - declinedTotal,
-      }),
+      t('export.summary', { guests: state.guests.length, tables: tables.length, date: new Date().toLocaleDateString() }),
       marginX,
       hy + 3
     );
     hy += 3.8;
-  }
+    if (hasRsvp) {
+      doc.text(
+        t('export.rsvpSummary', {
+          confirmed: confirmedTotal,
+          declined: declinedTotal,
+          pending: state.guests.length - confirmedTotal - declinedTotal,
+        }),
+        marginX,
+        hy + 3
+      );
+      hy += 3.8;
+    }
 
-  // Gold double rule closing the header, then columns start below the taller of text / QR.
-  const headerBottom = Math.max(hy + 3.5, qrBottom);
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.5);
-  doc.line(marginX, headerBottom, pageWidth - marginX, headerBottom);
-  doc.setDrawColor(...goldSoft);
-  doc.setLineWidth(0.15);
-  doc.line(marginX, headerBottom + 0.8, pageWidth - marginX, headerBottom + 0.8);
-  columnY.fill(headerBottom + 6);
+    // Gold double rule closing the header, then columns start below the taller of text / QR.
+    const headerBottom = Math.max(hy + 3.5, qrBottom);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, headerBottom, pageWidth - marginX, headerBottom);
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.15);
+    doc.line(marginX, headerBottom + 0.8, pageWidth - marginX, headerBottom + 0.8);
+    columnY.fill(headerBottom + 6);
+  };
+
+  drawFrame();
+  drawFullHeader();
 
   // ---- Section headings & table blocks ---------------------------------------------------
   const drawSectionHeading = (label: string) => {
@@ -356,8 +364,21 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     { label: t('export.ungroupedHeading'), tables: sortedTables.filter((tb) => !tb.side) },
   ];
 
+  // Each part opens on its own fresh, full-header page (the first part reuses page 1), so the
+  // groom, bride and unseated lists can each be printed as a stand-alone stack.
+  let firstPart = true;
+  const startPart = () => {
+    if (!firstPart) {
+      doc.addPage();
+      drawFrame();
+      drawFullHeader();
+    }
+    firstPart = false;
+  };
+
   for (const section of sections) {
     if (section.tables.length === 0) continue;
+    startPart();
     drawSectionHeading(section.label);
     for (const table of section.tables) {
       const guests = guestsByTable.get(table.id) ?? [];
@@ -371,6 +392,7 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
   }
 
   if (unseated.length) {
+    startPart();
     drawSectionHeading(t('unseated.title'));
     drawBlock(t('export.unseatedHeading', { count: unseated.length }), unseated);
   }

@@ -11,7 +11,7 @@ A web app for planning wedding (or any event) table seating from a guest-list JS
 - **Search**: filter by name, surname, or table name/number.
 - **Invitation**: fill in bride & groom, venue, location, date/time, a schedule, and a message to guests, then download a print-ready **invitation PDF** styled after a classic gold-framed wedding card. The invitation deliberately carries no QR code — it shouldn't expose the whole guest list to whoever receives it.
 - **Share & QR**: share the whole event via a link (no server — the state travels in the URL), or show a **QR code** guests can scan. Links use a compact, index-based encoding of the seating state, which is roughly 3× smaller than the raw JSON — enough to fit a ~200-guest list into a single QR code. The seating PDF carries this share QR; lists that still exceed a QR's capacity fall back to the copy-link option automatically.
-- **Export**: JSON (full seating data, re-importable), PDF (printable seating chart — a gold-framed cream sheet that opens with a full-width header showing the couple's names, venue, date and a share QR code, with the seating list flowing beneath it in three columns), CSV (spreadsheet-friendly).
+- **Export**: JSON (full seating data, re-importable), PDF (printable seating chart — a gold-framed cream sheet where each part (groom, bride, unseated) begins on its own page under a full-width header showing the couple's names, venue, date and a share QR code, with each part's tables flowing in three columns so the parts can be printed separately), CSV (spreadsheet-friendly).
 - **Persistence**: seating state is saved to `localStorage` automatically.
 
 ## Development
