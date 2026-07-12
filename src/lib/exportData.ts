@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { EventState, Guest, Table } from '../types';
+import type { EventState, Guest, Table, TableTag } from '../types';
 import { tableDisplayName, type Translator } from './tableDisplay';
 
 function downloadBlob(content: BlobPart, filename: string, type: string): void {
@@ -28,6 +28,12 @@ function sideLabel(table: Table | undefined, t: Translator): string {
   return t(`tables.side.${table.side}`);
 }
 
+/** Labels of the custom tags applied to a table, in their defined order. */
+function tagLabels(table: Table | undefined, tagsById: Map<string, TableTag>): string[] {
+  if (!table?.tagIds) return [];
+  return table.tagIds.map((id) => tagsById.get(id)?.label).filter((label): label is string => !!label);
+}
+
 function rsvpLabel(g: Guest, t: Translator): string {
   if (g.rsvp === 'confirmed') return t('rsvp.confirmed');
   if (g.rsvp === 'declined') return t('rsvp.declined');
@@ -41,12 +47,14 @@ export function exportAsJson(state: EventState): void {
 export function exportAsCsv(state: EventState, t: Translator): void {
   const tableById = new Map(state.tables.map((tb) => [tb.id, tb]));
   const guestById = new Map(state.guests.map((g) => [g.id, g]));
+  const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
   const header = [
     t('export.fields.name'),
     t('export.fields.surname'),
     t('export.fields.table'),
     t('export.fields.capacity'),
     t('export.fields.side'),
+    t('export.fields.tags'),
     t('export.fields.rsvp'),
     t('export.fields.linkedWith'),
     t('export.fields.notes'),
@@ -66,6 +74,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
         g.tableId ? (table ? tableDisplayName(table, t) : t('export.fields.unknownTable')) : t('export.fields.unseated'),
         table ? String(table.capacity) : '',
         sideLabel(table, t),
+        tagLabels(table, tagsById).join('; '),
         rsvpLabel(g, t),
         linked,
         g.notes ?? '',
@@ -79,6 +88,7 @@ export function exportAsCsv(state: EventState, t: Translator): void {
 
 export function exportAsPdf(state: EventState, t: Translator): void {
   const doc = new jsPDF();
+  const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const marginX = 10;
@@ -199,7 +209,10 @@ export function exportAsPdf(state: EventState, t: Translator): void {
     for (const table of section.tables) {
       const guests = guestsByTable.get(table.id) ?? [];
       const side = sideLabel(table, t);
-      const heading = `${tableDisplayName(table, t)}${side ? ` (${side})` : ''} — ${guests.length}/${table.capacity}`;
+      const tags = tagLabels(table, tagsById);
+      const heading = `${tableDisplayName(table, t)}${side ? ` (${side})` : ''}${
+        tags.length ? ` · ${tags.join(', ')}` : ''
+      } — ${guests.length}/${table.capacity}`;
       drawBlock(heading, guests);
     }
   }

@@ -167,6 +167,7 @@ export const en = {
       capacity: 'Table capacity',
       notes: 'Notes',
       side: 'Side',
+      tags: 'Tags',
       unseated: 'Unseated',
       unknownTable: 'Unknown table',
       linkedWith: 'Linked with',
