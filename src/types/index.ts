@@ -50,6 +50,9 @@ export interface Table {
 
 export type TableNamingMode = 'letters' | 'numbers';
 
+/** Visual style chosen for the printable guest invitation. */
+export type InvitationTemplate = 'classic' | 'modern' | 'romantic';
+
 /** A single line on the invitation's schedule (e.g. "16:00 — Ceremony"). */
 export interface AgendaItem {
   id: string;
@@ -79,6 +82,8 @@ export interface EventDetails {
   agenda?: AgendaItem[];
   /** Free-form message to guests, e.g. "We would be honored by your presence." */
   invitationNote?: string;
+  /** Which visual design the printable invitation uses. Defaults to 'classic'. */
+  invitationTemplate?: InvitationTemplate;
 }
 
 export interface EventState {

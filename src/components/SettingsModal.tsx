@@ -24,14 +24,15 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, icon, children }: { title: string; icon?: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+    <section className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 p-4">
+      <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+        {icon && <span className="text-sm not-italic">{icon}</span>}
         {title}
       </h3>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -184,33 +185,38 @@ export function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6 max-h-[88vh] overflow-y-auto"
+        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">⚙️ {t('settings.title')}</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-lg">⚙️</span>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('settings.title')}</h2>
+          </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+            className="w-9 h-9 rounded-xl bg-white/70 dark:bg-slate-800 text-slate-500 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-colors"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
         </div>
 
-        <Section title={t('invitation.title')}>
+        <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
+        <Section title={t('invitation.title')} icon="💌">
           <button onClick={onEditInvitation} className={actionButton}>
-            💌 {t('invitation.editDetails')}
+            {t('invitation.editDetails')}
             <span className="block text-xs font-normal text-slate-400 dark:text-slate-500 mt-0.5">
               {t('invitation.editDetailsDesc')}
             </span>
           </button>
         </Section>
 
-        <Section title={t('settings.view')}>
+        <Section title={t('settings.view')} icon="🪑">
           <div className="space-y-3">
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">{t('settings.layout')}</p>
@@ -237,7 +243,7 @@ export function SettingsModal({
           </div>
         </Section>
 
-        <Section title={t('tags.title')}>
+        <Section title={t('tags.title')} icon="🏷️">
           <TagManager
             systemTags={systemTags}
             tags={tags}
@@ -247,7 +253,7 @@ export function SettingsModal({
           />
         </Section>
 
-        <Section title={t('settings.attendance')}>
+        <Section title={t('settings.attendance')} icon="✅">
           <div className="space-y-2">
             <button onClick={onMarkAllComing} className={actionButton}>
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2" />
@@ -260,7 +266,7 @@ export function SettingsModal({
           </div>
         </Section>
 
-        <Section title={t('settings.appearance')}>
+        <Section title={t('settings.appearance')} icon="🎨">
           <div className="space-y-3">
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">{t('settings.language')}</p>
@@ -289,7 +295,7 @@ export function SettingsModal({
           </div>
         </Section>
 
-        <Section title={t('settings.data')}>
+        <Section title={t('settings.data')} icon="🗄️">
           <div className="space-y-2">
             <button onClick={onUnseatAll} className={actionButton}>
               {t('settings.unseatAll')}
@@ -302,6 +308,7 @@ export function SettingsModal({
             </button>
           </div>
         </Section>
+        </div>
       </div>
     </div>
   );

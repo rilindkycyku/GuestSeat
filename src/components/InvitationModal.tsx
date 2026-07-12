@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { AgendaItem, EventDetails, EventState } from '../types';
+import type { AgendaItem, EventDetails, EventState, InvitationTemplate } from '../types';
 import { makeId } from '../lib/importGuests';
-import { exportInvitationPdf } from '../lib/exportData';
+import { exportInvitationPdf, INVITATION_TEMPLATES } from '../lib/invitationPdf';
 import { useLanguage } from '../hooks/useLanguage';
 
 /**
@@ -25,6 +25,7 @@ export function InvitationModal({
   const { t, lang } = useLanguage();
   const details = state.details ?? {};
   const agenda = details.agenda ?? [];
+  const template: InvitationTemplate = details.invitationTemplate ?? 'classic';
   const [busy, setBusy] = useState(false);
 
   const fieldClass =
@@ -157,6 +158,7 @@ export function InvitationModal({
               >
                 + {t('invitation.addAgendaItem')}
               </button>
+              <p className="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">{t('invitation.timelineHint')}</p>
             </div>
           </div>
 
@@ -169,6 +171,51 @@ export function InvitationModal({
               rows={3}
               className={`${fieldClass} resize-none`}
             />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('invitation.design')}</label>
+            <div className="grid grid-cols-3 gap-2">
+              {INVITATION_TEMPLATES.map((tpl) => {
+                const active = tpl.id === template;
+                const [bg, accent, ink] = tpl.swatch;
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => onChange({ invitationTemplate: tpl.id })}
+                    className={`group rounded-xl border p-2 text-left transition-all ${
+                      active
+                        ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/30'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div
+                      className="h-14 rounded-lg border border-black/5 flex flex-col items-center justify-center gap-1 mb-1.5 overflow-hidden"
+                      style={{ backgroundColor: bg }}
+                    >
+                      <span className="text-[8px] font-serif leading-none" style={{ color: ink }}>
+                        A &amp; B
+                      </span>
+                      <span className="block h-px w-6" style={{ backgroundColor: accent }} />
+                      <span className="flex gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent, opacity: 0.55 }} />
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent, opacity: 0.3 }} />
+                      </span>
+                    </div>
+                    <span
+                      className={`block text-[11px] font-semibold ${
+                        active ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {t(tpl.labelKey)}
+                    </span>
+                    <span className="block text-[10px] text-slate-400 dark:text-slate-500 leading-tight">{t(tpl.descKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

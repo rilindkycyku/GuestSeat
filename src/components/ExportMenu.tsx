@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EventState } from '../types';
-import { exportAsCsv, exportAsJson, exportAsPdf } from '../lib/exportData';
+import { exportAsExcel, exportAsJson, exportAsPdf } from '../lib/exportData';
 import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -129,12 +129,12 @@ export function ExportMenu({
           </button>
           <button
             onClick={() => {
-              exportAsCsv(state, t);
+              void exportAsExcel(state, t, lang);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
           >
-            {t('export.csv')} <span className="text-slate-400 text-xs block">{t('export.csvDesc')}</span>
+            {t('export.excel')} <span className="text-slate-400 text-xs block">{t('export.excelDesc')}</span>
           </button>
         </div>
       )}
