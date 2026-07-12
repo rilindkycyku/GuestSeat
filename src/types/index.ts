@@ -80,8 +80,14 @@ export interface EventDetails {
   time?: string;
   /** Ordered schedule shown on the invitation. */
   agenda?: AgendaItem[];
+  /** Warm opening paragraph shown at the very top of the invitation, above the names. */
+  introMessage?: string;
   /** Free-form message to guests, e.g. "We would be honored by your presence." */
   invitationNote?: string;
+  /** Host/family sign-off, e.g. "Familja Kyçyku" — rendered as "With respect, …". */
+  hostFamily?: string;
+  /** Phone number guests call to confirm attendance (RSVP). */
+  rsvpPhone?: string;
   /** Which visual design the printable invitation uses. Defaults to 'classic'. */
   invitationTemplate?: InvitationTemplate;
 }
