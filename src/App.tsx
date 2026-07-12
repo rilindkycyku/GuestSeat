@@ -27,6 +27,7 @@ import {
   type ViewMode,
   type TableColumns,
 } from './lib/storage';
+import { getDemoEventState } from './lib/demoEvent';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { TAG_COLORS } from './lib/tagColors';
@@ -410,7 +411,10 @@ export default function App() {
 
   if (!state) {
     return (
-      <Onboarding onImported={(guests, tables, name) => loadFromImport(guests, tables, name)} />
+      <Onboarding
+        onImported={(guests, tables, name) => loadFromImport(guests, tables, name)}
+        onLoadDemo={() => loadSharedState(getDemoEventState())}
+      />
     );
   }
 

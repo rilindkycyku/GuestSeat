@@ -63,7 +63,8 @@ export const sq = {
     chooseFile: 'Zgjidh skedarin…',
     viewExample: 'Shiko shembullin',
     downloadExample: 'Shkarko shembullin',
-    tryExample: '…ose provojeni me listën shembull',
+    tryDemo: 'Ngarko një listë demo',
+    tryDemoHint: 'Shihni një shembull të plotë — tavolina, etiketa, çifte të lidhura, të ftuar të paulur dhe detajet e ftesës — pa asnjë konfigurim.',
     exampleTitle: 'Formati shembull',
     exampleExplanation:
       'Çdo çelës bëhet një <strong>tavolinë</strong> (p.sh. "A" → Tavolina A), dhe emrat e saj ulen automatikisht në atë tavolinë. Vetëm <strong>emri</strong> është i detyrueshëm — mbiemrat janë opsionalë dhe mund të shtohen më vonë. Funksionon edhe një varg i thjeshtë emrash, ose objekte si {{sample}} (këto vijnë të paulura).',

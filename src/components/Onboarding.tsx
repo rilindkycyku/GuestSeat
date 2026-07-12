@@ -8,9 +8,11 @@ import type { Guest, Table, TableNamingMode } from '../types';
 
 interface OnboardingProps {
   onImported: (guests: Guest[], tables: Table[], eventName?: string) => void;
+  /** Load the fully-featured demo event (tags, sides, links, RSVP, invitation details). */
+  onLoadDemo: () => void;
 }
 
-export function Onboarding({ onImported }: OnboardingProps) {
+export function Onboarding({ onImported, onLoadDemo }: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [showExample, setShowExample] = useState(false);
@@ -66,15 +68,6 @@ export function Onboarding({ onImported }: OnboardingProps) {
     URL.revokeObjectURL(url);
   }, []);
 
-  const loadExample = useCallback(() => {
-    setError(null);
-    const { guests, tables, eventName } = parseImportedJson(
-      JSON.parse(EXAMPLE_JSON_TEXT),
-      t('tables.namePrefix'),
-      namingMode
-    );
-    onImported(guests, tables, eventName ?? t('header.defaultEventName'));
-  }, [onImported, t, namingMode]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 relative">
@@ -174,9 +167,13 @@ export function Onboarding({ onImported }: OnboardingProps) {
         )}
 
         <div className="mt-6 text-center">
-          <button onClick={loadExample} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-            {t('onboarding.tryExample')}
+          <button
+            onClick={onLoadDemo}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+          >
+            ✨ {t('onboarding.tryDemo')}
           </button>
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t('onboarding.tryDemoHint')}</p>
         </div>
       </div>
 
