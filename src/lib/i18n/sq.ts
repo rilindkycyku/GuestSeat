@@ -156,10 +156,16 @@ export const sq = {
   addGuest: {
     title: 'Shto të ftuar',
   },
+  eventDetails: {
+    title: 'Detajet e eventit',
+    editDetails: 'Ndrysho detajet e eventit',
+    editDetailsDesc: 'Nusja & dhëndri, salla, vendndodhja, data & ora',
+    hint: 'Këto detaje përdoren edhe nga ftesa e printueshme — mund t\'i plotësoni edhe nëse nuk printoni asnjë ftesë.',
+  },
   invitation: {
     title: 'Ftesa',
-    editDetails: 'Ndrysho ftesën & detajet',
-    editDetailsDesc: 'Nusja & dhëndri, salla, data, programi',
+    editDetails: 'Ndrysho ftesën',
+    editDetailsDesc: 'Mesazhi lart, programi, shënimi, dizajni & PDF',
     intro: 'Së bashku me familjet e tyre',
     brideName: 'Nusja',
     groomName: 'Dhëndri',
@@ -243,6 +249,8 @@ export const sq = {
     pdfDesc: 'Skema e printueshme e vendeve',
     excel: 'Excel',
     excelDesc: 'Tabelë e stilizuar (.xlsx)',
+    eventDetails: 'Detajet e eventit…',
+    eventDetailsDesc: 'Çifti, salla, data & ora',
     invitation: 'Ftesa…',
     invitationDesc: 'Ftesë për të ftuarit me detaje',
     qr: 'Kod QR',
