@@ -32,7 +32,7 @@ import { getDemoEventState } from './lib/demoEvent';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { TAG_COLORS } from './lib/tagColors';
-import type { Guest, Table, TableSide, TableTag } from './types';
+import type { EventState, Guest, Table, TableSide, TableTag } from './types';
 
 /** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
 type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
@@ -43,6 +43,7 @@ export default function App() {
     loadFromImport,
     mergeFromImport,
     loadSharedState,
+    restoreSnapshot,
     resetAll,
     setEventName,
     updateEventDetails,
@@ -68,7 +69,8 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; action?: { label: string; onClick: () => void } } | null>(null);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,9 +102,18 @@ export default function App() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   );
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 3000);
+  const toastTimer = useRef<number | undefined>(undefined);
+  const showToast = (msg: string, action?: { label: string; onClick: () => void }) => {
+    window.clearTimeout(toastTimer.current);
+    setToast({ msg, action });
+    // Give people longer to reach for an Undo than for a plain confirmation.
+    toastTimer.current = window.setTimeout(() => setToast(null), action ? 6000 : 3000);
+  };
+
+  // A destructive action + an "Undo" that rewinds to the snapshot captured just before it.
+  const runWithUndo = (snapshot: EventState | null, act: () => void, msg: string) => {
+    act();
+    showToast(msg, snapshot ? { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) } : undefined);
   };
 
   const tableById = useMemo(() => new Map((state?.tables ?? []).map((tb) => [tb.id, tb])), [state]);
@@ -384,8 +395,8 @@ export default function App() {
       message: t('settings.markAllComingConfirm', { count: guestCount }),
       confirmLabel: t('settings.markAllComing'),
       onConfirm: () => {
-        setAllRsvp('confirmed');
-        showToast(t('settings.markedAllComing'));
+        const snapshot = state;
+        runWithUndo(snapshot, () => setAllRsvp('confirmed'), t('settings.markedAllComing'));
       },
     });
   };
@@ -395,8 +406,8 @@ export default function App() {
       message: t('settings.markAllPendingConfirm', { count: guestCount }),
       confirmLabel: t('settings.markAllPending'),
       onConfirm: () => {
-        setAllRsvp(undefined);
-        showToast(t('settings.markedAllPending'));
+        const snapshot = state;
+        runWithUndo(snapshot, () => setAllRsvp(undefined), t('settings.markedAllPending'));
       },
     });
   };
@@ -407,13 +418,14 @@ export default function App() {
       confirmLabel: t('settings.unseatAll'),
       danger: true,
       onConfirm: () => {
-        unseatAll();
-        showToast(t('settings.unseatedAll'));
+        const snapshot = state;
+        runWithUndo(snapshot, () => unseatAll(), t('settings.unseatedAll'));
       },
     });
   };
 
   const handleReset = () => {
+    const snapshot = state;
     askConfirm({
       message: t('header.resetConfirm'),
       confirmLabel: t('settings.resetData'),
@@ -421,6 +433,10 @@ export default function App() {
       onConfirm: () => {
         resetAll();
         setSettingsOpen(false);
+        showToast(
+          t('settings.resetData'),
+          snapshot ? { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) } : undefined
+        );
       },
     });
   };
@@ -441,6 +457,25 @@ export default function App() {
     });
   };
 
+  // A single toast that optionally carries an Undo button; reused by both the onboarding and
+  // main screens so an undo after "Reset" (which drops back to onboarding) is still reachable.
+  const toastNode = toast && (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium pl-4 pr-2 py-2 rounded-xl shadow-lg z-50 max-w-[calc(100vw-2rem)]">
+      <span className="truncate">{toast.msg}</span>
+      {toast.action && (
+        <button
+          onClick={() => {
+            toast.action?.onClick();
+            setToast(null);
+          }}
+          className="shrink-0 rounded-lg bg-white/15 dark:bg-slate-900/10 hover:bg-white/25 dark:hover:bg-slate-900/20 px-2.5 py-1 text-indigo-300 dark:text-indigo-600 font-semibold"
+        >
+          {toast.action.label}
+        </button>
+      )}
+    </div>
+  );
+
   if (!state) {
     // A shared list arriving via a QR/share link decodes into a confirm prompt even before any
     // event exists, so the ConfirmModal and toast must render here too — otherwise the prompt is
@@ -453,11 +488,7 @@ export default function App() {
           onStartBlank={() => loadFromImport([], [], t('header.defaultEventName'))}
         />
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
-        {toast && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
-            {toast}
-          </div>
-        )}
+        {toastNode}
       </>
     );
   }
@@ -518,7 +549,7 @@ export default function App() {
             <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
               <button
                 onClick={() => setAddingGuest(true)}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+                className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 shadow-sm shadow-indigo-600/20"
               >
                 {t('header.addGuest')}
               </button>
@@ -584,13 +615,21 @@ export default function App() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('header.searchPlaceholder')}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-10 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-16 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-            {query && matchedIds && (
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-                {matchedIds.size}
-              </span>
+            {query && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {matchedIds && <span className="text-xs text-slate-400 tabular-nums">{matchedIds.size}</span>}
+                <button
+                  onClick={() => setQuery('')}
+                  aria-label={t('header.clearSearch')}
+                  title={t('header.clearSearch')}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
             )}
           </div>
 
@@ -635,6 +674,25 @@ export default function App() {
                   setQrOpen(true);
                   setMenuOpen(false);
                 }}
+              />
+            </div>
+          )}
+
+          {/* Slim seating-progress bar pinned to the header's bottom edge — an at-a-glance sense
+              of how far along the arrangement is without reading the count. */}
+          {totalGuests > 0 && (
+            <div
+              className="mt-2.5 h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={totalSeated}
+              aria-valuemin={0}
+              aria-valuemax={totalGuests}
+              aria-label={t('header.seatedProgress', { seated: totalSeated, total: totalGuests })}
+              title={t('header.seatedProgress', { seated: totalSeated, total: totalGuests })}
+            >
+              <div
+                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                style={{ width: `${Math.round((totalSeated / totalGuests) * 100)}%` }}
               />
             </div>
           )}
@@ -803,6 +861,48 @@ export default function App() {
         </main>
       </div>
 
+      {/* Mobile speed-dial: the two most common actions one thumb-tap away, so they aren't buried
+          behind the ☰ menu on phones (where this app mostly lives). */}
+      {quickAddOpen && (
+        <div className="sm:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
+      )}
+      <div className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+        {quickAddOpen && (
+          <>
+            <button
+              onClick={() => {
+                setAddingGuest(true);
+                setQuickAddOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 pl-3 pr-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              <span aria-hidden>🧑</span>
+              {t('header.addGuest')}
+            </button>
+            <button
+              onClick={() => {
+                addTable(t('tables.namePrefix'));
+                setQuickAddOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 pl-3 pr-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              <span aria-hidden>🪑</span>
+              {t('header.addTable')}
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => setQuickAddOpen((o) => !o)}
+          aria-label={t('header.quickAdd')}
+          aria-expanded={quickAddOpen}
+          className={`w-14 h-14 rounded-full bg-indigo-600 text-white text-3xl leading-none shadow-lg shadow-indigo-600/30 flex items-center justify-center hover:bg-indigo-500 transition-transform ${
+            quickAddOpen ? 'rotate-45' : ''
+          }`}
+        >
+          +
+        </button>
+      </div>
+
       {editingGuest && (
         <GuestEditorModal
           guest={editingGuest}
@@ -819,8 +919,12 @@ export default function App() {
               confirmLabel: t('common.delete'),
               danger: true,
               onConfirm: () => {
-                removeGuest(editingGuest.id);
+                const snapshot = state;
+                const name = editingGuest.surname
+                  ? `${editingGuest.name} ${editingGuest.surname}`
+                  : editingGuest.name;
                 setEditingGuestId(null);
+                runWithUndo(snapshot, () => removeGuest(editingGuest.id), t('guestEditor.deleted', { name }));
               },
             })
           }
@@ -888,11 +992,7 @@ export default function App() {
         />
       )}
 
-      {toast && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
-          {toast}
-        </div>
-      )}
+      {toastNode}
       <Analytics />
     </DndContext>
   );

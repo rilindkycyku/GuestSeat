@@ -9,6 +9,7 @@ export const sq = {
     add: 'Shto',
     download: 'Shkarko',
     optional: 'opsionale',
+    undo: 'Zhbëj',
   },
   rsvp: {
     label: 'Pjesëmarrja',
@@ -93,6 +94,9 @@ export const sq = {
     resetConfirm: 'Të rikthehet lista fillestare e të ftuarve? Ndryshimet tuaja do të humbasin.',
     menu: 'Menyja',
     renameHint: "Kliko për ta riemërtuar",
+    clearSearch: 'Pastro kërkimin',
+    quickAdd: 'Shto shpejt',
+    seatedProgress: '{{seated}} nga {{total}} të ulur',
   },
   tables: {
     namePrefix: 'Tavolina',
@@ -146,6 +150,7 @@ export const sq = {
     tags: 'Grupet',
     tagsHint: 'Etiketo të ftuarin sipas grupit — p.sh. Familja e nuses, Shokët e dhëndrit. E dobishme kur shumë të ftuar janë në një tavolinë të gjatë.',
     deleteConfirm: 'Të hiqet {{name}} nga lista?',
+    deleted: '{{name}} u hoq.',
     linkedGuests: 'Të lidhur',
     linkedGuestsHint: "Lidhni të ftuarit që doni t'i uleni së bashku — çifte, familje, shoqërues. Mund të lidhen vetëm të ftuar që janë tashmë në këtë tavolinë, ose pa vend; një i ftuar pa vend ulet automatikisht këtu.",
     searchToLink: "Kërko të ftuar për t'i lidhur…",

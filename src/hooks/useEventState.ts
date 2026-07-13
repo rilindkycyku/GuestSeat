@@ -41,6 +41,13 @@ export function useEventState() {
     setState({ ...shared, updatedAt: new Date().toISOString() });
   }, []);
 
+  // Restore a previously captured snapshot verbatim — the backbone of the undo toasts shown
+  // after destructive actions (unseat all, reset, mark all, delete guest). Unlike loadSharedState
+  // this keeps the original updatedAt so an undo truly rewinds to the prior state.
+  const restoreSnapshot = useCallback((snapshot: EventState) => {
+    setState(snapshot);
+  }, []);
+
   const setEventName = useCallback((eventName: string) => {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
   }, []);
@@ -289,6 +296,7 @@ export function useEventState() {
     loadFromImport,
     mergeFromImport,
     loadSharedState,
+    restoreSnapshot,
     resetAll,
     setEventName,
     updateEventDetails,

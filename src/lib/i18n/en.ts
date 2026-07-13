@@ -7,6 +7,7 @@ export const en = {
     add: 'Add',
     download: 'Download',
     optional: 'optional',
+    undo: 'Undo',
   },
   rsvp: {
     label: 'Attendance',
@@ -91,6 +92,9 @@ export const en = {
     resetConfirm: 'Restore the original guest list? Your changes will be lost.',
     menu: 'Menu',
     renameHint: 'Click to rename',
+    clearSearch: 'Clear search',
+    quickAdd: 'Quick add',
+    seatedProgress: '{{seated}} of {{total}} seated',
   },
   tables: {
     namePrefix: 'Table',
@@ -144,6 +148,7 @@ export const en = {
     tags: 'Groups',
     tagsHint: "Tag this guest by group — e.g. Bride's family, Groom's friends. Handy when many guests share one long table.",
     deleteConfirm: 'Remove {{name}} from the list?',
+    deleted: '{{name}} removed.',
     linkedGuests: 'Linked guests',
     linkedGuestsHint: 'Link guests you want seated together — couples, family, plus-ones. Only guests already at this table, or unseated, can be linked; an unseated guest is seated here automatically.',
     searchToLink: 'Search guests to link…',
