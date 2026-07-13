@@ -537,7 +537,6 @@ export default function App() {
               <ExportMenu
                 state={state}
                 onToast={showToast}
-                onShowEventDetails={() => setEventDetailsOpen(true)}
                 onShowInvitation={() => setInvitationOpen(true)}
                 onShowQr={() => setQrOpen(true)}
               />
@@ -628,10 +627,6 @@ export default function App() {
                 state={state}
                 fullWidth
                 onToast={showToast}
-                onShowEventDetails={() => {
-                  setEventDetailsOpen(true);
-                  setMenuOpen(false);
-                }}
                 onShowInvitation={() => {
                   setInvitationOpen(true);
                   setMenuOpen(false);

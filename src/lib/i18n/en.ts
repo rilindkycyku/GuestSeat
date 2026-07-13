@@ -18,6 +18,7 @@ export const en = {
   },
   settings: {
     title: 'Settings',
+    content: 'Event & invitation',
     view: 'Table view',
     layout: 'Layout',
     viewList: 'List',

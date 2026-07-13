@@ -37,6 +37,37 @@ function Section({ title, icon, children }: { title: string; icon?: string; chil
   );
 }
 
+/** A tappable navigation row: icon tile, title, description and a chevron affordance. */
+function NavRow({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors text-left"
+    >
+      <span className="shrink-0 w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-lg">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</span>
+        <span className="block text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">{description}</span>
+      </span>
+      <span className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
+        ›
+      </span>
+    </button>
+  );
+}
+
 function Segmented<T extends string>({
   value,
   options,
@@ -209,22 +240,21 @@ export function SettingsModal({
         </div>
 
         <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
-        <Section title={t('eventDetails.title')} icon="🗓️">
-          <button onClick={onEditEventDetails} className={actionButton}>
-            {t('eventDetails.editDetails')}
-            <span className="block text-xs font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-              {t('eventDetails.editDetailsDesc')}
-            </span>
-          </button>
-        </Section>
-
-        <Section title={t('invitation.title')} icon="💌">
-          <button onClick={onEditInvitation} className={actionButton}>
-            {t('invitation.editDetails')}
-            <span className="block text-xs font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-              {t('invitation.editDetailsDesc')}
-            </span>
-          </button>
+        <Section title={t('settings.content')} icon="✨">
+          <div className="space-y-2">
+            <NavRow
+              icon="🗓️"
+              title={t('eventDetails.editDetails')}
+              description={t('eventDetails.editDetailsDesc')}
+              onClick={onEditEventDetails}
+            />
+            <NavRow
+              icon="💌"
+              title={t('invitation.editDetails')}
+              description={t('invitation.editDetailsDesc')}
+              onClick={onEditInvitation}
+            />
+          </div>
         </Section>
 
         <Section title={t('settings.view')} icon="🪑">

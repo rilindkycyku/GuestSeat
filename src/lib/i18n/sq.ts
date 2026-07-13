@@ -20,6 +20,7 @@ export const sq = {
   },
   settings: {
     title: 'Cilësimet',
+    content: 'Eventi & ftesa',
     view: 'Pamja e tavolinave',
     layout: 'Paraqitja',
     viewList: 'Listë',
