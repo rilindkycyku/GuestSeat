@@ -123,19 +123,33 @@ export function FloorTable({
   // Linked guests sit next to each other around the table; the name list uses the same order.
   const orderedGuests = useMemo(() => groupLinkedWithin(guests).flat(), [guests]);
 
+  const isLong = table.shape === 'long';
   const seatCount = Math.max(table.capacity, guests.length);
-  const seats = useMemo(
-    () =>
-      Array.from({ length: seatCount }, (_, i) => {
-        const angle = (2 * Math.PI * i) / seatCount - Math.PI / 2;
+  const seats = useMemo(() => {
+    if (isLong) {
+      // Long banquet ("imperial") table: guests seated down both long sides,
+      // facing each other. Split the seats between a top row and a bottom row.
+      const topCount = Math.ceil(seatCount / 2);
+      return Array.from({ length: seatCount }, (_, i) => {
+        const onTop = i < topCount;
+        const rowCount = onTop ? topCount : seatCount - topCount;
+        const idx = onTop ? i : i - topCount;
         return {
-          x: 50 + 42 * Math.cos(angle),
-          y: 50 + 42 * Math.sin(angle),
+          x: rowCount === 0 ? 50 : 6 + (88 * (idx + 0.5)) / rowCount,
+          y: onTop ? 20 : 80,
           guest: orderedGuests[i],
         };
-      }),
-    [seatCount, orderedGuests]
-  );
+      });
+    }
+    return Array.from({ length: seatCount }, (_, i) => {
+      const angle = (2 * Math.PI * i) / seatCount - Math.PI / 2;
+      return {
+        x: 50 + 42 * Math.cos(angle),
+        y: 50 + 42 * Math.sin(angle),
+        guest: orderedGuests[i],
+      };
+    });
+  }, [isLong, seatCount, orderedGuests]);
 
   const rsvpTitle = (g: Guest) =>
     g.rsvp === 'confirmed' ? ` — ${t('rsvp.confirmed')}` : g.rsvp === 'declined' ? ` — ${t('rsvp.declined')}` : '';
@@ -147,6 +161,8 @@ export function FloorTable({
       data-table-id={table.id}
       data-table-side={table.side ?? ''}
       className={`flex flex-col rounded-2xl border-2 p-3 transition-all bg-white dark:bg-slate-900 shadow-sm hover:shadow-md scroll-mt-24 ${
+        isLong ? 'col-span-full' : ''
+      } ${
         isOver
           ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30'
           : highlighted
@@ -182,11 +198,17 @@ export function FloorTable({
         </div>
       </div>
 
-      <div className="relative aspect-square w-full max-w-[220px] mx-auto my-2">
+      <div
+        className={`relative w-full my-2 ${
+          isLong ? 'h-28 sm:h-32' : 'aspect-square max-w-[220px] mx-auto'
+        }`}
+      >
         {/* The table itself */}
         <div
           title={displayName}
-          className={`absolute inset-[27%] rounded-full border-4 flex flex-col items-center justify-center text-center px-1.5 ${
+          className={`absolute flex flex-col items-center justify-center text-center px-1.5 border-4 ${
+            isLong ? 'inset-x-[2%] top-[36%] h-[28%] rounded-2xl' : 'inset-[27%] rounded-full'
+          } ${
             table.side ? SIDE_RING[table.side] : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
           }`}
         >
@@ -232,7 +254,11 @@ export function FloorTable({
 
       {/* Readable guest list — always visible, no clicking required */}
       {orderedGuests.length > 0 ? (
-        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-t border-slate-100 dark:border-slate-800 pt-2">
+        <div
+          className={`grid gap-x-2 gap-y-0.5 border-t border-slate-100 dark:border-slate-800 pt-2 ${
+            isLong ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2'
+          }`}
+        >
           {orderedGuests.map((g) => {
             const isMatch = matchedIds ? matchedIds.has(g.id) : false;
             const badge = linkBadges.get(g.id);

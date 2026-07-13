@@ -21,6 +21,15 @@ export interface Guest {
 
 export type TableSide = 'groom' | 'bride';
 
+/**
+ * Physical shape of a table on the floor plan.
+ * - `round`  — the default: seats arranged in a circle.
+ * - `long`   — a long banquet / "imperial" table with guests seated down both
+ *   long sides facing each other. Common at Albanian engagements and smaller
+ *   weddings where everyone shares one long table.
+ */
+export type TableShape = 'round' | 'long';
+
 /** Preset color a custom tag can use. Maps to Tailwind classes in lib/tagColors.ts. */
 export type TagColor = 'rose' | 'amber' | 'emerald' | 'sky' | 'violet' | 'orange' | 'teal' | 'slate';
 
@@ -38,6 +47,8 @@ export interface Table {
   capacity: number;
   /** Which side of the wedding this table belongs to, if categorized. */
   side?: TableSide;
+  /** Table shape on the floor plan. Absent means `round` (the default). */
+  shape?: TableShape;
   /** IDs of custom tags (see EventState.tags) applied to this table. */
   tagIds?: string[];
   /**

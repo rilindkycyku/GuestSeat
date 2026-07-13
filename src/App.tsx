@@ -803,7 +803,7 @@ export default function App() {
       {capacityTable && (
         <CapacityModal
           table={capacityTable}
-          onSave={(capacity) => updateTable(capacityTable.id, { capacity })}
+          onSave={(capacity, shape) => updateTable(capacityTable.id, { capacity, shape })}
           onClose={() => setCapacityTableId(null)}
         />
       )}
