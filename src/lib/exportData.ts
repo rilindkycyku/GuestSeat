@@ -580,6 +580,11 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     }
     const x = colX(colIndex);
     const startY = columnY[colIndex];
+    // Re-assert the heading font here: if the fit check above triggered newPage(), the running
+    // header left the font as a large serif title, which would otherwise render this heading
+    // oversized and spill it across into the next column.
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(...ink);
     doc.text(headingLines, x, startY + 3);
     doc.setFont('helvetica', 'normal');

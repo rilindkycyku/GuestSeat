@@ -899,8 +899,9 @@ export default function App() {
         </main>
       </div>
 
-      {/* Mobile speed-dial: the two most common actions one thumb-tap away, so they aren't buried
-          behind the ☰ menu on phones (where this app mostly lives). */}
+      {/* Mobile speed-dial: the most common actions one thumb-tap away — add guest/table plus the
+          day-of check-in and share QR — so they aren't buried behind the ☰ menu on phones (where
+          this app mostly lives). */}
       {quickAddOpen && (
         <div className="sm:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
       )}
@@ -926,6 +927,26 @@ export default function App() {
             >
               <span aria-hidden>🪑</span>
               {t('header.addTable')}
+            </button>
+            <button
+              onClick={() => {
+                setCheckInOpen(true);
+                setQuickAddOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 pl-3 pr-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              <span aria-hidden>🎉</span>
+              {t('checkin.title')}
+            </button>
+            <button
+              onClick={() => {
+                setQrOpen(true);
+                setQuickAddOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 pl-3 pr-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              <span aria-hidden>📱</span>
+              {t('export.qr')}
             </button>
           </>
         )}
