@@ -39,6 +39,11 @@ export type IconKind =
   | 'cake'
   | 'rings'
   | 'music'
+  | 'dance'
+  | 'mic'
+  | 'gift'
+  | 'candle'
+  | 'doves'
   | 'fireworks'
   | 'heart';
 
@@ -57,8 +62,13 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
   if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
+  if (has('urim', 'congrat', 'felic', 'fjalim', 'speech', 'intervist', 'interview', 'mikrofon', 'wish', 'greet', 'urimet')) return 'mic';
+  if (has('dhurat', 'zarf', 'gift', 'envelope', 'bakshish')) return 'gift';
+  if (has('qiri', 'qirinj', 'candle')) return 'candle';
+  if (has('pëllumb', 'pellumb', 'dove', 'zog', 'bird')) return 'doves';
+  if (has('vall', 'vals', 'dance', 'danc', 'waltz', 'kërcim', 'kercim', 'first')) return 'dance';
   if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
-  if (has('dance', 'valle', 'kërcim', 'kercim', 'party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim', 'first')) return 'music';
+  if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim')) return 'music';
   return 'heart';
 }
 
@@ -177,6 +187,51 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
       doc.circle(cx - r * 0.2, cy + r * 0.6, r * 0.34, 'F'); // note head
       doc.line(cx + r * 0.14, cy + r * 0.6, cx + r * 0.14, cy - r * 0.85); // stem
       doc.lines([[r * 0.3, r * 0.12, r * 0.5, r * 0.34, r * 0.44, r * 0.72]], cx + r * 0.14, cy - r * 0.85, [1, 1], 'S'); // flag (bézier)
+      break;
+    }
+    case 'mic': {
+      doc.roundedRect(cx - r * 0.4, cy - r, r * 0.8, r * 1.15, r * 0.4, r * 0.4, 'S'); // capsule head
+      doc.line(cx - r * 0.24, cy - r * 0.62, cx + r * 0.24, cy - r * 0.62); // grille lines
+      doc.line(cx - r * 0.24, cy - r * 0.32, cx + r * 0.24, cy - r * 0.32);
+      doc.lines([[0, r * 0.5, r * 0.45, r * 0.5, r * 0.45, 0]], cx - r * 0.45, cy + r * 0.15, [1, 1], 'S'); // left cradle arc
+      doc.lines([[0, r * 0.5, -r * 0.45, r * 0.5, -r * 0.45, 0]], cx + r * 0.45, cy + r * 0.15, [1, 1], 'S'); // right cradle arc
+      doc.line(cx, cy + r * 0.65, cx, cy + r); // stand
+      doc.line(cx - r * 0.5, cy + r, cx + r * 0.5, cy + r); // base
+      break;
+    }
+    case 'gift': {
+      doc.rect(cx - r * 0.72, cy - r * 0.1, r * 1.44, r * 1.0, 'S'); // box
+      doc.rect(cx - r * 0.85, cy - r * 0.42, r * 1.7, r * 0.32, 'S'); // lid
+      doc.line(cx, cy - r * 0.42, cx, cy + r * 0.9); // ribbon down the front
+      doc.circle(cx - r * 0.24, cy - r * 0.6, r * 0.2, 'S'); // bow loops
+      doc.circle(cx + r * 0.24, cy - r * 0.6, r * 0.2, 'S');
+      break;
+    }
+    case 'candle': {
+      doc.rect(cx - r * 0.32, cy - r * 0.35, r * 0.64, r * 1.15, 'S'); // candle body
+      doc.line(cx - r * 0.55, cy + r * 0.8, cx + r * 0.55, cy + r * 0.8); // holder plate
+      doc.line(cx, cy - r * 0.35, cx, cy - r * 0.52); // wick
+      doc.setFillColor(...color);
+      doc.triangle(cx - r * 0.2, cy - r * 0.5, cx + r * 0.2, cy - r * 0.5, cx, cy - r * 1.05, 'F'); // flame
+      break;
+    }
+    case 'dance': {
+      // A couple mid-turn: a suited figure and a figure in a flared dress, hands joined.
+      doc.circle(cx - r * 0.52, cy - r * 0.55, r * 0.16, 'S'); // partner head
+      doc.line(cx - r * 0.52, cy - r * 0.39, cx - r * 0.38, cy + r * 0.35); // torso
+      doc.line(cx - r * 0.38, cy + r * 0.35, cx - r * 0.62, cy + r); // leg
+      doc.line(cx - r * 0.38, cy + r * 0.35, cx - r * 0.18, cy + r); // leg
+      doc.circle(cx + r * 0.5, cy - r * 0.55, r * 0.16, 'S'); // bride head
+      doc.triangle(cx + r * 0.5, cy - r * 0.4, cx + r * 0.15, cy + r, cx + r * 0.85, cy + r, 'S'); // flared dress
+      doc.line(cx - r * 0.42, cy - r * 0.2, cx + r * 0.42, cy - r * 0.2); // joined hands
+      break;
+    }
+    case 'doves': {
+      // Two birds in flight — each a soft arch (a smooth wing-pair), the classic dove-in-sky mark.
+      const bird = (bx: number, by: number, s: number) =>
+        doc.lines([[s * 0.7, -s * 0.85, s * 1.3, -s * 0.85, s * 2, 0]], bx - s, by, [1, 1], 'S');
+      bird(cx - r * 0.28, cy + r * 0.35, r * 0.72); // near bird
+      bird(cx + r * 0.55, cy - r * 0.4, r * 0.5); // far bird
       break;
     }
     case 'fireworks': {
