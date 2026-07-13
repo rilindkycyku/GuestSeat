@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { EventState } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { tagColorClasses } from '../lib/tagColors';
 
 /**
  * A focused, big-touch-target screen for the wedding day: search a guest, tap to mark them arrived,
@@ -23,6 +24,8 @@ export function CheckInScreen({
   const [query, setQuery] = useState('');
 
   const tableById = useMemo(() => new Map(state.tables.map((tb) => [tb.id, tb])), [state.tables]);
+  const guestById = useMemo(() => new Map(state.guests.map((g) => [g.id, g])), [state.guests]);
+  const tagById = useMemo(() => new Map((state.tags ?? []).map((tag) => [tag.id, tag])), [state.tags]);
 
   const attendees = useMemo(() => state.guests.filter((g) => g.rsvp !== 'declined'), [state.guests]);
   const arrivedCount = attendees.filter((g) => g.arrived).length;
@@ -94,6 +97,13 @@ export function CheckInScreen({
         )}
         {visible.map((g) => {
           const table = g.tableId ? tableById.get(g.tableId) : undefined;
+          // Extra signals to tell same-named guests apart: their group tags and who they're
+          // linked to (partner, family). Only rendered when present.
+          const tags = (g.tagIds ?? []).map((id) => tagById.get(id)).filter((tag): tag is NonNullable<typeof tag> => !!tag);
+          const linkedNames = (g.linkedGuestIds ?? [])
+            .map((id) => guestById.get(id))
+            .filter((p): p is NonNullable<typeof p> => !!p)
+            .map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name));
           return (
             <button
               key={g.id}
@@ -120,6 +130,24 @@ export function CheckInScreen({
                 <span className="block text-xs text-slate-400 dark:text-slate-500 truncate">
                   {table ? tableDisplayName(table, t) : t('checkin.noTable')}
                 </span>
+                {(tags.length > 0 || linkedNames.length > 0) && (
+                  <span className="mt-1 flex flex-wrap items-center gap-1">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${tagColorClasses(tag.color).chip}`}
+                      >
+                        {tag.label}
+                      </span>
+                    ))}
+                    {linkedNames.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 min-w-0">
+                        <span className="shrink-0">🔗</span>
+                        <span className="truncate">{linkedNames.join(', ')}</span>
+                      </span>
+                    )}
+                  </span>
+                )}
               </span>
               {g.arrived && <span className="shrink-0 text-xs font-medium text-emerald-600 dark:text-emerald-400">{t('checkin.arrived')}</span>}
             </button>
