@@ -27,6 +27,8 @@ import {
   saveViewMode,
   loadTableColumns,
   saveTableColumns,
+  loadSeedTraditions,
+  saveSeedTraditions,
   type ViewMode,
   type TableColumns,
 } from './lib/storage';
@@ -51,6 +53,7 @@ export default function App() {
     setEventName,
     updateEventDetails,
     addTable,
+    duplicateTable,
     updateTable,
     removeTable,
     seatGuest,
@@ -83,6 +86,7 @@ export default function App() {
   const [tableFilter, setTableFilter] = useState<TableFilter>({ kind: 'all' });
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
   const [tableColumns, setTableColumns] = useState<TableColumns>(() => loadTableColumns());
+  const [seedTraditions, setSeedTraditions] = useState<boolean>(() => loadSeedTraditions());
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -104,6 +108,10 @@ export default function App() {
   useEffect(() => {
     saveTableColumns(tableColumns);
   }, [tableColumns]);
+
+  useEffect(() => {
+    saveSeedTraditions(seedTraditions);
+  }, [seedTraditions]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -476,6 +484,14 @@ export default function App() {
       danger: true,
       onConfirm: () => resetArrivals(),
     });
+  };
+
+  // Duplicate a table (empty copy inheriting capacity/shape/side/tags) with a brief confirmation toast.
+  const handleDuplicateTable = (tableId: string) => {
+    const table = tableById.get(tableId);
+    if (!table) return;
+    duplicateTable(tableId, t('tables.namePrefix'));
+    showToast(t('tables.duplicatedTable', { name: tableDisplayName(table, t) }));
   };
 
   // Remove a table, confirming first only when it still has seated guests.
@@ -861,6 +877,7 @@ export default function App() {
                     linkBadges={linkBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onEditCapacity={() => setCapacityTableId(table.id)}
+                    onDuplicateTable={() => handleDuplicateTable(table.id)}
                     onRemoveTable={() => handleRemoveTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
@@ -887,6 +904,7 @@ export default function App() {
                       });
                     }}
                     onEditCapacity={() => setCapacityTableId(table.id)}
+                    onDuplicateTable={() => handleDuplicateTable(table.id)}
                     onRemoveTable={() => handleRemoveTable(table.id)}
                     onGuestClick={(g) => setEditingGuestId(g.id)}
                     onToggleTag={(tagId) => toggleTag(table.id, tagId)}
@@ -1014,6 +1032,7 @@ export default function App() {
           onChange={updateEventDetails}
           onShowQr={() => setQrOpen(true)}
           onToast={showToast}
+          seedTraditions={seedTraditions}
           onClose={() => setInvitationOpen(false)}
         />
       )}
@@ -1059,6 +1078,8 @@ export default function App() {
             setSettingsOpen(false);
             setInvitationOpen(true);
           }}
+          seedTraditions={seedTraditions}
+          onSeedTraditionsChange={setSeedTraditions}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
           systemTags={systemTags}

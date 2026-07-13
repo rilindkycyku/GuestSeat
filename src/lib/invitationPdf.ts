@@ -60,6 +60,9 @@ export type IconKind =
   | 'stars'
   | 'sunset'
   | 'fireworks'
+  | 'flag'
+  | 'sofra'
+  | 'cifteli'
   | 'heart';
 
 /** Choose the glyph that best fits a schedule line, by keyword (Albanian + English). */
@@ -67,6 +70,12 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
   if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  // Albanian wedding traditions — matched ahead of the generic bride/dinner/music glyphs so the
+  // bride's send-off (flamuri i procession), the krushq feast (sofra) and a çifteli folk band
+  // each carry their own mark rather than collapsing into a note, a plate, or the bride figure.
+  if (has('marrj', 'përcjell', 'percjell', 'flamur', 'send-off', 'sendoff', 'send off')) return 'flag';
+  if (has('çifteli', 'cifteli', 'sharki', 'folk', 'folklor', 'popullore', 'ansambël', 'ansambel')) return 'cifteli';
+  if (has('sofra', 'sofër', 'sofer', 'krushq', 'krushk', 'feast')) return 'sofra';
   // Getting-ready & logistics moments (early in the day) before the ceremony glyphs.
   if (has('grim', 'makeup', 'make-up', 'buzëkuq', 'buzekuq', 'lipstick', 'përgatitj', 'pergatitj', 'getting ready', 'beauty')) return 'makeup';
   if (has('fustan', 'gown', 'dress', 'atelie', 'veshja e nuses')) return 'dress';
@@ -437,6 +446,44 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
         doc.line(cx, cy - r * 0.05, cx + Math.cos(a) * r * 0.55, cy - r * 0.05 + Math.sin(a) * r * 0.55); // ray
         doc.circle(bx, by, r * 0.09, 'F'); // spark
       }
+      break;
+    }
+    case 'flag': {
+      // The wedding banner (flamuri) carried in the procession to fetch the bride.
+      const px = cx - r * 0.55;
+      doc.line(px, cy - r, px, cy + r); // pole
+      doc.setFillColor(...color);
+      doc.circle(px, cy - r, r * 0.12, 'F'); // finial
+      doc.triangle(px, cy - r * 0.9, px, cy - r * 0.08, cx + r, cy - r * 0.49, 'S'); // pennant
+      break;
+    }
+    case 'sofra': {
+      // A round communal feast table (sofra e krushqve) laden with dishes — distinct from the
+      // single-plate dinner glyph.
+      doc.ellipse(cx, cy + r * 0.15, r * 0.95, r * 0.4, 'S'); // round table top
+      doc.line(cx - r * 0.68, cy + r * 0.48, cx - r * 0.6, cy + r); // left leg
+      doc.line(cx + r * 0.68, cy + r * 0.48, cx + r * 0.6, cy + r); // right leg
+      doc.line(cx, cy + r * 0.55, cx, cy + r); // centre leg
+      doc.setFillColor(...color);
+      doc.circle(cx - r * 0.42, cy + r * 0.05, r * 0.15, 'F'); // dish
+      doc.circle(cx + r * 0.05, cy - r * 0.08, r * 0.17, 'F'); // dish
+      doc.circle(cx + r * 0.5, cy + r * 0.05, r * 0.14, 'F'); // dish
+      break;
+    }
+    case 'cifteli': {
+      // The two-string long-necked lute (çifteli) of Albanian folk music — oval body, slim neck
+      // and a two-peg headstock standing in for the two strings.
+      doc.ellipse(cx, cy + r * 0.55, r * 0.48, r * 0.44, 'S'); // sound body
+      doc.line(cx - r * 0.13, cy + r * 0.2, cx - r * 0.13, cy - r * 0.85); // neck left
+      doc.line(cx + r * 0.13, cy + r * 0.2, cx + r * 0.13, cy - r * 0.85); // neck right
+      doc.line(cx - r * 0.13, cy - r * 0.85, cx + r * 0.13, cy - r * 0.85); // nut
+      doc.line(cx - r * 0.19, cy - r * 0.85, cx - r * 0.19, cy - r * 1.15); // headstock left
+      doc.line(cx + r * 0.19, cy - r * 0.85, cx + r * 0.19, cy - r * 1.15); // headstock right
+      doc.line(cx - r * 0.19, cy - r * 1.15, cx + r * 0.19, cy - r * 1.15); // headstock top
+      doc.setFillColor(...color);
+      doc.circle(cx, cy + r * 0.5, r * 0.09, 'F'); // sound hole
+      doc.circle(cx - r * 0.28, cy - r, r * 0.06, 'F'); // tuning peg
+      doc.circle(cx + r * 0.28, cy - r, r * 0.06, 'F'); // tuning peg
       break;
     }
     case 'heart':

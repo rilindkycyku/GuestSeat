@@ -80,3 +80,22 @@ export function saveTableColumns(cols: TableColumns): void {
     // storage full or unavailable — silently skip persistence
   }
 }
+
+/**
+ * Whether a fresh invitation should pre-fill the traditional Albanian program (bride's send-off,
+ * çifteli, sofra…) instead of the plain default. An app-level preference, off by default, so it
+ * carries across every new event rather than living inside one event's saved state.
+ */
+const SEED_TRADITIONS_KEY = 'guestseat.seedTraditions.v1';
+
+export function loadSeedTraditions(): boolean {
+  return localStorage.getItem(SEED_TRADITIONS_KEY) === '1';
+}
+
+export function saveSeedTraditions(on: boolean): void {
+  try {
+    localStorage.setItem(SEED_TRADITIONS_KEY, on ? '1' : '0');
+  } catch {
+    // storage full or unavailable — silently skip persistence
+  }
+}
