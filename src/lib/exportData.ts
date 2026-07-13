@@ -203,6 +203,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
     { header: t('export.fields.side'), width: 12 },
     { header: t('export.fields.tags'), width: 20 },
     { header: t('export.fields.rsvp'), width: 14 },
+    { header: t('export.fields.meal'), width: 16 },
     { header: t('export.fields.linkedWith'), width: 24 },
     { header: t('export.fields.notes'), width: 28 },
   ];
@@ -238,6 +239,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       sideLabel(table, t),
       tagLabels(table, tagsById).join(', '),
       rsvpLabel(g, t),
+      g.meal ?? '',
       linked,
       g.notes ?? '',
     ]);
@@ -248,7 +250,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       cell.fill = fill(bg);
       cell.font = font();
       cell.border = border();
-      cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'center' : 'left', indent: c === 1 ? 0 : 1, wrapText: c >= 8 };
+      cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'center' : 'left', indent: c === 1 ? 0 : 1, wrapText: c >= 9 };
     }
   });
   brandFooter(guests, gCols.length);

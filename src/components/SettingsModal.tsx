@@ -21,6 +21,9 @@ interface SettingsModalProps {
   onMarkAllPending: () => void;
   onUnseatAll: () => void;
   onReset: () => void;
+  onAutoSeat: () => void;
+  onOverview: () => void;
+  onCheckIn: () => void;
   onEditEventDetails: () => void;
   onEditInvitation: () => void;
   onClose: () => void;
@@ -207,6 +210,9 @@ export function SettingsModal({
   onMarkAllPending,
   onUnseatAll,
   onReset,
+  onAutoSeat,
+  onOverview,
+  onCheckIn,
   onEditEventDetails,
   onEditInvitation,
   onClose,
@@ -243,6 +249,14 @@ export function SettingsModal({
               description={t('invitation.editDetailsDesc')}
               onClick={onEditInvitation}
             />
+          </div>
+        </Section>
+
+        <Section title={t('settings.seating')} icon="🎯">
+          <div className="space-y-2">
+            <NavRow icon="✨" title={t('settings.autoSeat')} description={t('settings.autoSeatDesc')} onClick={onAutoSeat} />
+            <NavRow icon="📊" title={t('settings.overview')} description={t('settings.overviewDesc')} onClick={onOverview} />
+            <NavRow icon="🎉" title={t('settings.checkIn')} description={t('settings.checkInDesc')} onClick={onCheckIn} />
           </div>
         </Section>
 

@@ -11,6 +11,8 @@ import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
+import { StatsModal } from './components/StatsModal';
+import { CheckInScreen } from './components/CheckInScreen';
 import { InvitationModal } from './components/InvitationModal';
 import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
@@ -29,6 +31,7 @@ import {
   type TableColumns,
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
+import { autoSeat } from './lib/autoSeat';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { TAG_COLORS } from './lib/tagColors';
@@ -51,6 +54,9 @@ export default function App() {
     updateTable,
     removeTable,
     seatGuest,
+    assignSeats,
+    toggleArrived,
+    resetArrivals,
     addGuest,
     updateGuest,
     removeGuest,
@@ -80,6 +86,8 @@ export default function App() {
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -441,6 +449,35 @@ export default function App() {
     });
   };
 
+  // Auto-seat: fill tables from the unseated pool in one undoable step, reporting how it went.
+  const handleAutoSeat = () => {
+    if (!state) return;
+    const unseatedComing = state.guests.filter((g) => !g.tableId && g.rsvp !== 'declined').length;
+    if (unseatedComing === 0) {
+      showToast(t('autoSeat.noneToSeat'));
+      return;
+    }
+    const snapshot = state;
+    const { assignments, seated, leftUnseated } = autoSeat(state);
+    if (seated === 0) {
+      showToast(t('autoSeat.noRoom'));
+      return;
+    }
+    assignSeats(assignments);
+    const msg =
+      leftUnseated > 0 ? t('autoSeat.someLeft', { count: seated, left: leftUnseated }) : t('autoSeat.seated', { count: seated });
+    showToast(msg, { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) });
+  };
+
+  const handleResetArrivals = () => {
+    askConfirm({
+      message: t('checkin.resetConfirm'),
+      confirmLabel: t('checkin.reset'),
+      danger: true,
+      onConfirm: () => resetArrivals(),
+    });
+  };
+
   // Remove a table, confirming first only when it still has seated guests.
   const handleRemoveTable = (tableId: string) => {
     const table = tableById.get(tableId);
@@ -706,6 +743,7 @@ export default function App() {
               linkBadges={linkBadges}
               tags={customTags}
               onGuestClick={(g) => setEditingGuestId(g.id)}
+              onAutoSeat={handleAutoSeat}
             />
           </div>
 
@@ -965,10 +1003,33 @@ export default function App() {
 
       {qrOpen && <QrModal state={state} onToast={showToast} onClose={() => setQrOpen(false)} />}
 
+      {statsOpen && <StatsModal state={state} onClose={() => setStatsOpen(false)} />}
+
+      {checkInOpen && (
+        <CheckInScreen
+          state={state}
+          onToggleArrived={toggleArrived}
+          onReset={handleResetArrivals}
+          onClose={() => setCheckInOpen(false)}
+        />
+      )}
+
       {settingsOpen && (
         <SettingsModal
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onAutoSeat={() => {
+            setSettingsOpen(false);
+            handleAutoSeat();
+          }}
+          onOverview={() => {
+            setSettingsOpen(false);
+            setStatsOpen(true);
+          }}
+          onCheckIn={() => {
+            setSettingsOpen(false);
+            setCheckInOpen(true);
+          }}
           onEditEventDetails={() => {
             setSettingsOpen(false);
             setEventDetailsOpen(true);

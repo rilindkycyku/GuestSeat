@@ -50,18 +50,18 @@ const DEMO: EventState = {
   ],
   guests: [
     // Head table — the couple, linked together, both confirmed.
-    { id: 'g_bride', name: 'Elira', surname: 'Krasniqi', tableId: 't_head', rsvp: 'confirmed', linkedGuestIds: ['g_groom'] },
-    { id: 'g_groom', name: 'Arben', surname: 'Berisha', tableId: 't_head', rsvp: 'confirmed', linkedGuestIds: ['g_bride'] },
+    { id: 'g_bride', name: 'Elira', surname: 'Krasniqi', tableId: 't_head', rsvp: 'confirmed', meal: 'Fish', linkedGuestIds: ['g_groom'] },
+    { id: 'g_groom', name: 'Arben', surname: 'Berisha', tableId: 't_head', rsvp: 'confirmed', meal: 'Chicken', linkedGuestIds: ['g_bride'] },
 
     // Groom's family — a linked married couple + their child, notes for dietary needs.
-    { id: 'g_gf1', name: 'Ramadan', surname: 'Berisha', notes: "Groom's father", tableId: 't_g1', rsvp: 'confirmed', linkedGuestIds: ['g_gf2'] },
-    { id: 'g_gf2', name: 'Fatime', surname: 'Berisha', notes: "Groom's mother", tableId: 't_g1', rsvp: 'confirmed', linkedGuestIds: ['g_gf1'] },
-    { id: 'g_gf3', name: 'Drin', surname: 'Berisha', notes: 'Vegetarian', tableId: 't_g1', rsvp: 'confirmed' },
+    { id: 'g_gf1', name: 'Ramadan', surname: 'Berisha', notes: "Groom's father", tableId: 't_g1', rsvp: 'confirmed', meal: 'Chicken', linkedGuestIds: ['g_gf2'] },
+    { id: 'g_gf2', name: 'Fatime', surname: 'Berisha', notes: "Groom's mother", tableId: 't_g1', rsvp: 'confirmed', meal: 'Fish', linkedGuestIds: ['g_gf1'] },
+    { id: 'g_gf3', name: 'Drin', surname: 'Berisha', notes: 'Vegetarian', tableId: 't_g1', rsvp: 'confirmed', meal: 'Vegetarian' },
     { id: 'g_gf4', name: 'Blerta', surname: 'Berisha', tableId: 't_g1' },
 
     // Groom's friends & colleagues.
-    { id: 'g_gc1', name: 'Besnik', surname: 'Gashi', notes: '+1', tableId: 't_g2', rsvp: 'confirmed', linkedGuestIds: ['g_gc2'] },
-    { id: 'g_gc2', name: 'Vlora', surname: 'Gashi', tableId: 't_g2', rsvp: 'confirmed', linkedGuestIds: ['g_gc1'] },
+    { id: 'g_gc1', name: 'Besnik', surname: 'Gashi', notes: '+1', tableId: 't_g2', rsvp: 'confirmed', meal: 'Chicken', linkedGuestIds: ['g_gc2'] },
+    { id: 'g_gc2', name: 'Vlora', surname: 'Gashi', tableId: 't_g2', rsvp: 'confirmed', meal: 'Fish', linkedGuestIds: ['g_gc1'] },
     { id: 'g_gc3', name: 'Agron', surname: 'Hoxha', notes: 'Works with the groom', tableId: 't_g2', rsvp: 'declined' },
     { id: 'g_gc4', name: 'Rina', surname: 'Krasniqi', tableId: 't_g2', rsvp: 'confirmed' },
 
@@ -82,7 +82,7 @@ const DEMO: EventState = {
     { id: 'g_l3', name: 'Petrit', surname: 'Krasniqi', tableId: 't_long', tagIds: ['tag_family'], rsvp: 'confirmed' },
     { id: 'g_l4', name: 'Donika', surname: 'Rexhepi', notes: 'Childhood friend', tableId: 't_long', tagIds: ['tag_prishtina'], rsvp: 'confirmed', linkedGuestIds: ['g_l5'] },
     { id: 'g_l5', name: 'Burim', surname: 'Rexhepi', tableId: 't_long', tagIds: ['tag_prishtina'], rsvp: 'confirmed', linkedGuestIds: ['g_l4'] },
-    { id: 'g_l6', name: 'Flaka', surname: 'Zeqiri', notes: 'Vegetarian', tableId: 't_long', tagIds: ['tag_prishtina'] },
+    { id: 'g_l6', name: 'Flaka', surname: 'Zeqiri', notes: 'Vegetarian', tableId: 't_long', tagIds: ['tag_prishtina'], meal: 'Vegetarian' },
 
     // Unseated — not yet assigned to a table, so users see the Unseated panel in action.
     { id: 'g_u1', name: 'Liridon', surname: 'Shala', notes: 'Cousin — table TBD', tableId: null, rsvp: 'confirmed' },

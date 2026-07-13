@@ -9,9 +9,10 @@ interface UnseatedPanelProps {
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   tags: TableTag[];
   onGuestClick: (guest: Guest) => void;
+  onAutoSeat: () => void;
 }
 
-export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestClick }: UnseatedPanelProps) {
+export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestClick, onAutoSeat }: UnseatedPanelProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: 'unseated' });
   const isEmpty = guests.length === 0;
@@ -30,6 +31,16 @@ export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestCli
           {guests.length}
         </span>
       </div>
+      {/* One-tap fill: seat everyone in the pool at once, keeping linked guests & groups together. */}
+      {guests.length > 0 && (
+        <button
+          onClick={onAutoSeat}
+          className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold py-2 hover:bg-indigo-500 shadow-sm shadow-indigo-600/20"
+        >
+          <span aria-hidden>✨</span>
+          {t('autoSeat.action')}
+        </button>
+      )}
       {/* When empty, collapse to a slim bar on mobile (still a valid drop target); full panel on desktop. */}
       <div className={`${isEmpty ? 'hidden lg:block' : ''} flex-1 overflow-y-auto space-y-1.5 pr-1 mt-2 ${isEmpty ? '' : 'min-h-[80px]'}`}>
         {isEmpty && (
