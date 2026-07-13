@@ -68,13 +68,43 @@ export function useEventState() {
     setState((prev) => {
       const base = prev ?? makeEventState();
       const nextNumber = base.tables.length + 1;
+      // Inherit the capacity and shape of the last table added: once someone sets their tables to,
+      // say, 10 seats or a long banquet shape, every "Add table" after keeps that instead of
+      // snapping back to the round-8 default — a small optimization for rooms of uniform tables.
+      const last = base.tables[base.tables.length - 1];
       const newTable: Table = {
         id: makeId('t'),
         name: `${namePrefix} ${nextNumber}`,
-        capacity: 8,
+        capacity: last?.capacity ?? 8,
+        ...(last?.shape ? { shape: last.shape } : {}),
         autoSuffix: String(nextNumber),
       };
       return { ...base, tables: [...base.tables, newTable], updatedAt: new Date().toISOString() };
+    });
+  }, []);
+
+  // Duplicate a table: a new, empty table right after the source, carrying its capacity, shape,
+  // side and tags — but not its guests or its (possibly hand-typed) name, which is re-numbered so
+  // the copy reads as a fresh table. Handy for filling a room with identical tables in one tap each.
+  const duplicateTable = useCallback((tableId: string, namePrefix = 'Table') => {
+    setState((prev) => {
+      if (!prev) return prev;
+      const index = prev.tables.findIndex((tb) => tb.id === tableId);
+      if (index === -1) return prev;
+      const source = prev.tables[index];
+      const nextNumber = prev.tables.length + 1;
+      const copy: Table = {
+        id: makeId('t'),
+        name: `${namePrefix} ${nextNumber}`,
+        capacity: source.capacity,
+        ...(source.shape ? { shape: source.shape } : {}),
+        ...(source.side ? { side: source.side } : {}),
+        ...(source.tagIds?.length ? { tagIds: [...source.tagIds] } : {}),
+        autoSuffix: String(nextNumber),
+      };
+      const tables = [...prev.tables];
+      tables.splice(index + 1, 0, copy);
+      return { ...prev, tables, updatedAt: new Date().toISOString() };
     });
   }, []);
 
@@ -340,6 +370,7 @@ export function useEventState() {
     setEventName,
     updateEventDetails,
     addTable,
+    duplicateTable,
     updateTable,
     removeTable,
     seatGuest,

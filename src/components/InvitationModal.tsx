@@ -1,4 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import type { AgendaItem, EventDetails, EventState, InvitationTemplate } from '../types';
 import { makeId } from '../lib/importGuests';
 import { exportInvitationPdf, INVITATION_TEMPLATES, iconForAgenda, type IconKind } from '../lib/invitationPdf';
@@ -43,6 +55,9 @@ const ICON_EMOJI: Record<IconKind, string> = {
   stars: '✨',
   sunset: '🌅',
   fireworks: '🎆',
+  flag: '🚩',
+  sofra: '🍲',
+  cifteli: '🪕',
   heart: '💗',
 };
 
@@ -58,6 +73,21 @@ const DEFAULT_AGENDA_KEYS = [
   { key: 'traditional', time: '' },
   { key: 'ceremony', time: '17:00' },
   { key: 'dinner', time: '19:00' },
+  { key: 'cake', time: '21:00' },
+  { key: 'party', time: '22:00' },
+] as const;
+
+/**
+ * The traditional Albanian wedding program, seeded instead of the plain default when the
+ * "pre-fill traditions" setting is on: the bride's send-off (marrja e nuses), the çifteli folk
+ * band and the krushq feast (sofra e krushqve) each land in their natural spot in the day.
+ */
+const TRADITION_AGENDA_KEYS = [
+  { key: 'cocktail', time: '16:00' },
+  { key: 'brideSendoff', time: '16:20' },
+  { key: 'ceremony', time: '17:00' },
+  { key: 'cifteli', time: '18:00' },
+  { key: 'krushqFeast', time: '19:00' },
   { key: 'cake', time: '21:00' },
   { key: 'party', time: '22:00' },
 ] as const;
@@ -88,6 +118,9 @@ const EXTRA_SUGGESTION_KEYS = [
   { key: 'decor', time: '' },
   { key: 'lanterns', time: '' },
   { key: 'candles', time: '' },
+  { key: 'brideSendoff', time: '' },
+  { key: 'cifteli', time: '' },
+  { key: 'krushqFeast', time: '' },
   { key: 'doves', time: '' },
   { key: 'groom', time: '' },
   { key: 'sunset', time: '' },
@@ -98,6 +131,78 @@ const EXTRA_SUGGESTION_KEYS = [
   { key: 'rings', time: '' },
   { key: 'fireworks', time: '' },
 ] as const;
+
+/**
+ * One draggable schedule row. The leading glyph doubles as the drag handle (so reordering costs no
+ * extra button); the whole row is a drop target. Reordering happens on drop — see the parent's
+ * `onAgendaDragEnd` — so there's no live-follow overlay, just a dimmed source and a highlighted target.
+ */
+function AgendaRow({
+  item,
+  emoji,
+  dragging,
+  dragLabel,
+  timeLabel,
+  titlePlaceholder,
+  deleteLabel,
+  fieldBase,
+  onUpdate,
+  onRemove,
+}: {
+  item: AgendaItem;
+  emoji: string;
+  dragging: boolean;
+  dragLabel: string;
+  timeLabel: string;
+  titlePlaceholder: string;
+  deleteLabel: string;
+  fieldBase: string;
+  onUpdate: (patch: Partial<AgendaItem>) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef: setDragRef } = useDraggable({ id: item.id });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: item.id });
+  return (
+    <div
+      ref={setDropRef}
+      className={`flex items-center gap-2 rounded-lg transition-colors ${dragging ? 'opacity-40' : ''} ${
+        isOver && !dragging ? 'ring-2 ring-indigo-300 dark:ring-indigo-700' : ''
+      }`}
+    >
+      <button
+        ref={setDragRef}
+        type="button"
+        {...listeners}
+        {...attributes}
+        aria-label={dragLabel}
+        title={dragLabel}
+        className="w-6 shrink-0 text-center text-lg leading-none cursor-grab active:cursor-grabbing touch-none select-none"
+      >
+        {emoji}
+      </button>
+      <input
+        type="time"
+        value={item.time ?? ''}
+        onChange={(e) => onUpdate({ time: e.target.value })}
+        aria-label={timeLabel}
+        className={`${fieldBase} w-28 shrink-0`}
+      />
+      <input
+        value={item.title}
+        onChange={(e) => onUpdate({ title: e.target.value })}
+        placeholder={titlePlaceholder}
+        className={`${fieldBase} min-w-0 flex-1`}
+      />
+      <button
+        onClick={onRemove}
+        title={deleteLabel}
+        className="w-9 h-9 shrink-0 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40 flex items-center justify-center"
+      >
+        🗑
+      </button>
+    </div>
+  );
+}
 
 /**
  * Editor for the printable invitation: the top message, schedule, personal note,
@@ -111,12 +216,15 @@ export function InvitationModal({
   onChange,
   onShowQr,
   onToast,
+  seedTraditions = false,
   onClose,
 }: {
   state: EventState;
   onChange: (patch: Partial<EventDetails>) => void;
   onShowQr: () => void;
   onToast?: (msg: string) => void;
+  /** When true, a fresh invitation seeds the traditional Albanian program instead of the plain default. */
+  seedTraditions?: boolean;
   onClose: () => void;
 }) {
   const { t, lang } = useLanguage();
@@ -140,6 +248,30 @@ export function InvitationModal({
     setAgenda(agenda.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   const removeAgendaItem = (id: string) => setAgenda(agenda.filter((item) => item.id !== id));
 
+  // Drag-to-reorder the schedule. A local DndContext (isolated from the app's guest-seating one)
+  // reorders rows when a dragged item is dropped onto another; the leading icon doubles as the grab
+  // handle so no extra control crowds the row. Touch uses a short press-and-hold so taps still edit.
+  const [activeAgendaId, setActiveAgendaId] = useState<string | null>(null);
+  const agendaSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
+  const moveAgendaItem = (activeId: string, overId: string) => {
+    if (activeId === overId) return;
+    const from = agenda.findIndex((a) => a.id === activeId);
+    const to = agenda.findIndex((a) => a.id === overId);
+    if (from === -1 || to === -1) return;
+    const next = [...agenda];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setAgenda(next);
+  };
+  const onAgendaDragStart = (e: DragStartEvent) => setActiveAgendaId(String(e.active.id));
+  const onAgendaDragEnd = (e: DragEndEvent) => {
+    setActiveAgendaId(null);
+    if (e.over) moveAgendaItem(String(e.active.id), String(e.over.id));
+  };
+
   // Seed the default program the first time the invitation is opened. We key off `agenda` being
   // *undefined* (never touched) rather than empty — so once a couple deletes points down to none,
   // reopening the editor won't silently bring the defaults back.
@@ -151,7 +283,10 @@ export function InvitationModal({
     const patch: Partial<EventDetails> = {};
     if (details.agenda === undefined) {
       // Seed the schedule from the event type's preset (a wedding day, a birthday, a henna night…).
-      patch.agenda = cfg.agenda.map(({ key, time }) => ({ id: makeId('a'), time, title: t(`invitation.defaults.${key}`) }));
+      // Weddings can opt into the fuller traditional program (send-off, çifteli, sofra) via a setting;
+      // every other event type keeps its own preset.
+      const keys = seedTraditions && cfg.id === 'wedding' ? TRADITION_AGENDA_KEYS : cfg.agenda;
+      patch.agenda = keys.map(({ key, time }) => ({ id: makeId('a'), time, title: t(`invitation.defaults.${key}`) }));
     }
     // The warm wedding paragraph only fits couples; other events start with a blank top message.
     if (details.introMessage === undefined && cfg.nameLabelKeys.length === 2) {
@@ -206,33 +341,28 @@ export function InvitationModal({
           <div>
             <label className={labelClass}>{t('invitation.schedule')}</label>
             <div className="space-y-2">
-              {agenda.map((item) => (
-                <div key={item.id} className="flex items-center gap-2">
-                  <span aria-hidden className="w-6 shrink-0 text-center text-lg leading-none">
-                    {ICON_EMOJI[iconForAgenda(item)]}
-                  </span>
-                  <input
-                    type="time"
-                    value={item.time ?? ''}
-                    onChange={(e) => updateAgendaItem(item.id, { time: e.target.value })}
-                    aria-label={t('invitation.time')}
-                    className={`${fieldBase} w-28 shrink-0`}
+              <DndContext
+                sensors={agendaSensors}
+                collisionDetection={closestCenter}
+                onDragStart={onAgendaDragStart}
+                onDragEnd={onAgendaDragEnd}
+              >
+                {agenda.map((item) => (
+                  <AgendaRow
+                    key={item.id}
+                    item={item}
+                    emoji={ICON_EMOJI[iconForAgenda(item)]}
+                    dragging={activeAgendaId === item.id}
+                    dragLabel={t('invitation.dragToReorder')}
+                    timeLabel={t('invitation.time')}
+                    titlePlaceholder={t('invitation.agendaPlaceholder')}
+                    deleteLabel={t('common.delete')}
+                    fieldBase={fieldBase}
+                    onUpdate={(patch) => updateAgendaItem(item.id, patch)}
+                    onRemove={() => removeAgendaItem(item.id)}
                   />
-                  <input
-                    value={item.title}
-                    onChange={(e) => updateAgendaItem(item.id, { title: e.target.value })}
-                    placeholder={t('invitation.agendaPlaceholder')}
-                    className={`${fieldBase} min-w-0 flex-1`}
-                  />
-                  <button
-                    onClick={() => removeAgendaItem(item.id)}
-                    title={t('common.delete')}
-                    className="w-9 h-9 shrink-0 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40 flex items-center justify-center"
-                  >
-                    🗑
-                  </button>
-                </div>
-              ))}
+                ))}
+              </DndContext>
               {suggestions.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {suggestions.map((s) => (

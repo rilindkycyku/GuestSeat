@@ -17,6 +17,7 @@ interface FloorTableProps {
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
   highlighted: boolean;
   onEditCapacity: () => void;
+  onDuplicateTable: () => void;
   onRemoveTable: () => void;
   onGuestClick: (guest: Guest) => void;
   onToggleTag: (tagId: string) => void;
@@ -123,6 +124,7 @@ export function FloorTable({
   linkBadges,
   highlighted,
   onEditCapacity,
+  onDuplicateTable,
   onRemoveTable,
   onGuestClick,
   onToggleTag,
@@ -210,6 +212,13 @@ export function FloorTable({
           />
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={onDuplicateTable}
+            className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-indigo-100 hover:text-indigo-500 dark:hover:bg-indigo-950/40"
+            title={t('tables.duplicateTable')}
+          >
+            ⧉
+          </button>
           <button
             onClick={onRemoveTable}
             className="w-6 h-6 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
