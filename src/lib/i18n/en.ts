@@ -264,6 +264,8 @@ export const en = {
       lanterns: 'Lanterns',
       candles: 'Candles',
       traditional: 'Tupan drums',
+      henna: 'Henna night',
+      valle: 'Valle (circle dance)',
       doves: 'Doves',
       groom: 'Groom',
       sunset: 'Golden hour',

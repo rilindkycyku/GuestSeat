@@ -36,6 +36,7 @@ const DEMO: EventState = {
       { id: 'ag_3', time: '18:00', title: "Bride's entrance" },
       { id: 'ag_tupan', time: '', title: 'Tupanat' },
       { id: 'ag_4', time: '19:30', title: 'Dinner' },
+      { id: 'ag_valle', time: '', title: 'Valle' },
       { id: 'ag_5', time: '21:00', title: 'Party' },
     ],
   },

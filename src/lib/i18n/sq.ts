@@ -266,6 +266,8 @@ export const sq = {
       lanterns: 'Fanarët',
       candles: 'Qirinjtë',
       traditional: 'Tupanat',
+      henna: 'Kanagjeqi',
+      valle: 'Valle',
       doves: 'Pëllumbat',
       groom: 'Dhëndri',
       sunset: 'Perëndimi',

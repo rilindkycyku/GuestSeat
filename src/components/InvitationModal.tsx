@@ -35,6 +35,8 @@ const ICON_EMOJI: Record<IconKind, string> = {
   letter: '💌',
   carriage: '🐴',
   drum: '🥁',
+  henna: '🖐️',
+  circledance: '👯',
   lantern: '🏮',
   video: '🎥',
   stars: '✨',
@@ -66,6 +68,8 @@ const DEFAULT_AGENDA_KEYS = [
  * fireworks — without every card carrying them.
  */
 const EXTRA_SUGGESTION_KEYS = [
+  { key: 'henna', time: '' },
+  { key: 'valle', time: '' },
   { key: 'gettingReady', time: '' },
   { key: 'dress', time: '' },
   { key: 'arrival', time: '' },
