@@ -2,15 +2,16 @@ import { useCallback, useRef, useState } from 'react';
 import { ImportError, parseImportedJson } from '../lib/importGuests';
 import { parseImportedCsv } from '../lib/importCsv';
 import { useLanguage } from '../hooks/useLanguage';
+import { EVENT_TYPES } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
-import type { Guest, Table, TableNamingMode } from '../types';
+import type { EventType, Guest, Table, TableNamingMode } from '../types';
 
 interface OnboardingProps {
-  onImported: (guests: Guest[], tables: Table[], eventName?: string) => void;
+  onImported: (guests: Guest[], tables: Table[], eventName: string | undefined, eventType: EventType) => void;
   /** Load the fully-featured demo event (tags, sides, links, RSVP, invitation details). */
   onLoadDemo: () => void;
   /** Start with an empty event — no guests or tables — and build the list by hand. */
-  onStartBlank: () => void;
+  onStartBlank: (eventType: EventType) => void;
 }
 
 export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingProps) {
@@ -18,6 +19,7 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [namingMode, setNamingMode] = useState<TableNamingMode>('letters');
+  const [eventType, setEventType] = useState<EventType>('wedding');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -27,12 +29,12 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
         const text = await file.text();
         if (file.name.toLowerCase().endsWith('.csv')) {
           const { guests, tables } = parseImportedCsv(text);
-          onImported(guests, tables, t('header.defaultEventName'));
+          onImported(guests, tables, t('header.defaultEventName'), eventType);
           return;
         }
         const json = JSON.parse(text);
         const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'), namingMode);
-        onImported(guests, tables, eventName ?? t('header.defaultEventName'));
+        onImported(guests, tables, eventName ?? t('header.defaultEventName'), eventType);
       } catch (err) {
         if (err instanceof ImportError) {
           setError(t(`import.errors.${err.code}`));
@@ -43,7 +45,7 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
         }
       }
     },
-    [onImported, t, namingMode]
+    [onImported, t, namingMode, eventType]
   );
 
   const onDrop = useCallback(
@@ -66,6 +68,30 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">GuestSeat</h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">{t('onboarding.tagline')}</p>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-2.5">{t('onboarding.whatPlanning')}</p>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {EVENT_TYPES.map((et) => {
+              const active = et.id === eventType;
+              return (
+                <button
+                  key={et.id}
+                  type="button"
+                  onClick={() => setEventType(et.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <span aria-hidden>{et.emoji}</span>
+                  {t(et.labelKey)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div
@@ -122,7 +148,7 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
               {t('onboarding.chooseFile')}
             </button>
             <button
-              onClick={onStartBlank}
+              onClick={() => onStartBlank(eventType)}
               className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             >
               {t('onboarding.startBlank')}
