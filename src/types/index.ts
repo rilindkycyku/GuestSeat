@@ -91,6 +91,7 @@ export type EventType =
   | 'bachelor'
   | 'babyShower'
   | 'graduation'
+  | 'synetia'
   | 'party';
 
 /** A single line on the invitation's schedule (e.g. "16:00 — Ceremony"). */

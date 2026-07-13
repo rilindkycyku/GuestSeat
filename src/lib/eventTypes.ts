@@ -157,6 +157,21 @@ export const EVENT_TYPES: EventTypeConfig[] = [
     ],
   },
   {
+    id: 'synetia',
+    emoji: '👑',
+    labelKey: 'eventType.synetia',
+    nameLabelKeys: ['invitation.honoreeName'],
+    introKey: 'invitation.introGeneric',
+    agenda: [
+      { key: 'cocktail', time: '' },
+      { key: 'traditional', time: '' },
+      { key: 'dinner', time: '19:00' },
+      { key: 'cake', time: '20:00' },
+      { key: 'gifts', time: '' },
+      { key: 'party', time: '21:00' },
+    ],
+  },
+  {
     id: 'party',
     emoji: '🎉',
     labelKey: 'eventType.party',
