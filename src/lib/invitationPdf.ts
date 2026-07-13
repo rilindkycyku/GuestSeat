@@ -48,6 +48,17 @@ export type IconKind =
   | 'plane'
   | 'guestbook'
   | 'clock'
+  | 'groom'
+  | 'dress'
+  | 'makeup'
+  | 'pin'
+  | 'letter'
+  | 'carriage'
+  | 'drum'
+  | 'lantern'
+  | 'video'
+  | 'stars'
+  | 'sunset'
   | 'fireworks'
   | 'heart';
 
@@ -56,15 +67,23 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
   if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  // Getting-ready & logistics moments (early in the day) before the ceremony glyphs.
+  if (has('grim', 'makeup', 'make-up', 'buzëkuq', 'buzekuq', 'lipstick', 'përgatitj', 'pergatitj', 'getting ready', 'beauty')) return 'makeup';
+  if (has('fustan', 'gown', 'dress', 'atelie', 'veshja e nuses')) return 'dress';
+  if (has('lokacion', 'harta', 'harte', 'map', 'location', 'directions', 'udhëzime', 'udhezime', 'vendndodhj')) return 'pin';
   if (has('mbërritj', 'mberritj', 'arrival', 'arrive')) return 'clock';
   if (has('dolli', 'shampanj', 'champagne', 'toast', 'cheers', 'gëzuar', 'gezuar', 'gotë', 'gote')) return 'toast';
   if (has('unaz', 'ring')) return 'rings';
   if (has('kish', 'church', 'famull', 'kapel', 'chapel')) return 'church';
-  if (has('ceremon', 'kuror', 'kunor', 'arch', 'vow', 'martes', 'wedding', 'ritual')) return 'arch';
+  if (has('premtim', 'betim', 'zotim', 'vow', 'vows', 'letra', 'letër', 'love letter')) return 'letter';
+  if (has('ceremon', 'kuror', 'kunor', 'arch', 'martes', 'wedding', 'ritual')) return 'arch';
   if (has('foto', 'fotograf', 'photo', 'camera', 'kamer', 'album')) return 'camera';
+  if (has('video', 'xhirim', 'filmim', 'videograf', 'cinema')) return 'video';
   if (has('lule', 'buqet', 'bouquet', 'flower', 'trëndafil', 'trendafil')) return 'flowers';
-  if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'dhëndr', 'dhendr', 'walk')) return 'bride';
+  if (has('dhëndr', 'dhendr', 'groom')) return 'groom';
+  if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'walk')) return 'bride';
   if (has('honeymoon', 'mjalt', 'muaji', 'aeroplan', 'avion', 'fluturim', 'flight', 'plane')) return 'plane';
+  if (has('karroc', 'carriage', 'coach', 'fiaker', 'horse')) return 'carriage';
   if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
   if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
@@ -74,8 +93,12 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   if (has('dhurat', 'zarf', 'gift', 'envelope', 'bakshish')) return 'gift';
   if (has('qiri', 'qirinj', 'candle')) return 'candle';
   if (has('pëllumb', 'pellumb', 'dove', 'zog', 'bird')) return 'doves';
+  if (has('lodr', 'tupan', 'daulle', 'drum', 'tallava', 'defi', 'tradition')) return 'drum';
   if (has('vall', 'vals', 'dance', 'danc', 'waltz', 'kërcim', 'kercim', 'first')) return 'dance';
+  if (has('fanar', 'lantern', 'llamba', 'ndriçim', 'ndricim', 'fener')) return 'lantern';
   if (has('balon', 'balloon', 'dekor', 'decor', 'zbukur', 'stolis')) return 'balloons';
+  if (has('perëndim', 'perendim', 'sunset', 'golden hour', 'golden', 'muzg')) return 'sunset';
+  if (has('mbrëmj', 'mbremj', 'night', 'evening', 'starlight', 'sparkle')) return 'stars';
   if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
   if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim')) return 'music';
   return 'heart';
@@ -287,6 +310,122 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
       doc.line(cx, cy, cx + r * 0.46, cy + r * 0.2); // minute hand
       doc.setFillColor(...color);
       doc.circle(cx, cy, r * 0.08, 'F'); // centre pin
+      break;
+    }
+    case 'groom': {
+      // A top hat and a bow tie — the groom's counterpart to the bride glyph.
+      doc.line(cx - r, cy - r * 0.15, cx + r, cy - r * 0.15); // hat brim
+      doc.rect(cx - r * 0.55, cy - r, r * 1.1, r * 0.85, 'S'); // hat crown
+      doc.line(cx - r * 0.55, cy - r * 0.4, cx + r * 0.55, cy - r * 0.4); // hat band
+      doc.triangle(cx - r * 0.55, cy + r * 0.35, cx - r * 0.55, cy + r, cx, cy + r * 0.68, 'S'); // bow tie left
+      doc.triangle(cx + r * 0.55, cy + r * 0.35, cx + r * 0.55, cy + r, cx, cy + r * 0.68, 'S'); // bow tie right
+      doc.setFillColor(...color);
+      doc.circle(cx, cy + r * 0.68, r * 0.12, 'F'); // knot
+      break;
+    }
+    case 'dress': {
+      // The wedding gown on a hanger — an A-line skirt flaring to a curved hem.
+      doc.circle(cx, cy - r, r * 0.12, 'S'); // hanger hook
+      doc.line(cx - r * 0.55, cy - r * 0.55, cx, cy - r * 0.85); // hanger left
+      doc.line(cx + r * 0.55, cy - r * 0.55, cx, cy - r * 0.85); // hanger right
+      doc.line(cx - r * 0.5, cy - r * 0.5, cx - r * 0.12, cy + r * 0.1); // bodice left
+      doc.line(cx + r * 0.5, cy - r * 0.5, cx + r * 0.12, cy + r * 0.1); // bodice right
+      doc.line(cx - r * 0.12, cy + r * 0.1, cx - r * 0.6, cy + r); // skirt left
+      doc.line(cx + r * 0.12, cy + r * 0.1, cx + r * 0.6, cy + r); // skirt right
+      doc.lines([[r * 0.3, r * 0.2, r * 0.9, r * 0.2, r * 1.2, 0]], cx - r * 0.6, cy + r, [1, 1], 'S'); // hem curve
+      break;
+    }
+    case 'makeup': {
+      // A lipstick, standing in for hair & make-up / getting ready.
+      doc.roundedRect(cx - r * 0.3, cy - r * 0.05, r * 0.6, r * 0.95, r * 0.06, r * 0.06, 'S'); // tube base
+      doc.rect(cx - r * 0.22, cy - r * 0.45, r * 0.44, r * 0.4, 'S'); // collar
+      doc.setFillColor(...color);
+      doc.triangle(cx - r * 0.18, cy - r * 0.45, cx + r * 0.18, cy - r * 0.45, cx + r * 0.08, cy - r, 'F'); // slanted tip
+      break;
+    }
+    case 'pin': {
+      // A map pin for the venue / directions.
+      doc.circle(cx, cy - r * 0.3, r * 0.62, 'S'); // head
+      doc.line(cx - r * 0.44, cy + r * 0.12, cx, cy + r); // left flank to tip
+      doc.line(cx + r * 0.44, cy + r * 0.12, cx, cy + r); // right flank to tip
+      doc.setFillColor(...color);
+      doc.circle(cx, cy - r * 0.3, r * 0.2, 'F'); // centre dot
+      break;
+    }
+    case 'letter': {
+      // A sealed love letter — for the vows or the couple's note.
+      doc.rect(cx - r * 0.9, cy - r * 0.55, r * 1.8, r * 1.15, 'S'); // envelope
+      doc.line(cx - r * 0.9, cy - r * 0.55, cx, cy + r * 0.1); // flap left
+      doc.line(cx + r * 0.9, cy - r * 0.55, cx, cy + r * 0.1); // flap right
+      drawHeart(doc, cx, cy + r * 0.05, r * 0.3, color); // wax-seal heart
+      break;
+    }
+    case 'carriage': {
+      // A fairy-tale carriage: a round cabin over two wheels with a hitch shaft.
+      doc.circle(cx - r * 0.4, cy + r * 0.55, r * 0.3, 'S'); // rear wheel
+      doc.circle(cx + r * 0.55, cy + r * 0.55, r * 0.3, 'S'); // front wheel
+      doc.circle(cx, cy - r * 0.1, r * 0.62, 'S'); // cabin
+      doc.line(cx, cy - r * 0.72, cx, cy + r * 0.5); // door split
+      doc.line(cx + r * 0.6, cy - r * 0.05, cx + r * 1.05, cy - r * 0.28); // shaft
+      break;
+    }
+    case 'drum': {
+      // A traditional drum (lodra / tupan) with crossed sticks.
+      doc.ellipse(cx, cy - r * 0.35, r * 0.82, r * 0.26, 'S'); // top skin
+      doc.line(cx - r * 0.82, cy - r * 0.35, cx - r * 0.62, cy + r * 0.6); // left shell
+      doc.line(cx + r * 0.82, cy - r * 0.35, cx + r * 0.62, cy + r * 0.6); // right shell
+      doc.lines([[r * 0.24, r * 0.5, r * 1.0, r * 0.5, r * 1.24, 0]], cx - r * 0.62, cy + r * 0.6, [1, 1], 'S'); // bottom
+      doc.line(cx - r * 0.82, cy - r * 0.35, cx + r * 0.62, cy + r * 0.6); // tension
+      doc.line(cx + r * 0.82, cy - r * 0.35, cx - r * 0.62, cy + r * 0.6); // tension
+      doc.line(cx - r * 0.25, cy - r * 0.95, cx + r * 0.35, cy - r * 0.45); // stick
+      doc.line(cx + r * 0.25, cy - r * 0.95, cx - r * 0.35, cy - r * 0.45); // stick
+      break;
+    }
+    case 'lantern': {
+      // A hanging lantern with a small flame — evening ambience / string lights.
+      doc.line(cx, cy - r, cx, cy - r * 0.8); // hook
+      doc.line(cx - r * 0.5, cy - r * 0.8, cx + r * 0.5, cy - r * 0.8); // cap
+      doc.roundedRect(cx - r * 0.5, cy - r * 0.72, r * 1.0, r * 1.4, r * 0.22, r * 0.22, 'S'); // body
+      doc.setFillColor(...color);
+      doc.triangle(cx - r * 0.16, cy + r * 0.15, cx + r * 0.16, cy + r * 0.15, cx, cy - r * 0.35, 'F'); // flame
+      break;
+    }
+    case 'video': {
+      // A movie camera with two reels and a lens — videography.
+      doc.roundedRect(cx - r * 0.95, cy - r * 0.35, r * 1.5, r * 0.9, r * 0.1, r * 0.1, 'S'); // body
+      doc.circle(cx - r * 0.5, cy - r * 0.55, r * 0.3, 'S'); // reel
+      doc.circle(cx + r * 0.15, cy - r * 0.55, r * 0.3, 'S'); // reel
+      doc.triangle(cx + r * 0.55, cy - r * 0.05, cx + r * 1.05, cy - r * 0.35, cx + r * 1.05, cy + r * 0.25, 'S'); // lens
+      break;
+    }
+    case 'stars': {
+      // A scatter of four-point sparkles — the evening / starlit celebration.
+      doc.setFillColor(...color);
+      const spark = (sx: number, sy: number, s: number) => {
+        doc.triangle(sx, sy - s, sx - s * 0.3, sy, sx + s * 0.3, sy, 'F');
+        doc.triangle(sx, sy + s, sx - s * 0.3, sy, sx + s * 0.3, sy, 'F');
+        doc.triangle(sx - s, sy, sx, sy - s * 0.3, sx, sy + s * 0.3, 'F');
+        doc.triangle(sx + s, sy, sx, sy - s * 0.3, sx, sy + s * 0.3, 'F');
+      };
+      spark(cx - r * 0.35, cy - r * 0.2, r * 0.6);
+      spark(cx + r * 0.5, cy - r * 0.5, r * 0.4);
+      spark(cx + r * 0.3, cy + r * 0.55, r * 0.45);
+      break;
+    }
+    case 'sunset': {
+      // A sun on the horizon with rising rays — golden-hour photos.
+      doc.line(cx - r, cy + r * 0.55, cx + r, cy + r * 0.55); // horizon
+      doc.circle(cx, cy + r * 0.55, r * 0.5, 'S'); // sun
+      const sunY = cy + r * 0.55;
+      for (let k = -2; k <= 2; k++) {
+        const a = -Math.PI / 2 + k * (Math.PI / 3.2); // fan upward
+        doc.line(
+          cx + Math.cos(a) * r * 0.66,
+          sunY + Math.sin(a) * r * 0.66,
+          cx + Math.cos(a) * r * 0.98,
+          sunY + Math.sin(a) * r * 0.98,
+        ); // ray
+      }
       break;
     }
     case 'fireworks': {
