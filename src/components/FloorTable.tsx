@@ -158,7 +158,7 @@ export function FloorTable({
         const idx = onTop ? i : i - topCount;
         return {
           x: rowCount === 0 ? 50 : 6 + (88 * (idx + 0.5)) / rowCount,
-          y: onTop ? 20 : 80,
+          y: onTop ? 15 : 85,
           guest: orderedGuests[i],
         };
       });
@@ -222,14 +222,14 @@ export function FloorTable({
 
       <div
         className={`relative w-full my-2 ${
-          isLong ? 'h-28 sm:h-32' : 'aspect-square max-w-[220px] mx-auto'
+          isLong ? 'h-32 sm:h-36' : 'aspect-square max-w-[220px] mx-auto'
         }`}
       >
         {/* The table itself */}
         <div
           title={displayName}
           className={`absolute flex flex-col items-center justify-center text-center px-1.5 border-4 ${
-            isLong ? 'inset-x-[2%] top-[36%] h-[28%] rounded-2xl' : 'inset-[27%] rounded-full'
+            isLong ? 'inset-x-[2%] top-[32%] h-[36%] rounded-2xl' : 'inset-[27%] rounded-full'
           } ${
             table.side ? SIDE_RING[table.side] : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
           }`}
