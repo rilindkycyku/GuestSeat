@@ -26,18 +26,39 @@ export const INVITATION_TEMPLATES: InvitationTemplateMeta[] = [
 // classic invitation card: a welcome cocktail, the ceremony arch, the bride's entrance,
 // dinner, the cake, and the rings. Each maps a schedule item to a recognisable glyph.
 
-export type IconKind = 'cocktail' | 'arch' | 'bride' | 'dinner' | 'cake' | 'rings' | 'heart';
+export type IconKind =
+  | 'cocktail'
+  | 'toast'
+  | 'arch'
+  | 'church'
+  | 'bride'
+  | 'car'
+  | 'camera'
+  | 'flowers'
+  | 'dinner'
+  | 'cake'
+  | 'rings'
+  | 'music'
+  | 'fireworks'
+  | 'heart';
 
 /** Choose the glyph that best fits a schedule line, by keyword (Albanian + English). */
 export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
-  if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje', 'gotë', 'gote')) return 'cocktail';
-  if (has('ceremon', 'kuror', 'kunor', 'arch', 'vow', 'martes', 'wedding', 'ritual', 'unaz', 'ring')) return has('unaz', 'ring') ? 'rings' : 'arch';
+  if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  if (has('dolli', 'shampanj', 'champagne', 'toast', 'cheers', 'gëzuar', 'gezuar', 'gotë', 'gote')) return 'toast';
+  if (has('unaz', 'ring')) return 'rings';
+  if (has('kish', 'church', 'famull', 'kapel', 'chapel')) return 'church';
+  if (has('ceremon', 'kuror', 'kunor', 'arch', 'vow', 'martes', 'wedding', 'ritual')) return 'arch';
+  if (has('foto', 'fotograf', 'photo', 'camera', 'kamer', 'album')) return 'camera';
+  if (has('lule', 'buqet', 'bouquet', 'flower', 'trëndafil', 'trendafil')) return 'flowers';
   if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'dhëndr', 'dhendr', 'walk')) return 'bride';
+  if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
   if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
-  if (has('dance', 'valle', 'party', 'aheng', 'muzik', 'music', 'dj', 'gëzim', 'gezim', 'love', 'dashuri', 'first')) return 'rings';
+  if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
+  if (has('dance', 'valle', 'kërcim', 'kercim', 'party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim', 'first')) return 'music';
   return 'heart';
 }
 
@@ -97,6 +118,76 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
     case 'rings': {
       doc.circle(cx - r * 0.42, cy, r * 0.62, 'S');
       doc.circle(cx + r * 0.42, cy, r * 0.62, 'S');
+      break;
+    }
+    case 'toast': {
+      // Two champagne flutes leaning together to clink at the top.
+      doc.triangle(cx - r * 0.18, cy - r * 0.15, cx - r * 0.72, cy - r, cx - r * 0.04, cy - r * 0.86, 'S'); // left bowl
+      doc.line(cx - r * 0.18, cy - r * 0.15, cx - r * 0.42, cy + r); // left stem
+      doc.line(cx - r * 0.72, cy + r, cx - r * 0.12, cy + r); // left foot
+      doc.triangle(cx + r * 0.18, cy - r * 0.15, cx + r * 0.72, cy - r, cx + r * 0.04, cy - r * 0.86, 'S'); // right bowl
+      doc.line(cx + r * 0.18, cy - r * 0.15, cx + r * 0.42, cy + r); // right stem
+      doc.line(cx + r * 0.12, cy + r, cx + r * 0.72, cy + r); // right foot
+      doc.setFillColor(...color);
+      doc.circle(cx, cy - r * 1.05, r * 0.1, 'F'); // a rising bubble at the clink
+      break;
+    }
+    case 'church': {
+      doc.rect(cx - r * 0.62, cy - r * 0.2, r * 1.24, r * 1.1, 'S'); // nave
+      doc.triangle(cx - r * 0.62, cy - r * 0.2, cx + r * 0.62, cy - r * 0.2, cx, cy - r * 0.72, 'S'); // roof
+      doc.line(cx, cy - r * 0.72, cx, cy - r * 1.15); // steeple
+      doc.line(cx - r * 0.16, cy - r, cx + r * 0.16, cy - r); // cross arm
+      doc.line(cx - r * 0.16, cy + r * 0.9, cx - r * 0.16, cy + r * 0.35); // door sides
+      doc.line(cx + r * 0.16, cy + r * 0.9, cx + r * 0.16, cy + r * 0.35);
+      doc.line(cx - r * 0.16, cy + r * 0.35, cx + r * 0.16, cy + r * 0.35);
+      break;
+    }
+    case 'car': {
+      doc.roundedRect(cx - r, cy - r * 0.1, r * 2, r * 0.6, r * 0.12, r * 0.12, 'S'); // body
+      doc.lines([[r * 0.3, -r * 0.55, r * 0.9, 0, r * 0.25, r * 0.55]], cx - r * 0.5, cy - r * 0.1, [1, 1], 'S'); // cabin
+      doc.circle(cx - r * 0.5, cy + r * 0.6, r * 0.26, 'S'); // wheel
+      doc.circle(cx + r * 0.5, cy + r * 0.6, r * 0.26, 'S'); // wheel
+      drawHeart(doc, cx + r * 0.02, cy - r * 0.85, r * 0.22, color); // ribbon heart on the roof
+      break;
+    }
+    case 'camera': {
+      doc.roundedRect(cx - r, cy - r * 0.5, r * 2, r * 1.12, r * 0.12, r * 0.12, 'S'); // body
+      doc.rect(cx - r * 0.45, cy - r * 0.8, r * 0.55, r * 0.32, 'S'); // viewfinder hump
+      doc.circle(cx, cy + r * 0.12, r * 0.46, 'S'); // lens
+      doc.circle(cx, cy + r * 0.12, r * 0.22, 'S'); // inner lens
+      doc.setFillColor(...color);
+      doc.circle(cx + r * 0.62, cy - r * 0.28, r * 0.08, 'F'); // flash
+      break;
+    }
+    case 'flowers': {
+      const bloom = (bx: number, by: number) => {
+        doc.line(cx, cy + r, bx, by); // stem
+        doc.circle(bx, by, r * 0.26, 'S'); // petals outline
+        doc.setFillColor(...color);
+        doc.circle(bx, by, r * 0.08, 'F'); // centre
+      };
+      bloom(cx, cy - r * 0.55);
+      bloom(cx - r * 0.5, cy - r * 0.28);
+      bloom(cx + r * 0.5, cy - r * 0.28);
+      doc.line(cx - r * 0.3, cy + r * 0.62, cx + r * 0.3, cy + r * 0.62); // wrap ribbon
+      break;
+    }
+    case 'music': {
+      doc.setFillColor(...color);
+      doc.circle(cx - r * 0.2, cy + r * 0.6, r * 0.34, 'F'); // note head
+      doc.line(cx + r * 0.14, cy + r * 0.6, cx + r * 0.14, cy - r * 0.85); // stem
+      doc.lines([[r * 0.3, r * 0.12, r * 0.5, r * 0.34, r * 0.44, r * 0.72]], cx + r * 0.14, cy - r * 0.85, [1, 1], 'S'); // flag (bézier)
+      break;
+    }
+    case 'fireworks': {
+      doc.setFillColor(...color);
+      for (let i = 0; i < 8; i++) {
+        const a = (Math.PI / 4) * i;
+        const bx = cx + Math.cos(a) * r;
+        const by = cy - r * 0.05 + Math.sin(a) * r;
+        doc.line(cx, cy - r * 0.05, cx + Math.cos(a) * r * 0.55, cy - r * 0.05 + Math.sin(a) * r * 0.55); // ray
+        doc.circle(bx, by, r * 0.09, 'F'); // spark
+      }
       break;
     }
     case 'heart':
