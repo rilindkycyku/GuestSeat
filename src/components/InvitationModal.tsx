@@ -23,6 +23,21 @@ const ICON_EMOJI: Record<IconKind, string> = {
   gift: '🎁',
   candle: '🕯️',
   doves: '🕊️',
+  balloons: '🎈',
+  plane: '✈️',
+  guestbook: '📖',
+  clock: '🕐',
+  groom: '🤵',
+  dress: '👗',
+  makeup: '💄',
+  pin: '📍',
+  letter: '💌',
+  carriage: '🐴',
+  drum: '🥁',
+  lantern: '🏮',
+  video: '🎥',
+  stars: '✨',
+  sunset: '🌅',
   fireworks: '🎆',
   heart: '💗',
 };
@@ -48,16 +63,31 @@ const DEFAULT_AGENDA_KEYS = [
  * fireworks — without every card carrying them.
  */
 const EXTRA_SUGGESTION_KEYS = [
+  { key: 'gettingReady', time: '' },
+  { key: 'dress', time: '' },
+  { key: 'arrival', time: '' },
+  { key: 'location', time: '' },
   { key: 'toast', time: '' },
   { key: 'church', time: '' },
+  { key: 'vows', time: '' },
   { key: 'congrats', time: '' },
   { key: 'gifts', time: '' },
+  { key: 'guestbook', time: '' },
   { key: 'firstDance', time: '' },
   { key: 'photo', time: '' },
+  { key: 'video', time: '' },
   { key: 'flowers', time: '' },
+  { key: 'decor', time: '' },
+  { key: 'lanterns', time: '' },
   { key: 'candles', time: '' },
+  { key: 'traditional', time: '' },
   { key: 'doves', time: '' },
+  { key: 'groom', time: '' },
+  { key: 'sunset', time: '' },
+  { key: 'evening', time: '' },
+  { key: 'carriage', time: '' },
   { key: 'car', time: '' },
+  { key: 'honeymoon', time: '' },
   { key: 'rings', time: '' },
   { key: 'fireworks', time: '' },
 ] as const;
@@ -234,10 +264,11 @@ export function InvitationModal({
                     {ICON_EMOJI[iconForAgenda(item)]}
                   </span>
                   <input
+                    type="time"
                     value={item.time ?? ''}
                     onChange={(e) => updateAgendaItem(item.id, { time: e.target.value })}
-                    placeholder={t('invitation.timePlaceholder')}
-                    className={`${fieldBase} w-16 shrink-0`}
+                    aria-label={t('invitation.time')}
+                    className={`${fieldBase} w-28 shrink-0`}
                   />
                   <input
                     value={item.title}

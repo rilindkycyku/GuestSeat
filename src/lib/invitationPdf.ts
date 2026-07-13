@@ -44,6 +44,21 @@ export type IconKind =
   | 'gift'
   | 'candle'
   | 'doves'
+  | 'balloons'
+  | 'plane'
+  | 'guestbook'
+  | 'clock'
+  | 'groom'
+  | 'dress'
+  | 'makeup'
+  | 'pin'
+  | 'letter'
+  | 'carriage'
+  | 'drum'
+  | 'lantern'
+  | 'video'
+  | 'stars'
+  | 'sunset'
   | 'fireworks'
   | 'heart';
 
@@ -52,21 +67,38 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
   if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  // Getting-ready & logistics moments (early in the day) before the ceremony glyphs.
+  if (has('grim', 'makeup', 'make-up', 'buzëkuq', 'buzekuq', 'lipstick', 'përgatitj', 'pergatitj', 'getting ready', 'beauty')) return 'makeup';
+  if (has('fustan', 'gown', 'dress', 'atelie', 'veshja e nuses')) return 'dress';
+  if (has('lokacion', 'harta', 'harte', 'map', 'location', 'directions', 'udhëzime', 'udhezime', 'vendndodhj')) return 'pin';
+  if (has('mbërritj', 'mberritj', 'arrival', 'arrive')) return 'clock';
   if (has('dolli', 'shampanj', 'champagne', 'toast', 'cheers', 'gëzuar', 'gezuar', 'gotë', 'gote')) return 'toast';
   if (has('unaz', 'ring')) return 'rings';
   if (has('kish', 'church', 'famull', 'kapel', 'chapel')) return 'church';
-  if (has('ceremon', 'kuror', 'kunor', 'arch', 'vow', 'martes', 'wedding', 'ritual')) return 'arch';
+  if (has('premtim', 'betim', 'zotim', 'vow', 'vows', 'letra', 'letër', 'love letter')) return 'letter';
+  if (has('ceremon', 'kuror', 'kunor', 'arch', 'martes', 'wedding', 'ritual')) return 'arch';
   if (has('foto', 'fotograf', 'photo', 'camera', 'kamer', 'album')) return 'camera';
+  if (has('video', 'xhirim', 'filmim', 'videograf', 'cinema')) return 'video';
   if (has('lule', 'buqet', 'bouquet', 'flower', 'trëndafil', 'trendafil')) return 'flowers';
-  if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'dhëndr', 'dhendr', 'walk')) return 'bride';
+  if (has('dhëndr', 'dhendr', 'groom')) return 'groom';
+  if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'walk')) return 'bride';
+  if (has('honeymoon', 'mjalt', 'muaji', 'aeroplan', 'avion', 'fluturim', 'flight', 'plane')) return 'plane';
+  if (has('karroc', 'carriage', 'coach', 'fiaker', 'horse')) return 'carriage';
   if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
   if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
+  // Guest book before the microphone: "Libri i urimeve" carries "urim" (a well-wish) but is a book.
+  if (has('libri', 'librin', 'guestbook', 'guest book', 'impresion', 'përshtypje', 'pershtypje', 'nënshkrim', 'nenshkrim')) return 'guestbook';
   if (has('urim', 'congrat', 'felic', 'fjalim', 'speech', 'intervist', 'interview', 'mikrofon', 'wish', 'greet', 'urimet')) return 'mic';
   if (has('dhurat', 'zarf', 'gift', 'envelope', 'bakshish')) return 'gift';
   if (has('qiri', 'qirinj', 'candle')) return 'candle';
   if (has('pëllumb', 'pellumb', 'dove', 'zog', 'bird')) return 'doves';
+  if (has('lodr', 'tupan', 'daulle', 'drum', 'tallava', 'defi', 'tradition')) return 'drum';
   if (has('vall', 'vals', 'dance', 'danc', 'waltz', 'kërcim', 'kercim', 'first')) return 'dance';
+  if (has('fanar', 'lantern', 'llamba', 'ndriçim', 'ndricim', 'fener')) return 'lantern';
+  if (has('balon', 'balloon', 'dekor', 'decor', 'zbukur', 'stolis')) return 'balloons';
+  if (has('perëndim', 'perendim', 'sunset', 'golden hour', 'golden', 'muzg')) return 'sunset';
+  if (has('mbrëmj', 'mbremj', 'night', 'evening', 'starlight', 'sparkle')) return 'stars';
   if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
   if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim')) return 'music';
   return 'heart';
@@ -232,6 +264,168 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
         doc.lines([[s * 0.7, -s * 0.85, s * 1.3, -s * 0.85, s * 2, 0]], bx - s, by, [1, 1], 'S');
       bird(cx - r * 0.28, cy + r * 0.35, r * 0.72); // near bird
       bird(cx + r * 0.55, cy - r * 0.4, r * 0.5); // far bird
+      break;
+    }
+    case 'balloons': {
+      // A little cluster of balloons, strings gathered at the foot.
+      const balloon = (bx: number, by: number, br: number) => {
+        doc.ellipse(bx, by, br, br * 1.15, 'S'); // balloon body
+        doc.line(bx, by + br * 1.15, cx, cy + r); // string to the gather point
+      };
+      balloon(cx, cy - r * 0.55, r * 0.42);
+      balloon(cx - r * 0.55, cy - r * 0.25, r * 0.38);
+      balloon(cx + r * 0.55, cy - r * 0.25, r * 0.38);
+      break;
+    }
+    case 'plane': {
+      // Side-view aeroplane for the honeymoon send-off.
+      doc.ellipse(cx, cy, r * 0.95, r * 0.32, 'S'); // fuselage
+      doc.triangle(cx - r * 0.1, cy - r * 0.28, cx + r * 0.5, cy - r * 0.28, cx + r * 0.12, cy - r * 0.9, 'S'); // tail fin
+      doc.triangle(cx - r * 0.35, cy, cx + r * 0.25, cy, cx - r * 0.05, cy + r * 0.7, 'S'); // wing
+      doc.setFillColor(...color);
+      doc.circle(cx + r * 0.72, cy, r * 0.08, 'F'); // cockpit window
+      break;
+    }
+    case 'guestbook': {
+      // An open guest book with a couple of ruled lines on each page.
+      const Ax = cx, Ay = cy - r * 0.6; // top of the spine
+      const Dx = cx, Dy = cy + r * 0.85; // foot of the spine
+      doc.line(Ax, Ay, Dx, Dy); // spine
+      doc.line(Ax, Ay, cx - r, cy - r * 0.35); // left top edge
+      doc.line(cx - r, cy - r * 0.35, cx - r, cy + r * 0.6); // left outer edge
+      doc.line(cx - r, cy + r * 0.6, Dx, Dy); // left bottom edge
+      doc.line(Ax, Ay, cx + r, cy - r * 0.35); // right top edge
+      doc.line(cx + r, cy - r * 0.35, cx + r, cy + r * 0.6); // right outer edge
+      doc.line(cx + r, cy + r * 0.6, Dx, Dy); // right bottom edge
+      doc.line(cx - r * 0.72, cy, cx - r * 0.28, cy); // page rules
+      doc.line(cx + r * 0.28, cy, cx + r * 0.72, cy);
+      doc.line(cx - r * 0.72, cy + r * 0.3, cx - r * 0.28, cy + r * 0.3);
+      doc.line(cx + r * 0.28, cy + r * 0.3, cx + r * 0.72, cy + r * 0.3);
+      break;
+    }
+    case 'clock': {
+      doc.circle(cx, cy, r * 0.9, 'S'); // face
+      doc.line(cx, cy - r * 0.9, cx, cy - r * 0.72); // 12 o'clock marker
+      doc.line(cx, cy, cx, cy - r * 0.55); // hour hand
+      doc.line(cx, cy, cx + r * 0.46, cy + r * 0.2); // minute hand
+      doc.setFillColor(...color);
+      doc.circle(cx, cy, r * 0.08, 'F'); // centre pin
+      break;
+    }
+    case 'groom': {
+      // A top hat and a bow tie — the groom's counterpart to the bride glyph.
+      doc.line(cx - r, cy - r * 0.15, cx + r, cy - r * 0.15); // hat brim
+      doc.rect(cx - r * 0.55, cy - r, r * 1.1, r * 0.85, 'S'); // hat crown
+      doc.line(cx - r * 0.55, cy - r * 0.4, cx + r * 0.55, cy - r * 0.4); // hat band
+      doc.triangle(cx - r * 0.55, cy + r * 0.35, cx - r * 0.55, cy + r, cx, cy + r * 0.68, 'S'); // bow tie left
+      doc.triangle(cx + r * 0.55, cy + r * 0.35, cx + r * 0.55, cy + r, cx, cy + r * 0.68, 'S'); // bow tie right
+      doc.setFillColor(...color);
+      doc.circle(cx, cy + r * 0.68, r * 0.12, 'F'); // knot
+      break;
+    }
+    case 'dress': {
+      // The wedding gown on a hanger — an A-line skirt flaring to a curved hem.
+      doc.circle(cx, cy - r, r * 0.12, 'S'); // hanger hook
+      doc.line(cx - r * 0.55, cy - r * 0.55, cx, cy - r * 0.85); // hanger left
+      doc.line(cx + r * 0.55, cy - r * 0.55, cx, cy - r * 0.85); // hanger right
+      doc.line(cx - r * 0.5, cy - r * 0.5, cx - r * 0.12, cy + r * 0.1); // bodice left
+      doc.line(cx + r * 0.5, cy - r * 0.5, cx + r * 0.12, cy + r * 0.1); // bodice right
+      doc.line(cx - r * 0.12, cy + r * 0.1, cx - r * 0.6, cy + r); // skirt left
+      doc.line(cx + r * 0.12, cy + r * 0.1, cx + r * 0.6, cy + r); // skirt right
+      doc.lines([[r * 0.3, r * 0.2, r * 0.9, r * 0.2, r * 1.2, 0]], cx - r * 0.6, cy + r, [1, 1], 'S'); // hem curve
+      break;
+    }
+    case 'makeup': {
+      // A lipstick, standing in for hair & make-up / getting ready.
+      doc.roundedRect(cx - r * 0.3, cy - r * 0.05, r * 0.6, r * 0.95, r * 0.06, r * 0.06, 'S'); // tube base
+      doc.rect(cx - r * 0.22, cy - r * 0.45, r * 0.44, r * 0.4, 'S'); // collar
+      doc.setFillColor(...color);
+      doc.triangle(cx - r * 0.18, cy - r * 0.45, cx + r * 0.18, cy - r * 0.45, cx + r * 0.08, cy - r, 'F'); // slanted tip
+      break;
+    }
+    case 'pin': {
+      // A map pin for the venue / directions.
+      doc.circle(cx, cy - r * 0.3, r * 0.62, 'S'); // head
+      doc.line(cx - r * 0.44, cy + r * 0.12, cx, cy + r); // left flank to tip
+      doc.line(cx + r * 0.44, cy + r * 0.12, cx, cy + r); // right flank to tip
+      doc.setFillColor(...color);
+      doc.circle(cx, cy - r * 0.3, r * 0.2, 'F'); // centre dot
+      break;
+    }
+    case 'letter': {
+      // A sealed love letter — for the vows or the couple's note.
+      doc.rect(cx - r * 0.9, cy - r * 0.55, r * 1.8, r * 1.15, 'S'); // envelope
+      doc.line(cx - r * 0.9, cy - r * 0.55, cx, cy + r * 0.1); // flap left
+      doc.line(cx + r * 0.9, cy - r * 0.55, cx, cy + r * 0.1); // flap right
+      drawHeart(doc, cx, cy + r * 0.05, r * 0.3, color); // wax-seal heart
+      break;
+    }
+    case 'carriage': {
+      // A fairy-tale carriage: a round cabin over two wheels with a hitch shaft.
+      doc.circle(cx - r * 0.4, cy + r * 0.55, r * 0.3, 'S'); // rear wheel
+      doc.circle(cx + r * 0.55, cy + r * 0.55, r * 0.3, 'S'); // front wheel
+      doc.circle(cx, cy - r * 0.1, r * 0.62, 'S'); // cabin
+      doc.line(cx, cy - r * 0.72, cx, cy + r * 0.5); // door split
+      doc.line(cx + r * 0.6, cy - r * 0.05, cx + r * 1.05, cy - r * 0.28); // shaft
+      break;
+    }
+    case 'drum': {
+      // A traditional drum (lodra / tupan) with crossed sticks.
+      doc.ellipse(cx, cy - r * 0.35, r * 0.82, r * 0.26, 'S'); // top skin
+      doc.line(cx - r * 0.82, cy - r * 0.35, cx - r * 0.62, cy + r * 0.6); // left shell
+      doc.line(cx + r * 0.82, cy - r * 0.35, cx + r * 0.62, cy + r * 0.6); // right shell
+      doc.lines([[r * 0.24, r * 0.5, r * 1.0, r * 0.5, r * 1.24, 0]], cx - r * 0.62, cy + r * 0.6, [1, 1], 'S'); // bottom
+      doc.line(cx - r * 0.82, cy - r * 0.35, cx + r * 0.62, cy + r * 0.6); // tension
+      doc.line(cx + r * 0.82, cy - r * 0.35, cx - r * 0.62, cy + r * 0.6); // tension
+      doc.line(cx - r * 0.25, cy - r * 0.95, cx + r * 0.35, cy - r * 0.45); // stick
+      doc.line(cx + r * 0.25, cy - r * 0.95, cx - r * 0.35, cy - r * 0.45); // stick
+      break;
+    }
+    case 'lantern': {
+      // A hanging lantern with a small flame — evening ambience / string lights.
+      doc.line(cx, cy - r, cx, cy - r * 0.8); // hook
+      doc.line(cx - r * 0.5, cy - r * 0.8, cx + r * 0.5, cy - r * 0.8); // cap
+      doc.roundedRect(cx - r * 0.5, cy - r * 0.72, r * 1.0, r * 1.4, r * 0.22, r * 0.22, 'S'); // body
+      doc.setFillColor(...color);
+      doc.triangle(cx - r * 0.16, cy + r * 0.15, cx + r * 0.16, cy + r * 0.15, cx, cy - r * 0.35, 'F'); // flame
+      break;
+    }
+    case 'video': {
+      // A movie camera with two reels and a lens — videography.
+      doc.roundedRect(cx - r * 0.95, cy - r * 0.35, r * 1.5, r * 0.9, r * 0.1, r * 0.1, 'S'); // body
+      doc.circle(cx - r * 0.5, cy - r * 0.55, r * 0.3, 'S'); // reel
+      doc.circle(cx + r * 0.15, cy - r * 0.55, r * 0.3, 'S'); // reel
+      doc.triangle(cx + r * 0.55, cy - r * 0.05, cx + r * 1.05, cy - r * 0.35, cx + r * 1.05, cy + r * 0.25, 'S'); // lens
+      break;
+    }
+    case 'stars': {
+      // A scatter of four-point sparkles — the evening / starlit celebration.
+      doc.setFillColor(...color);
+      const spark = (sx: number, sy: number, s: number) => {
+        doc.triangle(sx, sy - s, sx - s * 0.3, sy, sx + s * 0.3, sy, 'F');
+        doc.triangle(sx, sy + s, sx - s * 0.3, sy, sx + s * 0.3, sy, 'F');
+        doc.triangle(sx - s, sy, sx, sy - s * 0.3, sx, sy + s * 0.3, 'F');
+        doc.triangle(sx + s, sy, sx, sy - s * 0.3, sx, sy + s * 0.3, 'F');
+      };
+      spark(cx - r * 0.35, cy - r * 0.2, r * 0.6);
+      spark(cx + r * 0.5, cy - r * 0.5, r * 0.4);
+      spark(cx + r * 0.3, cy + r * 0.55, r * 0.45);
+      break;
+    }
+    case 'sunset': {
+      // A sun on the horizon with rising rays — golden-hour photos.
+      doc.line(cx - r, cy + r * 0.55, cx + r, cy + r * 0.55); // horizon
+      doc.circle(cx, cy + r * 0.55, r * 0.5, 'S'); // sun
+      const sunY = cy + r * 0.55;
+      for (let k = -2; k <= 2; k++) {
+        const a = -Math.PI / 2 + k * (Math.PI / 3.2); // fan upward
+        doc.line(
+          cx + Math.cos(a) * r * 0.66,
+          sunY + Math.sin(a) * r * 0.66,
+          cx + Math.cos(a) * r * 0.98,
+          sunY + Math.sin(a) * r * 0.98,
+        ); // ray
+      }
       break;
     }
     case 'fireworks': {
@@ -406,37 +600,50 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content): void {
   if (c.venue) centered(c.venue, 14, { style: 'bold', font: style.nameFont, gap: c.address ? 1 : 6 });
   if (c.address) centered(c.address, 10, { font: 'helvetica', color: style.muted, gap: 6, lineHeight: 5 });
 
-  // Icon schedule timeline — the heart of the redesign.
-  const agenda = c.agenda.slice(0, 6);
+  // Icon schedule timeline — the heart of the redesign. Program points flow left-to-right and
+  // wrap onto further rows (up to PER_ROW per row), so a long day still fits on the one keepsake
+  // page instead of being truncated. Icons are sized for a full row and stay uniform across rows;
+  // a short final row is centred under the block.
+  const PER_ROW = 6;
+  const MAX_ROWS = 2;
+  const agenda = c.agenda.slice(0, PER_ROW * MAX_ROWS);
   if (agenda.length) {
     rule(30);
     centered(c.scheduleHeading.toUpperCase(), 9, { font: 'helvetica', color: style.accent, gap: 6, lineHeight: 4, spacing: 0.8 });
-    const slot = contentWidth / agenda.length;
+    const perRow = Math.min(agenda.length, PER_ROW);
+    const slot = contentWidth / perRow;
     const r = Math.min(slot * 0.26, 5.5);
-    const startX = cx - contentWidth / 2 + slot / 2;
-    const iconY = y + r;
-    agenda.forEach((item, i) => {
-      const ix = startX + i * slot;
-      drawIcon(doc, iconForAgenda(item), ix, iconY, r, style.accent);
-      let ty = iconY + r + 4.5;
-      if (item.time?.trim()) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...style.ink);
-        doc.text(item.time.trim(), ix, ty, { align: 'center' });
-        ty += 4;
-      }
-      if (item.title.trim()) {
-        doc.setFont(style.nameFont, style.nameFont === 'times' ? 'italic' : 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...style.muted);
-        for (const line of (doc.splitTextToSize(item.title.trim(), slot - 2) as string[]).slice(0, 2)) {
-          doc.text(line, ix, ty, { align: 'center' });
-          ty += 3.4;
+    let curY = y;
+    for (let start = 0; start < agenda.length; start += perRow) {
+      const row = agenda.slice(start, start + perRow);
+      const iconY = curY + r;
+      const rowStartX = cx - (row.length * slot) / 2 + slot / 2;
+      let rowBottom = iconY + r + 4.5;
+      row.forEach((item, i) => {
+        const ix = rowStartX + i * slot;
+        drawIcon(doc, iconForAgenda(item), ix, iconY, r, style.accent);
+        let ty = iconY + r + 4.5;
+        if (item.time?.trim()) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(...style.ink);
+          doc.text(item.time.trim(), ix, ty, { align: 'center' });
+          ty += 4;
         }
-      }
-    });
-    y = iconY + r + 4.5 + 14;
+        if (item.title.trim()) {
+          doc.setFont(style.nameFont, style.nameFont === 'times' ? 'italic' : 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(...style.muted);
+          for (const line of (doc.splitTextToSize(item.title.trim(), slot - 2) as string[]).slice(0, 2)) {
+            doc.text(line, ix, ty, { align: 'center' });
+            ty += 3.4;
+          }
+        }
+        rowBottom = Math.max(rowBottom, ty);
+      });
+      curY = rowBottom + 6; // gap before the next row
+    }
+    y = curY + 8;
   }
 
   if (c.note) {
