@@ -7,11 +7,23 @@ import { useLanguage } from '../hooks/useLanguage';
 /** Emoji shown next to a schedule row in the editor, echoing the icon the PDF draws for it. */
 const ICON_EMOJI: Record<IconKind, string> = {
   cocktail: '🍸',
+  toast: '🥂',
   arch: '💒',
+  church: '⛪',
   bride: '👰',
+  car: '🚗',
+  camera: '📸',
+  flowers: '💐',
   dinner: '🍽️',
   cake: '🎂',
   rings: '💍',
+  music: '🎵',
+  dance: '💃',
+  mic: '🎤',
+  gift: '🎁',
+  candle: '🕯️',
+  doves: '🕊️',
+  fireworks: '🎆',
   heart: '💗',
 };
 
@@ -27,6 +39,27 @@ const DEFAULT_AGENDA_KEYS = [
   { key: 'dinner', time: '19:00' },
   { key: 'cake', time: '21:00' },
   { key: 'party', time: '22:00' },
+] as const;
+
+/**
+ * Extra one-tap program points, each drawing its own vector icon on the invitation. They aren't
+ * seeded into the schedule, only offered as "quick add" chips, so couples can pick the moments
+ * that fit their day — a toast, church ceremony, photos, bouquet, the departure car, rings,
+ * fireworks — without every card carrying them.
+ */
+const EXTRA_SUGGESTION_KEYS = [
+  { key: 'toast', time: '' },
+  { key: 'church', time: '' },
+  { key: 'congrats', time: '' },
+  { key: 'gifts', time: '' },
+  { key: 'firstDance', time: '' },
+  { key: 'photo', time: '' },
+  { key: 'flowers', time: '' },
+  { key: 'candles', time: '' },
+  { key: 'doves', time: '' },
+  { key: 'car', time: '' },
+  { key: 'rings', time: '' },
+  { key: 'fireworks', time: '' },
 ] as const;
 
 /**
@@ -89,9 +122,9 @@ export function InvitationModal({
   // "Quick add" chips for any default point not already on the schedule (matched by its icon, so
   // an edited "Darka i vonë" still counts as dinner). Lets a couple re-add what they removed.
   const presentIcons = new Set(agenda.map(iconForAgenda));
-  const suggestions = DEFAULT_AGENDA_KEYS.map(({ key, time }) => ({ key, time, title: t(`invitation.defaults.${key}`) })).filter(
-    (d) => !presentIcons.has(iconForAgenda({ id: d.key, title: d.title })),
-  );
+  const suggestions = [...DEFAULT_AGENDA_KEYS, ...EXTRA_SUGGESTION_KEYS]
+    .map(({ key, time }) => ({ key, time, title: t(`invitation.defaults.${key}`) }))
+    .filter((d) => !presentIcons.has(iconForAgenda({ id: d.key, title: d.title })));
 
   const downloadPdf = async () => {
     setBusy(true);
