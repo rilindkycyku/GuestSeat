@@ -3,6 +3,7 @@ import type { EventState } from '../types';
 import { qrDataUrl, QrTooLargeError } from '../lib/qr';
 import { encodeStateToLink, toQrPayloadUrl } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
+import { ModalHeader } from './ModalHeader';
 
 /**
  * Shows a scannable QR code for the current event's share link, so a guest can
@@ -87,21 +88,17 @@ export function QrModal({
   const tooLarge = status === 'tooLarge';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6"
+        className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('share.qrTitle')}</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
-          >
-            ✕
-          </button>
-        </div>
+        <ModalHeader icon="📱" title={t('share.qrTitle')} onClose={onClose} />
 
+        <div className="p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           {tooLarge ? t('share.qrTooLarge') : t('share.qrDesc')}
         </p>
@@ -157,6 +154,7 @@ export function QrModal({
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

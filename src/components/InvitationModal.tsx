@@ -3,6 +3,7 @@ import type { AgendaItem, EventDetails, EventState, InvitationTemplate } from '.
 import { makeId } from '../lib/importGuests';
 import { exportInvitationPdf, INVITATION_TEMPLATES, iconForAgenda, type IconKind } from '../lib/invitationPdf';
 import { useLanguage } from '../hooks/useLanguage';
+import { ModalHeader } from './ModalHeader';
 
 /** Emoji shown next to a schedule row in the editor, echoing the icon the PDF draws for it. */
 const ICON_EMOJI: Record<IconKind, string> = {
@@ -170,21 +171,17 @@ export function InvitationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto"
+        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">💌 {t('invitation.title')}</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
-          >
-            ✕
-          </button>
-        </div>
+        <ModalHeader icon="💌" title={t('invitation.title')} onClose={onClose} />
 
+        <div className="overflow-y-auto p-6">
         <div className="space-y-4">
           <div>
             <label className={labelClass}>{t('invitation.introMessage')}</label>
@@ -345,6 +342,7 @@ export function InvitationModal({
           >
             {t('share.qrTitle')}
           </button>
+        </div>
         </div>
       </div>
     </div>

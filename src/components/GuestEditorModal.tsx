@@ -4,6 +4,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { TAG_COLORS } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
+import { ModalHeader } from './ModalHeader';
 
 interface GuestEditorModalProps {
   guest: Guest;
@@ -97,13 +98,17 @@ export function GuestEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6 max-h-[88vh] overflow-y-auto"
+        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('guestEditor.title')}</h2>
+        <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
 
+        <div className="overflow-y-auto p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -312,6 +317,7 @@ export function GuestEditorModal({
               {t('common.save')}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

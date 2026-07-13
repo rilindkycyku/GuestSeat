@@ -26,12 +26,12 @@ export function ConfirmModal({ message, confirmLabel, title, danger, onConfirm, 
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 sm:px-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
       onClick={onClose}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6"
+        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {title && <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1.5">{title}</h2>}

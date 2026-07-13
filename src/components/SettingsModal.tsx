@@ -5,6 +5,7 @@ import type { TableColumns, ViewMode } from '../lib/storage';
 import type { Language } from '../lib/i18n';
 import type { TableTag, TagColor } from '../types';
 import { TAG_COLORS, TAG_COLOR_ORDER } from '../lib/tagColors';
+import { ModalHeader } from './ModalHeader';
 
 interface SettingsModalProps {
   viewMode: ViewMode;
@@ -225,19 +226,7 @@ export function SettingsModal({
         className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900">
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-lg">⚙️</span>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('settings.title')}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-white/70 dark:bg-slate-800 text-slate-500 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-colors"
-            aria-label={t('common.close')}
-          >
-            ✕
-          </button>
-        </div>
+        <ModalHeader icon="⚙️" title={t('settings.title')} onClose={onClose} />
 
         <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
         <Section title={t('settings.content')} icon="✨">
