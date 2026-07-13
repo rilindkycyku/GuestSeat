@@ -3,6 +3,7 @@ import type { EventState } from '../types';
 import { exportAsExcel, exportAsJson, exportAsPdf } from '../lib/exportData';
 import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 export function ExportMenu({
   state,
@@ -21,6 +22,9 @@ export function ExportMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const { state: installState, promptInstall } = useInstallPrompt();
+  // Offer the shortcut only where there's a path to install: a native prompt, or iOS's manual flow.
+  const canInstall = installState === 'available' || installState === 'ios';
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +64,18 @@ export function ExportMenu({
     }
   };
 
+  // Install the app as a home-screen shortcut. On Chrome/Edge this fires the native prompt; on
+  // iOS there's no programmatic install, so we point the user at the Share → Add flow instead.
+  const addToHomeScreen = async () => {
+    setOpen(false);
+    if (installState === 'ios') {
+      onToast?.(t('export.shortcutIosHint'));
+      return;
+    }
+    const outcome = await promptInstall();
+    if (outcome === 'accepted') onToast?.(t('export.shortcutAdded'));
+  };
+
   return (
     <div className={`relative ${fullWidth ? 'w-full' : ''}`} ref={ref}>
       <button
@@ -87,6 +103,14 @@ export function ExportMenu({
           >
             {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
           </button>
+          {canInstall && (
+            <button
+              onClick={() => void addToHomeScreen()}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+            >
+              {t('export.shortcut')} <span className="text-slate-400 text-xs block">{t('export.shortcutDesc')}</span>
+            </button>
+          )}
           {onShowInvitation && (
             <button
               onClick={() => {
