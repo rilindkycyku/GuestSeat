@@ -109,6 +109,8 @@ export interface EventDetails {
   invitationNote?: string;
   /** Host/family sign-off, e.g. "Familja Kyçyku" — rendered as "With respect, …". */
   hostFamily?: string;
+  /** Dress code line for guests, e.g. "Black tie", "Formal", "Garden party". */
+  dressCode?: string;
   /** Phone number guests call to confirm attendance (RSVP). */
   rsvpPhone?: string;
   /** Which visual design the printable invitation uses. Defaults to 'classic'. */

@@ -51,6 +51,8 @@ const ICON_EMOJI: Record<IconKind, string> = {
 const DEFAULT_AGENDA_KEYS = [
   { key: 'cocktail', time: '16:00' },
   { key: 'entrance', time: '16:30' },
+  // Tupanat — the traditional drums that herald the bride's arrival at Albanian weddings.
+  { key: 'traditional', time: '' },
   { key: 'ceremony', time: '17:00' },
   { key: 'dinner', time: '19:00' },
   { key: 'cake', time: '21:00' },
@@ -81,7 +83,6 @@ const EXTRA_SUGGESTION_KEYS = [
   { key: 'decor', time: '' },
   { key: 'lanterns', time: '' },
   { key: 'candles', time: '' },
-  { key: 'traditional', time: '' },
   { key: 'doves', time: '' },
   { key: 'groom', time: '' },
   { key: 'sunset', time: '' },
@@ -257,6 +258,16 @@ export function InvitationModal({
               placeholder={t('invitation.notePlaceholder')}
               rows={3}
               className={`${fieldClass} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('invitation.dressCode')}</label>
+            <input
+              value={details.dressCode ?? ''}
+              onChange={(e) => onChange({ dressCode: e.target.value })}
+              placeholder={t('invitation.dressCodePlaceholder')}
+              className={fieldClass}
             />
           </div>
 

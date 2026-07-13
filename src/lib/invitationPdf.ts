@@ -489,6 +489,7 @@ interface Content {
   agenda: AgendaItem[];
   note: string;
   scheduleHeading: string;
+  dressCode: string;
   hostLine: string;
   rsvpPrompt: string;
   rsvpPhone: string;
@@ -651,6 +652,11 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content): void {
     centered(c.note, 11.5, { style: 'italic', font: style.nameFont, color: style.ink, gap: 6, lineHeight: 5.5 });
   }
 
+  // Dress code — a small caps practical line above the sign-off, e.g. "DRESS CODE · Black tie".
+  if (c.dressCode) {
+    centered(c.dressCode, 9, { font: 'helvetica', color: style.accent, gap: 6, lineHeight: 4.4, spacing: 0.6, upper: true });
+  }
+
   // Sign-off ("With respect, the … family") and the RSVP prompt with a phone number.
   if (c.hostLine) {
     centered(c.hostLine.toUpperCase(), 10, { font: 'helvetica', color: style.accent, gap: c.rsvpPhone || c.rsvpPrompt ? 6 : 6, lineHeight: 4.6, spacing: 0.4 });
@@ -705,6 +711,7 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
     agenda: (details.agenda ?? []).filter((a) => a.title.trim() || a.time?.trim()),
     note: details.invitationNote?.trim() ?? '',
     scheduleHeading: t('invitation.scheduleHeading'),
+    dressCode: details.dressCode?.trim() ? `${t('invitation.dressCodeLabel')} · ${details.dressCode.trim()}` : '',
     hostLine: hostFamily ? `${t('invitation.respectPrefix')} ${hostFamily}` : '',
     rsvpPrompt: details.rsvpPhone?.trim() ? t('invitation.rsvpPrompt') : '',
     rsvpPhone: details.rsvpPhone?.trim() ?? '',
