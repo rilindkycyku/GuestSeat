@@ -225,6 +225,26 @@ export function useEventState() {
         tables: prev.tables.map((tb) =>
           tb.tagIds?.includes(tagId) ? { ...tb, tagIds: tb.tagIds.filter((id) => id !== tagId) } : tb
         ),
+        // …and from any guest that carried it.
+        guests: prev.guests.map((g) =>
+          g.tagIds?.includes(tagId) ? { ...g, tagIds: g.tagIds.filter((id) => id !== tagId) } : g
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const toggleGuestTag = useCallback((guestId: string, tagId: string) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => {
+          if (g.id !== guestId) return g;
+          const current = g.tagIds ?? [];
+          const next = current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId];
+          return { ...g, tagIds: next };
+        }),
         updatedAt: new Date().toISOString(),
       };
     });
@@ -287,5 +307,6 @@ export function useEventState() {
     updateTag,
     removeTag,
     toggleTableTag,
+    toggleGuestTag,
   };
 }

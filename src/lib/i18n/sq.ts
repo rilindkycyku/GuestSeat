@@ -142,6 +142,8 @@ export const sq = {
     unseatedOption: 'Pa vend',
     notes: 'Shënime',
     notesPlaceholder: 'Nevoja ushqimore, +1, marrëdhënia…',
+    tags: 'Grupet',
+    tagsHint: 'Etiketo të ftuarin sipas grupit — p.sh. Familja e nuses, Shokët e dhëndrit. E dobishme kur shumë të ftuar janë në një tavolinë të gjatë.',
     deleteConfirm: 'Të hiqet {{name}} nga lista?',
     linkedGuests: 'Të lidhur',
     linkedGuestsHint: "Lidhni të ftuarit që doni t'i uleni së bashku — çifte, familje, shoqërues. Mund të lidhen vetëm të ftuar që janë tashmë në këtë tavolinë, ose pa vend; një i ftuar pa vend ulet automatikisht këtu.",

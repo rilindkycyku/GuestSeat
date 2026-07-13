@@ -140,6 +140,8 @@ export const en = {
     unseatedOption: 'Unseated',
     notes: 'Notes',
     notesPlaceholder: 'Dietary needs, +1, relation…',
+    tags: 'Groups',
+    tagsHint: "Tag this guest by group — e.g. Bride's family, Groom's friends. Handy when many guests share one long table.",
     deleteConfirm: 'Remove {{name}} from the list?',
     linkedGuests: 'Linked guests',
     linkedGuestsHint: 'Link guests you want seated together — couples, family, plus-ones. Only guests already at this table, or unseated, can be linked; an unseated guest is seated here automatically.',

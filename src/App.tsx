@@ -60,6 +60,7 @@ export default function App() {
     updateTag,
     removeTag,
     toggleTableTag,
+    toggleGuestTag,
   } = useEventState();
   const { t } = useLanguage();
 
@@ -144,12 +145,30 @@ export default function App() {
   // The tag ids applied to a table, merging the wedding side with its custom tags.
   const assignedIdsFor = useCallback((tb: Table) => [...(tb.side ? [tb.side] : []), ...(tb.tagIds ?? [])], []);
 
+  // The set of guest-level tag ids present at each table, so a tag applied only to guests
+  // (e.g. "Bride's family" on a shared long table) still counts and filters that table in.
+  const guestTagIdsByTable = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const g of state?.guests ?? []) {
+      if (!g.tableId || !g.tagIds?.length) continue;
+      const set = m.get(g.tableId) ?? new Set<string>();
+      for (const id of g.tagIds) set.add(id);
+      m.set(g.tableId, set);
+    }
+    return m;
+  }, [state]);
+
+  const tableHasTag = useCallback(
+    (tb: Table, id: string) => tb.side === id || tb.tagIds?.includes(id) || guestTagIdsByTable.get(tb.id)?.has(id),
+    [guestTagIdsByTable]
+  );
+
   const filteredTables = useMemo(() => {
     if (!state) return [];
     if (tableFilter.kind === 'all') return state.tables;
     const id = tableFilter.tagId;
-    return state.tables.filter((tb) => tb.side === id || tb.tagIds?.includes(id));
-  }, [state, tableFilter]);
+    return state.tables.filter((tb) => tableHasTag(tb, id));
+  }, [state, tableFilter, tableHasTag]);
 
   const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
 
@@ -157,10 +176,12 @@ export default function App() {
     const counts = new Map<string, number>();
     for (const tb of state?.tables ?? []) {
       if (tb.side) counts.set(tb.side, (counts.get(tb.side) ?? 0) + 1);
-      for (const id of tb.tagIds ?? []) counts.set(id, (counts.get(id) ?? 0) + 1);
+      // Union of table-level tags and any guest tags at the table, so each tag counts a table once.
+      const ids = new Set([...(tb.tagIds ?? []), ...(guestTagIdsByTable.get(tb.id) ?? [])]);
+      for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     return counts;
-  }, [state]);
+  }, [state, guestTagIdsByTable]);
 
   // Toggle a tag on a table. Groom/Bride map to the mutually-exclusive `side`; custom tags stack.
   const toggleTag = useCallback(
@@ -182,6 +203,15 @@ export default function App() {
       toggleTableTag(tableId, id);
     },
     [addTag, toggleTableTag]
+  );
+
+  // Create a custom tag and immediately apply it to the guest being edited.
+  const createTagForGuest = useCallback(
+    (guestId: string, label: string) => {
+      const id = addTag(label);
+      toggleGuestTag(guestId, id);
+    },
+    [addTag, toggleGuestTag]
   );
 
   const seatedCount = useMemo(() => {
@@ -614,6 +644,7 @@ export default function App() {
               guests={unseatedGuests}
               matchedIds={matchedIds}
               linkBadges={linkBadges}
+              tags={customTags}
               onGuestClick={(g) => setEditingGuestId(g.id)}
             />
           </div>
@@ -795,6 +826,8 @@ export default function App() {
           onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
           onSeatGuest={trySeatGuest}
+          onToggleTag={(tagId) => toggleGuestTag(editingGuest.id, tagId)}
+          onCreateTag={(label) => createTagForGuest(editingGuest.id, label)}
         />
       )}
 

@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import type { Guest } from '../types';
+import type { Guest, TableTag } from '../types';
+import { TAG_COLORS } from '../lib/tagColors';
 
 interface GuestChipProps {
   guest: Guest;
@@ -8,13 +9,17 @@ interface GuestChipProps {
   onClick?: () => void;
   compact?: boolean;
   linkBadge?: { status: 'together' | 'apart'; title: string };
+  /** All event tags, used to render this guest's group tags. Omit to hide tags. */
+  tags?: TableTag[];
 }
 
-export function GuestChip({ guest, highlighted, onClick, compact, linkBadge }: GuestChipProps) {
+export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, tags }: GuestChipProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: guest.id,
     data: { guestId: guest.id },
   });
+
+  const guestTags = tags ? (guest.tagIds ?? []).map((id) => tags.find((tg) => tg.id === id)).filter((x): x is TableTag => !!x) : [];
 
   const style = transform
     ? { transform: CSS.Translate.toString(transform), zIndex: 50 }
@@ -58,6 +63,15 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge }: G
         {guest.name}
         {guest.surname ? <span className="text-slate-500 dark:text-slate-400"> {guest.surname}</span> : null}
       </span>
+      {guestTags.map((tag) => (
+        <span
+          key={tag.id}
+          title={tag.label}
+          className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+        >
+          {tag.label}
+        </span>
+      ))}
       {linkBadge && (
         <span
           title={linkBadge.title}

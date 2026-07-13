@@ -148,6 +148,7 @@ export function TableCard({
                     highlighted={matchedIds ? matchedIds.has(g.id) : false}
                     linkBadge={linkBadges.get(g.id)}
                     onClick={() => onGuestClick(g)}
+                    tags={tags}
                     compact
                   />
                 ))}
@@ -159,6 +160,7 @@ export function TableCard({
                 highlighted={matchedIds ? matchedIds.has(group[0].id) : false}
                 linkBadge={linkBadges.get(group[0].id)}
                 onClick={() => onGuestClick(group[0])}
+                tags={tags}
                 compact
               />
             )

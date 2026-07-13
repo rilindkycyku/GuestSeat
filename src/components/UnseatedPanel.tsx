@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import type { Guest } from '../types';
+import type { Guest, TableTag } from '../types';
 import { GuestChip } from './GuestChip';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -7,10 +7,11 @@ interface UnseatedPanelProps {
   guests: Guest[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
+  tags: TableTag[];
   onGuestClick: (guest: Guest) => void;
 }
 
-export function UnseatedPanel({ guests, matchedIds, linkBadges, onGuestClick }: UnseatedPanelProps) {
+export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestClick }: UnseatedPanelProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: 'unseated' });
   const isEmpty = guests.length === 0;
@@ -44,6 +45,7 @@ export function UnseatedPanel({ guests, matchedIds, linkBadges, onGuestClick }: 
             guest={g}
             highlighted={matchedIds ? matchedIds.has(g.id) : false}
             linkBadge={linkBadges.get(g.id)}
+            tags={tags}
             onClick={() => onGuestClick(g)}
           />
         ))}

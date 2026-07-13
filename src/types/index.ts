@@ -15,6 +15,11 @@ export interface Guest {
   tableId: string | null;
   /** IDs of other guests this guest is linked to (couples, families, plus-ones). Always mutual. */
   linkedGuestIds?: string[];
+  /**
+   * IDs of custom tags (see EventState.tags) applied to this guest — e.g. "Bride's family",
+   * "Groom's friends". Lets guests sharing one table (a long banquet table) be color-coded by group.
+   */
+  tagIds?: string[];
   /** RSVP / attendance response. Absent means no response yet (pending). */
   rsvp?: RsvpStatus;
 }
