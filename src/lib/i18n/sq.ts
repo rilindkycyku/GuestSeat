@@ -315,6 +315,10 @@ export const sq = {
     invitationDesc: 'Ftesë për të ftuarit me detaje',
     qr: 'Kod QR',
     qrDesc: 'Lidhje e skanueshme',
+    shortcut: 'Shto në ekranin bazë',
+    shortcutDesc: 'Shkurtore me një prekje në telefon',
+    shortcutIosHint: 'Prek butonin Ndaj, pastaj "Shto në ekranin bazë".',
+    shortcutAdded: 'U shtua në ekranin bazë.',
     fields: {
       name: 'Emri',
       surname: 'Mbiemri',

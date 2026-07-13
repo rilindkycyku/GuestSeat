@@ -313,6 +313,10 @@ export const en = {
     invitationDesc: 'Guest invitation with details',
     qr: 'QR code',
     qrDesc: 'Scannable share link',
+    shortcut: 'Add to Home Screen',
+    shortcutDesc: 'One-tap shortcut on your phone',
+    shortcutIosHint: 'Tap the Share button, then "Add to Home Screen".',
+    shortcutAdded: 'Added to your home screen.',
     fields: {
       name: 'Name',
       surname: 'Surname',
