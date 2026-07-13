@@ -44,6 +44,9 @@ const DEMO: EventState = {
     { id: 't_g2', name: 'Table 2', capacity: 8, side: 'groom', autoSuffix: '2', tagIds: ['tag_friends', 'tag_colleagues'] },
     { id: 't_b1', name: 'Table 3', capacity: 8, side: 'bride', autoSuffix: '3', tagIds: ['tag_family'] },
     { id: 't_b2', name: 'Table 4', capacity: 8, side: 'bride', autoSuffix: '4', tagIds: ['tag_friends', 'tag_prishtina'] },
+    // A long banquet ("imperial") table — one shared row where several groups sit
+    // together, color-coded by their group tags. Shows off the `long` table shape.
+    { id: 't_long', name: 'Long Table', capacity: 12, shape: 'long', tagIds: ['tag_family', 'tag_prishtina'] },
   ],
   guests: [
     // Head table — the couple, linked together, both confirmed.
@@ -71,6 +74,15 @@ const DEMO: EventState = {
     { id: 'g_bp1', name: 'Adelina', surname: 'Morina', tableId: 't_b2', rsvp: 'confirmed', linkedGuestIds: ['g_bp2'] },
     { id: 'g_bp2', name: 'Fisnik', surname: 'Morina', notes: 'No nuts (allergy)', tableId: 't_b2', rsvp: 'confirmed', linkedGuestIds: ['g_bp1'] },
     { id: 'g_bp3', name: 'Kaltrina', surname: 'Berisha', tableId: 't_b2' },
+
+    // Long banquet table — two groups share the one long row, color-coded by their
+    // group tags (family vs. Prishtina friends) so it's clear who's who.
+    { id: 'g_l1', name: 'Skender', surname: 'Krasniqi', notes: "Bride's uncle", tableId: 't_long', tagIds: ['tag_family'], rsvp: 'confirmed', linkedGuestIds: ['g_l2'] },
+    { id: 'g_l2', name: 'Mirlinda', surname: 'Krasniqi', notes: "Bride's aunt", tableId: 't_long', tagIds: ['tag_family'], rsvp: 'confirmed', linkedGuestIds: ['g_l1'] },
+    { id: 'g_l3', name: 'Petrit', surname: 'Krasniqi', tableId: 't_long', tagIds: ['tag_family'], rsvp: 'confirmed' },
+    { id: 'g_l4', name: 'Donika', surname: 'Rexhepi', notes: 'Childhood friend', tableId: 't_long', tagIds: ['tag_prishtina'], rsvp: 'confirmed', linkedGuestIds: ['g_l5'] },
+    { id: 'g_l5', name: 'Burim', surname: 'Rexhepi', tableId: 't_long', tagIds: ['tag_prishtina'], rsvp: 'confirmed', linkedGuestIds: ['g_l4'] },
+    { id: 'g_l6', name: 'Flaka', surname: 'Zeqiri', notes: 'Vegetarian', tableId: 't_long', tagIds: ['tag_prishtina'] },
 
     // Unseated — not yet assigned to a table, so users see the Unseated panel in action.
     { id: 'g_u1', name: 'Liridon', surname: 'Shala', notes: 'Cousin — table TBD', tableId: null, rsvp: 'confirmed' },
