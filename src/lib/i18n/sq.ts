@@ -331,6 +331,7 @@ export const sq = {
     bachelor: 'Beqaria (djemtë)',
     babyShower: 'Për foshnjën',
     graduation: 'Diplomim',
+    synetia: 'Synetia',
     party: 'Festë',
   },
   export: {

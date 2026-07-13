@@ -329,6 +329,7 @@ export const en = {
     bachelor: 'Bachelor party',
     babyShower: 'Baby shower',
     graduation: 'Graduation',
+    synetia: 'Circumcision celebration',
     party: 'Party',
   },
   export: {
