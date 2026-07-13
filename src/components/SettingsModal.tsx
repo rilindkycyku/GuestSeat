@@ -4,7 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 import type { TableColumns, ViewMode } from '../lib/storage';
 import type { Language } from '../lib/i18n';
 import type { TableTag, TagColor } from '../types';
-import { TAG_COLORS, TAG_COLOR_ORDER } from '../lib/tagColors';
+import { TAG_COLORS, TAG_COLOR_ORDER, tagColorClasses } from '../lib/tagColors';
 import { ModalHeader } from './ModalHeader';
 
 interface SettingsModalProps {
@@ -126,7 +126,7 @@ function TagManager({
       {/* Built-in Groom/Bride tags: always present, cannot be renamed or removed. */}
       {systemTags.map((tag) => (
         <div key={tag.id} className="flex items-center gap-2">
-          <span className={`shrink-0 w-7 h-7 rounded-full ${TAG_COLORS[tag.color].dot} ring-2 ring-white dark:ring-slate-900 shadow`} />
+          <span className={`shrink-0 w-7 h-7 rounded-full ${tagColorClasses(tag.color).dot} ring-2 ring-white dark:ring-slate-900 shadow`} />
           <span className="flex-1 min-w-0 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 truncate">
             {tag.label}
           </span>
@@ -141,7 +141,7 @@ function TagManager({
             <button
               onClick={() => setOpenColorId(openColorId === tag.id ? null : tag.id)}
               title={t('tags.chooseColor')}
-              className={`w-7 h-7 rounded-full ${TAG_COLORS[tag.color].dot} ring-2 ring-white dark:ring-slate-900 shadow`}
+              className={`w-7 h-7 rounded-full ${tagColorClasses(tag.color).dot} ring-2 ring-white dark:ring-slate-900 shadow`}
             />
             {openColorId === tag.id && (
               <div className="absolute left-0 top-full mt-1 z-10 grid grid-cols-4 gap-1.5 w-36 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">

@@ -34,7 +34,7 @@ import { getDemoEventState } from './lib/demoEvent';
 import { autoSeat } from './lib/autoSeat';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
-import { TAG_COLORS } from './lib/tagColors';
+import { tagColorClasses } from './lib/tagColors';
 import type { EventState, Guest, Table, TableSide, TableTag } from './types';
 
 /** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
@@ -769,11 +769,11 @@ export default function App() {
                         onClick={() => setTableFilter({ kind: 'tag', tagId: tag.id })}
                         className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
                           active
-                            ? TAG_COLORS[tag.color].chip + ' ring-1 ring-inset ring-current'
+                            ? tagColorClasses(tag.color).chip + ' ring-1 ring-inset ring-current'
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                         }`}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${tagColorClasses(tag.color).dot}`} />
                         {tag.label} ({tagCounts.get(tag.id) ?? 0})
                       </button>
                     );

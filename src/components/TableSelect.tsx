@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Table, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 
 interface TableSelectProps {
   tables: Table[];
@@ -58,7 +58,7 @@ export function TableSelect({ tables, tags, seatedCount, value, onChange }: Tabl
                 {tableDisplayName(selected, t)} ({seatedCount.get(selected.id) ?? 0}/{selected.capacity})
               </span>
               {tagsFor(selected).map((tag) => (
-                <span key={tag.id} className={`shrink-0 w-2 h-2 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                <span key={tag.id} className={`shrink-0 w-2 h-2 rounded-full ${tagColorClasses(tag.color).dot}`} />
               ))}
             </>
           ) : (
@@ -116,7 +116,7 @@ function Option({
       {tags.length > 0 && (
         <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
           {tags.map((tag) => (
-            <span key={tag.id} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}>
+            <span key={tag.id} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tagColorClasses(tag.color).chip}`}>
               {tag.label}
             </span>
           ))}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TableTag } from '../types';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 import { useLanguage } from '../hooks/useLanguage';
 
 interface TableTagPickerProps {
@@ -78,7 +78,7 @@ export function TableTagPicker({ tags, tableTagIds, onToggle, onCreateTag }: Tab
                     active ? '' : 'opacity-70'
                   }`}
                 >
-                  <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                  <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${tagColorClasses(tag.color).dot}`} />
                   <span className="truncate flex-1 text-slate-700 dark:text-slate-200">{tag.label}</span>
                   {active && <span className="shrink-0 text-indigo-500">✓</span>}
                 </button>

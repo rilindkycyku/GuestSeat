@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Guest, RsvpStatus, Table, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
 import { ModalHeader } from './ModalHeader';
 
@@ -208,11 +208,11 @@ export function GuestEditorModal({
                 onClick={() => onToggleTag(tag.id)}
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   active
-                    ? TAG_COLORS[tag.color].chip + ' ring-1 ring-inset ring-current'
+                    ? tagColorClasses(tag.color).chip + ' ring-1 ring-inset ring-current'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                <span className={`w-2 h-2 rounded-full ${tagColorClasses(tag.color).dot}`} />
                 {tag.label}
                 {active && <span className="text-current">✓</span>}
               </button>

@@ -5,7 +5,7 @@ import type { Guest, TableSide, TableTag, Table, TagColor } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName, tableShortName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 import { TableTagPicker } from './TableTagPicker';
 
 interface FloorTableProps {
@@ -69,7 +69,7 @@ function SeatDot({
   const ring = highlighted
     ? 'border-amber-400 ring-2 ring-amber-300'
     : tagColor
-      ? TAG_COLORS[tagColor].border + ' ring-2 ring-current/20'
+      ? tagColorClasses(tagColor).border + ' ring-2 ring-current/20'
       : guest.rsvp === 'confirmed'
         ? 'border-emerald-500'
         : guest.rsvp === 'declined'
@@ -197,7 +197,7 @@ export function FloorTable({
           {assignedTags.map((tag) => (
             <span
               key={tag.id}
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tagColorClasses(tag.color).chip}`}
             >
               {tag.label}
             </span>
@@ -315,7 +315,7 @@ export function FloorTable({
                   <span
                     key={tag.id}
                     title={tag.label}
-                    className={`shrink-0 text-[9px] font-medium px-1 rounded-full leading-tight ${TAG_COLORS[tag.color].chip}`}
+                    className={`shrink-0 text-[9px] font-medium px-1 rounded-full leading-tight ${tagColorClasses(tag.color).chip}`}
                   >
                     {tag.label}
                   </span>
