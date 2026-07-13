@@ -17,3 +17,17 @@ export const TAG_COLORS: Record<TagColor, { chip: string; dot: string; border: s
 
 /** Stable ordering for the color picker and for auto-assigning colors to new tags. */
 export const TAG_COLOR_ORDER: TagColor[] = ['rose', 'amber', 'emerald', 'sky', 'violet', 'orange', 'teal', 'slate'];
+
+/** Fallback used whenever a stored/imported tag carries a color outside the palette. */
+const DEFAULT_TAG_COLOR: TagColor = 'slate';
+
+/**
+ * Safe accessor for a tag's color classes. Tags can arrive from imported files, share links,
+ * or older saved state, so a `color` may not be one of our known keys — in which case indexing
+ * `TAG_COLORS` yields `undefined` and reading `.chip`/`.dot`/`.border` throws, crashing the whole
+ * app to a blank screen. Always resolve through here so an unknown color degrades to a default
+ * instead of taking the page down.
+ */
+export function tagColorClasses(color: string | undefined) {
+  return TAG_COLORS[color as TagColor] ?? TAG_COLORS[DEFAULT_TAG_COLOR];
+}

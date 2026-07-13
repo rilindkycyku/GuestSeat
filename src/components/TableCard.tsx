@@ -6,7 +6,7 @@ import { TableTagPicker } from './TableTagPicker';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 
 interface TableCardProps {
   table: Table;
@@ -101,7 +101,7 @@ export function TableCard({
                 {assignedTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tagColorClasses(tag.color).chip}`}
                   >
                     {tag.label}
                   </span>

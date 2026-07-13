@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Guest, TableTag } from '../types';
-import { TAG_COLORS } from '../lib/tagColors';
+import { tagColorClasses } from '../lib/tagColors';
 
 interface GuestChipProps {
   guest: Guest;
@@ -67,7 +67,7 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, tag
         <span
           key={tag.id}
           title={tag.label}
-          className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TAG_COLORS[tag.color].chip}`}
+          className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tagColorClasses(tag.color).chip}`}
         >
           {tag.label}
         </span>
