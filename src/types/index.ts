@@ -22,6 +22,13 @@ export interface Guest {
   tagIds?: string[];
   /** RSVP / attendance response. Absent means no response yet (pending). */
   rsvp?: RsvpStatus;
+  /**
+   * Chosen meal, as a free label (e.g. "Chicken", "Fish", "Vegetarian"). Kept as a plain string
+   * rather than an enum so every event can use its own menu; the caterer summary groups by value.
+   */
+  meal?: string;
+  /** Day-of check-in flag — set true once the guest has arrived at the venue. */
+  arrived?: boolean;
 }
 
 export type TableSide = 'groom' | 'bride';

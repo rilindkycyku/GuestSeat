@@ -41,6 +41,13 @@ export function useEventState() {
     setState({ ...shared, updatedAt: new Date().toISOString() });
   }, []);
 
+  // Restore a previously captured snapshot verbatim — the backbone of the undo toasts shown
+  // after destructive actions (unseat all, reset, mark all, delete guest). Unlike loadSharedState
+  // this keeps the original updatedAt so an undo truly rewinds to the prior state.
+  const restoreSnapshot = useCallback((snapshot: EventState) => {
+    setState(snapshot);
+  }, []);
+
   const setEventName = useCallback((eventName: string) => {
     setState((prev) => (prev ? { ...prev, eventName, updatedAt: new Date().toISOString() } : prev));
   }, []);
@@ -100,6 +107,45 @@ export function useEventState() {
       return {
         ...prev,
         guests: prev.guests.map((g) => (g.id === guestId ? { ...g, tableId } : g)),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  // Apply a batch of seat assignments in one update (used by auto-seat) so the whole fill is a
+  // single undoable step instead of many.
+  const assignSeats = useCallback((assignments: { guestId: string; tableId: string }[]) => {
+    if (assignments.length === 0) return;
+    setState((prev) => {
+      if (!prev) return prev;
+      const byGuest = new Map(assignments.map((a) => [a.guestId, a.tableId]));
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => (byGuest.has(g.id) ? { ...g, tableId: byGuest.get(g.id)! } : g)),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  // Day-of check-in: flip a guest's arrived flag.
+  const toggleArrived = useCallback((guestId: string) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => (g.id === guestId ? { ...g, arrived: !g.arrived } : g)),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  // Clear every guest's arrived flag — start a fresh check-in.
+  const resetArrivals = useCallback(() => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        guests: prev.guests.map((g) => (g.arrived ? { ...g, arrived: false } : g)),
         updatedAt: new Date().toISOString(),
       };
     });
@@ -289,6 +335,7 @@ export function useEventState() {
     loadFromImport,
     mergeFromImport,
     loadSharedState,
+    restoreSnapshot,
     resetAll,
     setEventName,
     updateEventDetails,
@@ -296,6 +343,9 @@ export function useEventState() {
     updateTable,
     removeTable,
     seatGuest,
+    assignSeats,
+    toggleArrived,
+    resetArrivals,
     addGuest,
     updateGuest,
     removeGuest,

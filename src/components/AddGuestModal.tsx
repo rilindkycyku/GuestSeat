@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Guest } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
+import { ModalHeader } from './ModalHeader';
 
 interface AddGuestModalProps {
   onAdd: (guest: Partial<Guest> & { name: string }) => void;
@@ -19,13 +20,17 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6"
+        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('addGuest.title')}</h2>
+        <ModalHeader icon="🧑" title={t('addGuest.title')} onClose={onClose} />
 
+        <div className="p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -61,6 +66,7 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
           >
             {t('common.add')}
           </button>
+        </div>
         </div>
       </div>
     </div>

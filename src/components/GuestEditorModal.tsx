@@ -4,6 +4,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { TAG_COLORS } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
+import { ModalHeader } from './ModalHeader';
 
 interface GuestEditorModalProps {
   guest: Guest;
@@ -46,6 +47,7 @@ export function GuestEditorModal({
   const [name, setName] = useState(guest.name);
   const [surname, setSurname] = useState(guest.surname ?? '');
   const [notes, setNotes] = useState(guest.notes ?? '');
+  const [meal, setMeal] = useState(guest.meal ?? '');
   const [tableId, setTableId] = useState<string>(guest.tableId ?? '');
   const [rsvp, setRsvp] = useState<RsvpStatus | undefined>(guest.rsvp);
   const [linkSearch, setLinkSearch] = useState('');
@@ -66,6 +68,13 @@ export function GuestEditorModal({
 
   const tableById = useMemo(() => new Map(tables.map((tb) => [tb.id, tb])), [tables]);
   const guestById = useMemo(() => new Map(allGuests.map((g) => [g.id, g])), [allGuests]);
+
+  // Suggest meals the event already uses, so choices stay consistent for the caterer summary.
+  const mealOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const g of allGuests) if (g.meal?.trim()) set.add(g.meal.trim());
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [allGuests]);
 
   const linkedGuests = (guest.linkedGuestIds ?? [])
     .map((id) => guestById.get(id))
@@ -90,6 +99,7 @@ export function GuestEditorModal({
       name: name.trim(),
       surname: surname.trim() || undefined,
       notes: notes.trim() || undefined,
+      meal: meal.trim() || undefined,
       tableId: tableId || null,
       rsvp,
     });
@@ -97,13 +107,17 @@ export function GuestEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6 max-h-[88vh] overflow-y-auto"
+        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('guestEditor.title')}</h2>
+        <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
 
+        <div className="overflow-y-auto p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -159,8 +173,25 @@ export function GuestEditorModal({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder={t('guestEditor.notesPlaceholder')}
+          className="w-full mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+        />
+
+        {/* Meal choice — a free label backed by a datalist of meals already used, so counts stay tidy. */}
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+          {t('guestEditor.meal')} <span className="text-slate-400">({t('common.optional')})</span>
+        </label>
+        <input
+          value={meal}
+          onChange={(e) => setMeal(e.target.value)}
+          placeholder={t('guestEditor.mealPlaceholder')}
+          list="meal-options"
           className="w-full mb-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
         />
+        <datalist id="meal-options">
+          {mealOptions.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
 
         {/* Group tags — e.g. "Bride's family", "Groom's friends". Handy when many guests share one long table. */}
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
@@ -312,6 +343,7 @@ export function GuestEditorModal({
               {t('common.save')}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

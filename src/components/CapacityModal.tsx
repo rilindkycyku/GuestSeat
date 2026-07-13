@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Table, TableShape } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { ModalHeader } from './ModalHeader';
 
 interface CapacityModalProps {
   table: Table;
@@ -24,15 +25,17 @@ export function CapacityModal({ table, onSave, onClose }: CapacityModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:px-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
       onClick={onClose}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div
-        className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-xl p-6"
+        className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('tables.editCapacity')}</h2>
+        <ModalHeader icon="🪑" title={t('tables.editCapacity')} onClose={onClose} />
+
+        <div className="p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{tableDisplayName(table, t)}</p>
 
         {/* Steppers only — no text input, so the on-screen keyboard never opens. */}
@@ -103,6 +106,7 @@ export function CapacityModal({ table, onSave, onClose }: CapacityModalProps) {
           >
             {t('common.save')}
           </button>
+        </div>
         </div>
       </div>
     </div>
