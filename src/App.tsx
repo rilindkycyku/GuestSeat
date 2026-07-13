@@ -774,6 +774,7 @@ export default function App() {
         <GuestEditorModal
           guest={editingGuest}
           tables={state.tables}
+          tags={customTags}
           allGuests={state.guests}
           seatedCount={seatedCount}
           onSave={(patch) => updateGuest(editingGuest.id, patch)}

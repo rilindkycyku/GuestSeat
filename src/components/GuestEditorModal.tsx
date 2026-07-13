@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Guest, RsvpStatus, Table } from '../types';
+import type { Guest, RsvpStatus, Table, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { TableSelect } from './TableSelect';
 
 interface GuestEditorModalProps {
   guest: Guest;
   tables: Table[];
+  tags: TableTag[];
   allGuests: Guest[];
   seatedCount: Map<string, number>;
   onSave: (patch: Partial<Guest>) => void;
@@ -23,6 +25,7 @@ function fullName(g: Guest): string {
 export function GuestEditorModal({
   guest,
   tables,
+  tags,
   allGuests,
   seatedCount,
   onSave,
@@ -129,18 +132,9 @@ export function GuestEditorModal({
         </div>
 
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('guestEditor.table')}</label>
-        <select
-          value={tableId}
-          onChange={(e) => setTableId(e.target.value)}
-          className="w-full mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
-        >
-          <option value="">{t('guestEditor.unseatedOption')}</option>
-          {tables.map((tb) => (
-            <option key={tb.id} value={tb.id}>
-              {tableDisplayName(tb, t)} ({seatedCount.get(tb.id) ?? 0}/{tb.capacity})
-            </option>
-          ))}
-        </select>
+        <div className="mb-3">
+          <TableSelect tables={tables} tags={tags} seatedCount={seatedCount} value={tableId} onChange={setTableId} />
+        </div>
 
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.notes')} <span className="text-slate-400">({t('common.optional')})</span>
