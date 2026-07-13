@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { EventState, Guest, Table, TableTag } from '../types';
 import { tableDisplayName, type Translator } from './tableDisplay';
 import { buildShareQr } from './qr';
@@ -345,6 +343,12 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
  * that carry a compact running header (title and couple's names).
  */
 export async function exportAsPdf(state: EventState, t: Translator, lang: Language): Promise<void> {
+  // Load jsPDF on demand so the ~250 kB library stays out of the initial bundle — it's only
+  // needed the moment someone actually exports a PDF.
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const details = state.details ?? {};
   const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));

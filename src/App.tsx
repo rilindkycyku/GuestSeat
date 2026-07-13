@@ -31,6 +31,7 @@ import {
   type TableColumns,
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
+import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat } from './lib/autoSeat';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
@@ -92,6 +93,25 @@ export default function App() {
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts: "/" or ⌘/Ctrl-K jumps to search from anywhere (skipped while typing in a
+  // field or with a modal open), so planning a large list stays hands-on-keyboard.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      if (cmdK || (e.key === '/' && !typing)) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     saveCollapsedTableIds(collapsedTableIds);
@@ -520,9 +540,16 @@ export default function App() {
     return (
       <>
         <Onboarding
-          onImported={(guests, tables, name) => loadFromImport(guests, tables, name)}
+          onImported={(guests, tables, name, eventType) => {
+            loadFromImport(guests, tables, name);
+            if (eventType !== 'wedding') updateEventDetails({ eventType });
+          }}
           onLoadDemo={() => loadSharedState(getDemoEventState())}
-          onStartBlank={() => loadFromImport([], [], t('header.defaultEventName'))}
+          onStartBlank={(eventType) => {
+            const cfg = eventTypeConfig(eventType);
+            loadFromImport([], [], eventType === 'wedding' ? t('header.defaultEventName') : t(cfg.labelKey));
+            if (eventType !== 'wedding') updateEventDetails({ eventType });
+          }}
         />
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {toastNode}
@@ -649,12 +676,25 @@ export default function App() {
 
           <div className="relative mt-2.5">
             <input
+              ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                // Escape clears a query, or blurs the empty field so focus returns to the board.
+                if (e.key === 'Escape') {
+                  if (query) setQuery('');
+                  else (e.target as HTMLInputElement).blur();
+                }
+              }}
               placeholder={t('header.searchPlaceholder')}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-16 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+            {!query && (
+              <kbd className="hidden sm:flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-slate-200 dark:border-slate-700 text-[10px] font-medium text-slate-400 pointer-events-none select-none">
+                /
+              </kbd>
+            )}
             {query && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 {matchedIds && <span className="text-xs text-slate-400 tabular-nums">{matchedIds.size}</span>}
@@ -946,7 +986,7 @@ export default function App() {
               className="flex items-center gap-2 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 pl-3 pr-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               <span aria-hidden>📱</span>
-              {t('export.qr')}
+              {t('export.qrShort')}
             </button>
           </>
         )}

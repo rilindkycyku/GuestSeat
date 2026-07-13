@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 import type { AgendaItem, EventState, InvitationTemplate } from '../types';
+import { eventTypeConfig } from './eventTypes';
 import type { Translator } from './tableDisplay';
 import type { Language } from './i18n';
 import { formatEventDate, slug } from './exportData';
@@ -55,6 +56,8 @@ export type IconKind =
   | 'letter'
   | 'carriage'
   | 'drum'
+  | 'henna'
+  | 'circledance'
   | 'lantern'
   | 'video'
   | 'stars'
@@ -66,7 +69,11 @@ export type IconKind =
 export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
-  if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  // Distinctly Albanian traditions, checked early so their specific words win over generic tokens
+  // (e.g. "Valle" must not fall through to the couple's "dance" glyph, "Kanagjeqi" is its own night).
+  if (has('kana', 'kanagjeq', 'kanagjeg', 'kanagjek', 'henna', 'nata e kanës', 'nata e kanes')) return 'henna';
+  if (has('valle', 'vallja e burrave', 'vallja e grave', 'shota', 'rugova', 'popullore', 'popullor', 'kolo', 'oro', 'circle dance')) return 'circledance';
+  if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'raki', 'rakia', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
   // Getting-ready & logistics moments (early in the day) before the ceremony glyphs.
   if (has('grim', 'makeup', 'make-up', 'buzëkuq', 'buzekuq', 'lipstick', 'përgatitj', 'pergatitj', 'getting ready', 'beauty')) return 'makeup';
   if (has('fustan', 'gown', 'dress', 'atelie', 'veshja e nuses')) return 'dress';
@@ -84,8 +91,8 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'walk')) return 'bride';
   if (has('honeymoon', 'mjalt', 'muaji', 'aeroplan', 'avion', 'fluturim', 'flight', 'plane')) return 'plane';
   if (has('karroc', 'carriage', 'coach', 'fiaker', 'horse')) return 'carriage';
-  if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
-  if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
+  if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'krushq', 'defile', 'koloni', 'departure', 'depart')) return 'car';
+  if (has('dinner', 'darka', 'darkë', 'darke', 'sofra', 'sofër', 'sofer', 'gosti', 'meze', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
   // Guest book before the microphone: "Libri i urimeve" carries "urim" (a well-wish) but is a book.
   if (has('libri', 'librin', 'guestbook', 'guest book', 'impresion', 'përshtypje', 'pershtypje', 'nënshkrim', 'nenshkrim')) return 'guestbook';
@@ -93,14 +100,14 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   if (has('dhurat', 'zarf', 'gift', 'envelope', 'bakshish')) return 'gift';
   if (has('qiri', 'qirinj', 'candle')) return 'candle';
   if (has('pëllumb', 'pellumb', 'dove', 'zog', 'bird')) return 'doves';
-  if (has('lodr', 'tupan', 'daulle', 'drum', 'tallava', 'defi', 'tradition')) return 'drum';
+  if (has('lodr', 'tupan', 'daulle', 'drum', 'tallava', 'defi', 'kaba', 'tradition')) return 'drum';
   if (has('vall', 'vals', 'dance', 'danc', 'waltz', 'kërcim', 'kercim', 'first')) return 'dance';
   if (has('fanar', 'lantern', 'llamba', 'ndriçim', 'ndricim', 'fener')) return 'lantern';
   if (has('balon', 'balloon', 'dekor', 'decor', 'zbukur', 'stolis')) return 'balloons';
   if (has('perëndim', 'perendim', 'sunset', 'golden hour', 'golden', 'muzg')) return 'sunset';
   if (has('mbrëmj', 'mbremj', 'night', 'evening', 'starlight', 'sparkle')) return 'stars';
   if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
-  if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim')) return 'music';
+  if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'saze', 'sazë', 'çifteli', 'cifteli', 'fyell', 'gajde', 'këng', 'keng', 'gëzim', 'gezim')) return 'music';
   return 'heart';
 }
 
@@ -381,6 +388,35 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
       doc.line(cx + r * 0.25, cy - r * 0.95, cx - r * 0.35, cy - r * 0.45); // stick
       break;
     }
+    case 'henna': {
+      // An open hand with a henna dot in the palm — Kanagjeqi / Nata e Kanës (the henna night).
+      doc.roundedRect(cx - r * 0.55, cy - r * 0.12, r * 1.1, r * 0.82, r * 0.2, r * 0.2, 'S'); // palm
+      const fx = [-0.36, -0.12, 0.12, 0.36];
+      const ftop = [-0.62, -0.86, -0.82, -0.58];
+      fx.forEach((x, i) => doc.line(cx + r * x, cy - r * 0.08, cx + r * x, cy + r * ftop[i])); // four fingers
+      doc.line(cx - r * 0.55, cy + r * 0.28, cx - r * 0.92, cy - r * 0.06); // thumb
+      doc.setFillColor(...color);
+      doc.circle(cx, cy + r * 0.34, r * 0.16, 'F'); // henna dot in the palm
+      doc.circle(cx - r * 0.24, cy + r * 0.14, r * 0.06, 'F'); // small henna dots
+      doc.circle(cx + r * 0.24, cy + r * 0.14, r * 0.06, 'F');
+      break;
+    }
+    case 'circledance': {
+      // Three figures holding hands in a ring — the traditional valle (circle dance).
+      const s = r * 0.5;
+      const person = (px: number, py: number) => {
+        doc.circle(px, py - s * 0.9, s * 0.32, 'S'); // head
+        doc.line(px, py - s * 0.58, px, py + s * 0.5); // body
+        doc.line(px, py + s * 0.5, px - s * 0.4, py + s); // leg
+        doc.line(px, py + s * 0.5, px + s * 0.4, py + s); // leg
+      };
+      person(cx - r * 0.62, cy + r * 0.12);
+      person(cx, cy - r * 0.16);
+      person(cx + r * 0.62, cy + r * 0.12);
+      doc.line(cx - r * 0.62, cy - r * 0.04, cx, cy - r * 0.31); // linked arms (an arc of joined hands)
+      doc.line(cx, cy - r * 0.31, cx + r * 0.62, cy - r * 0.04);
+      break;
+    }
     case 'lantern': {
       // A hanging lantern with a small flame — evening ambience / string lights.
       doc.line(cx, cy - r, cx, cy - r * 0.8); // hook
@@ -489,6 +525,7 @@ interface Content {
   agenda: AgendaItem[];
   note: string;
   scheduleHeading: string;
+  dressCode: string;
   hostLine: string;
   rsvpPrompt: string;
   rsvpPhone: string;
@@ -651,6 +688,11 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content): void {
     centered(c.note, 11.5, { style: 'italic', font: style.nameFont, color: style.ink, gap: 6, lineHeight: 5.5 });
   }
 
+  // Dress code — a small caps practical line above the sign-off, e.g. "DRESS CODE · Black tie".
+  if (c.dressCode) {
+    centered(c.dressCode, 9, { font: 'helvetica', color: style.accent, gap: 6, lineHeight: 4.4, spacing: 0.6, upper: true });
+  }
+
   // Sign-off ("With respect, the … family") and the RSVP prompt with a phone number.
   if (c.hostLine) {
     centered(c.hostLine.toUpperCase(), 10, { font: 'helvetica', color: style.accent, gap: c.rsvpPhone || c.rsvpPrompt ? 6 : 6, lineHeight: 4.6, spacing: 0.4 });
@@ -695,7 +737,7 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
   const introMessage = details.introMessage?.trim();
   const hostFamily = details.hostFamily?.trim();
   const content: Content = {
-    intro: introMessage || t('invitation.intro'),
+    intro: introMessage || t(eventTypeConfig(details.eventType).introKey),
     brideName: details.brideName?.trim() ?? '',
     groomName: details.groomName?.trim() ?? '',
     eventName: state.eventName,
@@ -705,12 +747,15 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
     agenda: (details.agenda ?? []).filter((a) => a.title.trim() || a.time?.trim()),
     note: details.invitationNote?.trim() ?? '',
     scheduleHeading: t('invitation.scheduleHeading'),
+    dressCode: details.dressCode?.trim() ? `${t('invitation.dressCodeLabel')} · ${details.dressCode.trim()}` : '',
     hostLine: hostFamily ? `${t('invitation.respectPrefix')} ${hostFamily}` : '',
     rsvpPrompt: details.rsvpPhone?.trim() ? t('invitation.rsvpPrompt') : '',
     rsvpPhone: details.rsvpPhone?.trim() ?? '',
   };
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  // Pull in jsPDF only when an invitation is actually exported, keeping it out of the initial load.
+  const { default: JsPDF } = await import('jspdf');
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   renderInvitation(doc, style, content);
   doc.save(`${slug(state.eventName)}-invitation-${template}.pdf`);
 }
