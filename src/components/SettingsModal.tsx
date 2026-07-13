@@ -20,6 +20,7 @@ interface SettingsModalProps {
   onMarkAllPending: () => void;
   onUnseatAll: () => void;
   onReset: () => void;
+  onEditEventDetails: () => void;
   onEditInvitation: () => void;
   onClose: () => void;
 }
@@ -174,6 +175,7 @@ export function SettingsModal({
   onMarkAllPending,
   onUnseatAll,
   onReset,
+  onEditEventDetails,
   onEditInvitation,
   onClose,
 }: SettingsModalProps) {
@@ -207,6 +209,15 @@ export function SettingsModal({
         </div>
 
         <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
+        <Section title={t('eventDetails.title')} icon="🗓️">
+          <button onClick={onEditEventDetails} className={actionButton}>
+            {t('eventDetails.editDetails')}
+            <span className="block text-xs font-normal text-slate-400 dark:text-slate-500 mt-0.5">
+              {t('eventDetails.editDetailsDesc')}
+            </span>
+          </button>
+        </Section>
+
         <Section title={t('invitation.title')} icon="💌">
           <button onClick={onEditInvitation} className={actionButton}>
             {t('invitation.editDetails')}

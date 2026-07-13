@@ -12,6 +12,7 @@ import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
 import { InvitationModal } from './components/InvitationModal';
+import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
@@ -78,6 +79,7 @@ export default function App() {
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
+  const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -535,6 +537,7 @@ export default function App() {
               <ExportMenu
                 state={state}
                 onToast={showToast}
+                onShowEventDetails={() => setEventDetailsOpen(true)}
                 onShowInvitation={() => setInvitationOpen(true)}
                 onShowQr={() => setQrOpen(true)}
               />
@@ -625,6 +628,10 @@ export default function App() {
                 state={state}
                 fullWidth
                 onToast={showToast}
+                onShowEventDetails={() => {
+                  setEventDetailsOpen(true);
+                  setMenuOpen(false);
+                }}
                 onShowInvitation={() => {
                   setInvitationOpen(true);
                   setMenuOpen(false);
@@ -853,12 +860,20 @@ export default function App() {
         />
       )}
 
+      {eventDetailsOpen && (
+        <EventDetailsModal state={state} onChange={updateEventDetails} onClose={() => setEventDetailsOpen(false)} />
+      )}
+
       {qrOpen && <QrModal state={state} onToast={showToast} onClose={() => setQrOpen(false)} />}
 
       {settingsOpen && (
         <SettingsModal
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onEditEventDetails={() => {
+            setSettingsOpen(false);
+            setEventDetailsOpen(true);
+          }}
           onEditInvitation={() => {
             setSettingsOpen(false);
             setInvitationOpen(true);

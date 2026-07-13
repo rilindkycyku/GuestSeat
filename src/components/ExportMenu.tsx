@@ -8,12 +8,14 @@ export function ExportMenu({
   state,
   fullWidth,
   onToast,
+  onShowEventDetails,
   onShowInvitation,
   onShowQr,
 }: {
   state: EventState;
   fullWidth?: boolean;
   onToast?: (msg: string) => void;
+  onShowEventDetails?: () => void;
   onShowInvitation?: () => void;
   onShowQr?: () => void;
 }) {
@@ -87,6 +89,18 @@ export function ExportMenu({
           >
             {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
           </button>
+          {onShowEventDetails && (
+            <button
+              onClick={() => {
+                onShowEventDetails();
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+            >
+              {t('export.eventDetails')}{' '}
+              <span className="text-slate-400 text-xs block">{t('export.eventDetailsDesc')}</span>
+            </button>
+          )}
           {onShowInvitation && (
             <button
               onClick={() => {

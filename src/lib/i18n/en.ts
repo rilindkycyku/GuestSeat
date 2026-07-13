@@ -156,10 +156,16 @@ export const en = {
   addGuest: {
     title: 'Add guest',
   },
+  eventDetails: {
+    title: 'Event details',
+    editDetails: 'Edit event details',
+    editDetailsDesc: 'Bride & groom, venue, location, date & time',
+    hint: 'These details are shared by the printable invitation — you can fill them in even if you never print one.',
+  },
   invitation: {
     title: 'Invitation',
-    editDetails: 'Edit invitation & details',
-    editDetailsDesc: 'Bride & groom, venue, date, schedule',
+    editDetails: 'Edit invitation',
+    editDetailsDesc: 'Top message, schedule, note, design & PDF',
     intro: 'Together with their families',
     brideName: 'Bride',
     groomName: 'Groom',
@@ -243,6 +249,8 @@ export const en = {
     pdfDesc: 'Printable seating chart',
     excel: 'Excel',
     excelDesc: 'Styled spreadsheet (.xlsx)',
+    eventDetails: 'Event details…',
+    eventDetailsDesc: 'Couple, venue, date & time',
     invitation: 'Invitation…',
     invitationDesc: 'Guest invitation with details',
     qr: 'QR code',

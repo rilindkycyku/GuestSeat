@@ -93,9 +93,11 @@ const EXTRA_SUGGESTION_KEYS = [
 ] as const;
 
 /**
- * Editor for the guest-facing invitation: bride & groom, venue, date/time,
- * schedule, and a personal note. Fields write straight through to the shared
- * event state (auto-saved), and a button renders the printable PDF.
+ * Editor for the printable invitation: the top message, schedule, personal note,
+ * host sign-off, RSVP number and design. The couple, venue and date/time live in
+ * the separate Event Details editor (they're shared state the PDF also reads), so
+ * this modal is only about what gets printed. Fields auto-save; a button renders
+ * the PDF.
  */
 export function InvitationModal({
   state,
@@ -193,66 +195,6 @@ export function InvitationModal({
               rows={3}
               className={`${fieldClass} resize-none`}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>{t('invitation.brideName')}</label>
-              <input
-                value={details.brideName ?? ''}
-                onChange={(e) => onChange({ brideName: e.target.value })}
-                className={fieldClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>{t('invitation.groomName')}</label>
-              <input
-                value={details.groomName ?? ''}
-                onChange={(e) => onChange({ groomName: e.target.value })}
-                className={fieldClass}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>{t('invitation.venue')}</label>
-            <input
-              value={details.venue ?? ''}
-              onChange={(e) => onChange({ venue: e.target.value })}
-              placeholder={t('invitation.venuePlaceholder')}
-              className={fieldClass}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>{t('invitation.address')}</label>
-            <input
-              value={details.address ?? ''}
-              onChange={(e) => onChange({ address: e.target.value })}
-              placeholder={t('invitation.addressPlaceholder')}
-              className={fieldClass}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>{t('invitation.date')}</label>
-              <input
-                type="date"
-                value={details.date ?? ''}
-                onChange={(e) => onChange({ date: e.target.value })}
-                className={fieldClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>{t('invitation.time')}</label>
-              <input
-                type="time"
-                value={details.time ?? ''}
-                onChange={(e) => onChange({ time: e.target.value })}
-                className={fieldClass}
-              />
-            </div>
           </div>
 
           <div>
