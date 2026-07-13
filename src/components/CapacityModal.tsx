@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import type { Table } from '../types';
+import type { Table, TableShape } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
 
 interface CapacityModalProps {
   table: Table;
-  onSave: (capacity: number) => void;
+  onSave: (capacity: number, shape: TableShape) => void;
   onClose: () => void;
 }
 
-/** Themed replacement for the native prompt() used to edit a table's seat capacity. */
+/** Themed replacement for the native prompt() used to edit a table's seat capacity and shape. */
 export function CapacityModal({ table, onSave, onClose }: CapacityModalProps) {
   const { t } = useLanguage();
   const [value, setValue] = useState(Math.max(1, table.capacity));
+  const [shape, setShape] = useState<TableShape>(table.shape ?? 'round');
 
   const save = () => {
-    onSave(value);
+    onSave(value, shape);
     onClose();
   };
 
@@ -54,6 +55,39 @@ export function CapacityModal({ table, onSave, onClose }: CapacityModalProps) {
           >
             +
           </button>
+        </div>
+
+        {/* Table shape: a round table or a long banquet ("imperial") table. */}
+        <div className="mb-5">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">{t('tables.shape')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(['round', 'long'] as const).map((option) => {
+              const active = shape === option;
+              return (
+                <button
+                  key={option}
+                  onClick={() => setShape(option)}
+                  className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${
+                    active
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <span aria-hidden className="text-lg leading-none shrink-0">
+                    {option === 'round' ? '⭕' : '▭'}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-800 dark:text-white">
+                      {option === 'round' ? t('tables.shapeRound') : t('tables.shapeLong')}
+                    </span>
+                    <span className="block text-[11px] text-slate-400 leading-tight">
+                      {option === 'round' ? t('tables.shapeRoundDesc') : t('tables.shapeLongDesc')}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">
