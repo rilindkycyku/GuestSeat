@@ -410,11 +410,23 @@ export default function App() {
   };
 
   if (!state) {
+    // A shared list arriving via a QR/share link decodes into a confirm prompt even before any
+    // event exists, so the ConfirmModal and toast must render here too — otherwise the prompt is
+    // set but never shown until the user loads something (e.g. the demo) that reveals the main UI.
     return (
-      <Onboarding
-        onImported={(guests, tables, name) => loadFromImport(guests, tables, name)}
-        onLoadDemo={() => loadSharedState(getDemoEventState())}
-      />
+      <>
+        <Onboarding
+          onImported={(guests, tables, name) => loadFromImport(guests, tables, name)}
+          onLoadDemo={() => loadSharedState(getDemoEventState())}
+          onStartBlank={() => loadFromImport([], [], t('header.defaultEventName'))}
+        />
+        {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
+        {toast && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
+            {toast}
+          </div>
+        )}
+      </>
     );
   }
 

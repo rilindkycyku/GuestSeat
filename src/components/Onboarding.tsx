@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ImportError, parseImportedJson } from '../lib/importGuests';
 import { parseImportedCsv } from '../lib/importCsv';
-import { EXAMPLE_JSON_TEXT } from '../lib/exampleData';
 import { useLanguage } from '../hooks/useLanguage';
 import { SettingsControls } from './SettingsControls';
 import type { Guest, Table, TableNamingMode } from '../types';
@@ -10,12 +9,13 @@ interface OnboardingProps {
   onImported: (guests: Guest[], tables: Table[], eventName?: string) => void;
   /** Load the fully-featured demo event (tags, sides, links, RSVP, invitation details). */
   onLoadDemo: () => void;
+  /** Start with an empty event — no guests or tables — and build the list by hand. */
+  onStartBlank: () => void;
 }
 
-export function Onboarding({ onImported, onLoadDemo }: OnboardingProps) {
+export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
-  const [showExample, setShowExample] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [namingMode, setNamingMode] = useState<TableNamingMode>('letters');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,19 +55,6 @@ export function Onboarding({ onImported, onLoadDemo }: OnboardingProps) {
     },
     [handleFile]
   );
-
-  const downloadExample = useCallback(() => {
-    const blob = new Blob([EXAMPLE_JSON_TEXT], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'example-guest-list.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, []);
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 relative">
@@ -135,16 +122,10 @@ export function Onboarding({ onImported, onLoadDemo }: OnboardingProps) {
               {t('onboarding.chooseFile')}
             </button>
             <button
-              onClick={() => setShowExample(true)}
+              onClick={onStartBlank}
               className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             >
-              {t('onboarding.viewExample')}
-            </button>
-            <button
-              onClick={downloadExample}
-              className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              {t('onboarding.downloadExample')}
+              {t('onboarding.startBlank')}
             </button>
           </div>
           <input
@@ -176,45 +157,6 @@ export function Onboarding({ onImported, onLoadDemo }: OnboardingProps) {
           <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t('onboarding.tryDemoHint')}</p>
         </div>
       </div>
-
-      {showExample && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-          onClick={() => setShowExample(false)}
-        >
-          <div
-            className="max-w-lg w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('onboarding.exampleTitle')}</h2>
-            <p
-              className="text-sm text-slate-500 dark:text-slate-400 mb-3"
-              dangerouslySetInnerHTML={{
-                __html: t('onboarding.exampleExplanation', {
-                  sample: '<code class="text-xs">{ &quot;name&quot;: &quot;...&quot;, &quot;surname&quot;: &quot;...&quot; }</code>',
-                }),
-              }}
-            />
-            <pre className="bg-slate-50 dark:bg-slate-950 rounded-lg p-4 text-xs overflow-auto max-h-80 text-slate-700 dark:text-slate-300">
-{EXAMPLE_JSON_TEXT}
-            </pre>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={downloadExample}
-                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('common.download')}
-              </button>
-              <button
-                onClick={() => setShowExample(false)}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500"
-              >
-                {t('common.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
