@@ -1,15 +1,18 @@
 import type { TagColor } from '../types';
 
-/** Classes for rendering a tag in its color: `chip` for a pill, `dot` for a swatch. */
-export const TAG_COLORS: Record<TagColor, { chip: string; dot: string }> = {
-  rose: { chip: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', dot: 'bg-rose-500' },
-  amber: { chip: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', dot: 'bg-amber-500' },
-  emerald: { chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300', dot: 'bg-emerald-500' },
-  sky: { chip: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300', dot: 'bg-sky-500' },
-  violet: { chip: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300', dot: 'bg-violet-500' },
-  orange: { chip: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300', dot: 'bg-orange-500' },
-  teal: { chip: 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300', dot: 'bg-teal-500' },
-  slate: { chip: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200', dot: 'bg-slate-500' },
+/**
+ * Classes for rendering a tag in its color: `chip` for a pill, `dot` for a swatch,
+ * `border` for a ring around a seat that belongs to the tag's group.
+ */
+export const TAG_COLORS: Record<TagColor, { chip: string; dot: string; border: string }> = {
+  rose: { chip: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', dot: 'bg-rose-500', border: 'border-rose-400 dark:border-rose-500' },
+  amber: { chip: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', dot: 'bg-amber-500', border: 'border-amber-400 dark:border-amber-500' },
+  emerald: { chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300', dot: 'bg-emerald-500', border: 'border-emerald-400 dark:border-emerald-500' },
+  sky: { chip: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300', dot: 'bg-sky-500', border: 'border-sky-400 dark:border-sky-500' },
+  violet: { chip: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300', dot: 'bg-violet-500', border: 'border-violet-400 dark:border-violet-500' },
+  orange: { chip: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300', dot: 'bg-orange-500', border: 'border-orange-400 dark:border-orange-500' },
+  teal: { chip: 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300', dot: 'bg-teal-500', border: 'border-teal-400 dark:border-teal-500' },
+  slate: { chip: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200', dot: 'bg-slate-500', border: 'border-slate-400 dark:border-slate-500' },
 };
 
 /** Stable ordering for the color picker and for auto-assigning colors to new tags. */

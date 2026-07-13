@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Guest, RsvpStatus, Table, TableTag } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName } from '../lib/tableDisplay';
+import { TAG_COLORS } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
 
 interface GuestEditorModalProps {
@@ -16,6 +17,10 @@ interface GuestEditorModalProps {
   onLink: (otherGuestId: string) => void;
   onUnlink: (otherGuestId: string) => void;
   onSeatGuest: (guestId: string, tableId: string | null) => void;
+  /** Toggle a custom tag (group) on this guest. */
+  onToggleTag: (tagId: string) => void;
+  /** Create a brand-new tag and apply it to this guest. */
+  onCreateTag: (label: string) => void;
 }
 
 function fullName(g: Guest): string {
@@ -34,6 +39,8 @@ export function GuestEditorModal({
   onLink,
   onUnlink,
   onSeatGuest,
+  onToggleTag,
+  onCreateTag,
 }: GuestEditorModalProps) {
   const { t } = useLanguage();
   const [name, setName] = useState(guest.name);
@@ -42,6 +49,15 @@ export function GuestEditorModal({
   const [tableId, setTableId] = useState<string>(guest.tableId ?? '');
   const [rsvp, setRsvp] = useState<RsvpStatus | undefined>(guest.rsvp);
   const [linkSearch, setLinkSearch] = useState('');
+  const [tagDraft, setTagDraft] = useState('');
+
+  const guestTagIds = guest.tagIds ?? [];
+  const createTag = () => {
+    const label = tagDraft.trim();
+    if (!label) return;
+    onCreateTag(label);
+    setTagDraft('');
+  };
 
   // Keep the table selector in sync when linking auto-seats this guest elsewhere.
   useEffect(() => {
@@ -145,6 +161,56 @@ export function GuestEditorModal({
           placeholder={t('guestEditor.notesPlaceholder')}
           className="w-full mb-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
         />
+
+        {/* Group tags — e.g. "Bride's family", "Groom's friends". Handy when many guests share one long table. */}
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+          {t('guestEditor.tags')}
+        </label>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{t('guestEditor.tagsHint')}</p>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {tags.map((tag) => {
+            const active = guestTagIds.includes(tag.id);
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => onToggleTag(tag.id)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? TAG_COLORS[tag.color].chip + ' ring-1 ring-inset ring-current'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${TAG_COLORS[tag.color].dot}`} />
+                {tag.label}
+                {active && <span className="text-current">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-1.5 mb-4">
+          <input
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                createTag();
+              }
+            }}
+            placeholder={t('tags.newTagPlaceholder')}
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+          />
+          <button
+            type="button"
+            onClick={createTag}
+            disabled={!tagDraft.trim()}
+            title={t('tags.createTag')}
+            className="shrink-0 rounded-lg bg-indigo-600 text-white text-sm w-9 h-9 flex items-center justify-center hover:bg-indigo-500 disabled:opacity-40"
+          >
+            ＋
+          </button>
+        </div>
 
         <div className="mb-4 border-t border-slate-100 dark:border-slate-800 pt-3">
           <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">

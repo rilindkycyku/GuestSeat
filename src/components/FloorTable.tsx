@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import type { Guest, Table, TableSide, TableTag } from '../types';
+import type { Guest, TableSide, TableTag, Table, TagColor } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { tableDisplayName, tableShortName } from '../lib/tableDisplay';
 import { groupLinkedWithin } from '../lib/linkGroups';
@@ -42,14 +42,17 @@ function SeatDot({
   x,
   y,
   highlighted,
-  rsvpTitle,
+  tagColor,
+  title,
   onClick,
 }: {
   guest: Guest;
   x: number;
   y: number;
   highlighted: boolean;
-  rsvpTitle: string;
+  /** Group tag color for this guest, used to ring the seat. */
+  tagColor?: TagColor;
+  title: string;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -62,13 +65,16 @@ function SeatDot({
     ...(transform ? { transform: `translate(-50%, -50%) ${CSS.Translate.toString(transform)}`, zIndex: 50 } : {}),
   };
 
+  // The seat ring shows the guest's group color; a small corner dot then keeps RSVP visible.
   const ring = highlighted
     ? 'border-amber-400 ring-2 ring-amber-300'
-    : guest.rsvp === 'confirmed'
-      ? 'border-emerald-500'
-      : guest.rsvp === 'declined'
-        ? 'border-red-400'
-        : 'border-slate-300 dark:border-slate-600';
+    : tagColor
+      ? TAG_COLORS[tagColor].border + ' ring-2 ring-current/20'
+      : guest.rsvp === 'confirmed'
+        ? 'border-emerald-500'
+        : guest.rsvp === 'declined'
+          ? 'border-red-400'
+          : 'border-slate-300 dark:border-slate-600';
 
   return (
     <button
@@ -79,7 +85,7 @@ function SeatDot({
       onClick={onClick}
       data-testid="floor-seat"
       data-guest-id={guest.id}
-      title={`${fullName(guest)}${rsvpTitle}`}
+      title={title}
       className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 flex items-center justify-center
         text-[9px] font-bold cursor-grab active:cursor-grabbing touch-pan-y select-none transition-shadow hover:shadow-md
         ${isDragging ? 'opacity-40' : ''}
@@ -91,6 +97,14 @@ function SeatDot({
         }`}
     >
       {initials(guest)}
+      {/* When the ring is used for the group color, show RSVP as a small corner dot instead. */}
+      {tagColor && guest.rsvp && (
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white dark:border-slate-800 ${
+            guest.rsvp === 'confirmed' ? 'bg-emerald-500' : 'bg-red-500'
+          }`}
+        />
+      )}
     </button>
   );
 }
@@ -122,6 +136,14 @@ export function FloorTable({
 
   // Linked guests sit next to each other around the table; the name list uses the same order.
   const orderedGuests = useMemo(() => groupLinkedWithin(guests).flat(), [guests]);
+
+  // Resolve each guest's group tags (color-coded) from the event's tag list.
+  const tagById = useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]);
+  const guestTags = (g: Guest): TableTag[] => (g.tagIds ?? []).map((id) => tagById.get(id)).filter((x): x is TableTag => !!x);
+  const seatTitle = (g: Guest) => {
+    const groups = guestTags(g).map((tag) => tag.label);
+    return `${fullName(g)}${groups.length ? ` — ${groups.join(', ')}` : ''}${rsvpTitle(g)}`;
+  };
 
   const isLong = table.shape === 'long';
   const seatCount = Math.max(table.capacity, guests.length);
@@ -239,7 +261,8 @@ export function FloorTable({
               x={seat.x}
               y={seat.y}
               highlighted={matchedIds ? matchedIds.has(seat.guest.id) : false}
-              rsvpTitle={rsvpTitle(seat.guest)}
+              tagColor={guestTags(seat.guest)[0]?.color}
+              title={seatTitle(seat.guest)}
               onClick={() => onGuestClick(seat.guest!)}
             />
           ) : (
@@ -288,6 +311,15 @@ export function FloorTable({
                 >
                   {shortName(g)}
                 </span>
+                {guestTags(g).map((tag) => (
+                  <span
+                    key={tag.id}
+                    title={tag.label}
+                    className={`shrink-0 text-[9px] font-medium px-1 rounded-full leading-tight ${TAG_COLORS[tag.color].chip}`}
+                  >
+                    {tag.label}
+                  </span>
+                ))}
                 {badge && (
                   <span title={badge.title} className="ml-auto shrink-0 text-[9px] opacity-70">
                     {badge.status === 'together' ? '🔗' : '🔗⚠️'}
