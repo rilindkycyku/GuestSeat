@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import type { AgendaItem, EventState, InvitationTemplate } from '../types';
 import type { Translator } from './tableDisplay';
 import type { Language } from './i18n';
-import { BRAND, formatEventDate, generatedHost, slug } from './exportData';
+import { formatEventDate, slug } from './exportData';
 
 type RGB = [number, number, number];
 
@@ -175,7 +175,7 @@ function drawCorners(doc: jsPDF, pageW: number, pageH: number, m: number, style:
 }
 
 /** Render the whole single-page invitation for the given style. */
-export function renderInvitation(doc: jsPDF, style: Style, c: Content, t: Translator): void {
+export function renderInvitation(doc: jsPDF, style: Style, c: Content): void {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const cx = pageW / 2;
@@ -307,8 +307,9 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content, t: Transl
     if (c.rsvpPhone) centered(c.rsvpPhone, 12, { font: 'helvetica', style: 'bold', color: style.ink, gap: 6, lineHeight: 5.5 });
   }
 
-  // Closing flourish toward the foot.
-  const flourishY = Math.max(y + 4, pageH - frameM - 20);
+  // Closing flourish toward the foot. The invitation is a keepsake for guests, so it carries no
+  // "generated from" origin stamp — unlike the organiser-facing seating exports.
+  const flourishY = Math.max(y + 4, pageH - frameM - 12);
   if (style.separator === 'heart' || style.corners) {
     drawHeart(doc, cx, flourishY - 2, 2.2, style.accent);
   } else {
@@ -317,14 +318,6 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content, t: Transl
     doc.setTextColor(...style.accent);
     doc.text('~', cx, flourishY, { align: 'center' });
   }
-
-  // Subtle origin stamp, so the printed card shows where it was made.
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.setTextColor(...style.muted);
-  doc.setCharSpace(0.3);
-  doc.text(`${t('export.madeWith', { brand: BRAND })}  ·  ${generatedHost()}`, cx, pageH - frameM - 6, { align: 'center' });
-  doc.setCharSpace(0);
 }
 
 /**
@@ -365,6 +358,6 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
   };
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  renderInvitation(doc, style, content, t);
+  renderInvitation(doc, style, content);
   doc.save(`${slug(state.eventName)}-invitation-${template}.pdf`);
 }
