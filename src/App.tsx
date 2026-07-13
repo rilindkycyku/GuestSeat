@@ -31,6 +31,7 @@ import {
   type TableColumns,
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
+import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat } from './lib/autoSeat';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
@@ -539,9 +540,16 @@ export default function App() {
     return (
       <>
         <Onboarding
-          onImported={(guests, tables, name) => loadFromImport(guests, tables, name)}
+          onImported={(guests, tables, name, eventType) => {
+            loadFromImport(guests, tables, name);
+            if (eventType !== 'wedding') updateEventDetails({ eventType });
+          }}
           onLoadDemo={() => loadSharedState(getDemoEventState())}
-          onStartBlank={() => loadFromImport([], [], t('header.defaultEventName'))}
+          onStartBlank={(eventType) => {
+            const cfg = eventTypeConfig(eventType);
+            loadFromImport([], [], eventType === 'wedding' ? t('header.defaultEventName') : t(cfg.labelKey));
+            if (eventType !== 'wedding') updateEventDetails({ eventType });
+          }}
         />
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {toastNode}

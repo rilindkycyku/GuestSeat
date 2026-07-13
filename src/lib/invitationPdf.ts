@@ -1,5 +1,6 @@
 import type jsPDF from 'jspdf';
 import type { AgendaItem, EventState, InvitationTemplate } from '../types';
+import { eventTypeConfig } from './eventTypes';
 import type { Translator } from './tableDisplay';
 import type { Language } from './i18n';
 import { formatEventDate, slug } from './exportData';
@@ -736,7 +737,7 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
   const introMessage = details.introMessage?.trim();
   const hostFamily = details.hostFamily?.trim();
   const content: Content = {
-    intro: introMessage || t('invitation.intro'),
+    intro: introMessage || t(eventTypeConfig(details.eventType).introKey),
     brideName: details.brideName?.trim() ?? '',
     groomName: details.groomName?.trim() ?? '',
     eventName: state.eventName,

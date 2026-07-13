@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AgendaItem, EventDetails, EventState, InvitationTemplate } from '../types';
 import { makeId } from '../lib/importGuests';
 import { exportInvitationPdf, INVITATION_TEMPLATES, iconForAgenda, type IconKind } from '../lib/invitationPdf';
+import { eventTypeConfig } from '../lib/eventTypes';
 import { useLanguage } from '../hooks/useLanguage';
 import { ModalHeader } from './ModalHeader';
 
@@ -146,11 +147,14 @@ export function InvitationModal({
   useEffect(() => {
     if (seeded.current) return;
     seeded.current = true;
+    const cfg = eventTypeConfig(details.eventType);
     const patch: Partial<EventDetails> = {};
     if (details.agenda === undefined) {
-      patch.agenda = DEFAULT_AGENDA_KEYS.map(({ key, time }) => ({ id: makeId('a'), time, title: t(`invitation.defaults.${key}`) }));
+      // Seed the schedule from the event type's preset (a wedding day, a birthday, a henna night…).
+      patch.agenda = cfg.agenda.map(({ key, time }) => ({ id: makeId('a'), time, title: t(`invitation.defaults.${key}`) }));
     }
-    if (details.introMessage === undefined) {
+    // The warm wedding paragraph only fits couples; other events start with a blank top message.
+    if (details.introMessage === undefined && cfg.nameLabelKeys.length === 2) {
       patch.introMessage = t('invitation.introMessageDefault');
     }
     if (Object.keys(patch).length) onChange(patch);

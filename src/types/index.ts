@@ -76,6 +76,23 @@ export type TableNamingMode = 'letters' | 'numbers';
 /** Visual style chosen for the printable guest invitation. */
 export type InvitationTemplate = 'classic' | 'modern' | 'romantic';
 
+/**
+ * What kind of celebration this is. Drives the invitation's name labels (a couple vs. a single
+ * honoree), the default schedule preset, and the framing throughout. Absent means `wedding`,
+ * so events created before this existed keep working unchanged.
+ */
+export type EventType =
+  | 'wedding'
+  | 'engagement'
+  | 'anniversary'
+  | 'henna'
+  | 'birthday'
+  | 'bachelorette'
+  | 'bachelor'
+  | 'babyShower'
+  | 'graduation'
+  | 'party';
+
 /** A single line on the invitation's schedule (e.g. "16:00 — Ceremony"). */
 export interface AgendaItem {
   id: string;
@@ -91,6 +108,10 @@ export interface AgendaItem {
  * whatever isn't filled in.
  */
 export interface EventDetails {
+  /** What kind of event this is. Absent = wedding (backward compatible). */
+  eventType?: EventType;
+  /** First honoree name. For couples this is the bride / partner 1; for single-honoree events
+   * (birthday, graduation…) it holds the celebrant's name and `groomName` is left empty. */
   brideName?: string;
   groomName?: string;
   /** Venue name, e.g. "Emerald Hall". */
