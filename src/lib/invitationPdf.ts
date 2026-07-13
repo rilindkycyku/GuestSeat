@@ -44,6 +44,10 @@ export type IconKind =
   | 'gift'
   | 'candle'
   | 'doves'
+  | 'balloons'
+  | 'plane'
+  | 'guestbook'
+  | 'clock'
   | 'fireworks'
   | 'heart';
 
@@ -52,6 +56,7 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   const s = `${item.title} ${item.time ?? ''}`.toLowerCase();
   const has = (...w: string[]) => w.some((x) => s.includes(x));
   if (has('cocktail', 'koktej', 'drink', 'pije', 'aperitiv', 'welcome', 'mirëseardhje', 'miresardhje')) return 'cocktail';
+  if (has('mbërritj', 'mberritj', 'arrival', 'arrive')) return 'clock';
   if (has('dolli', 'shampanj', 'champagne', 'toast', 'cheers', 'gëzuar', 'gezuar', 'gotë', 'gote')) return 'toast';
   if (has('unaz', 'ring')) return 'rings';
   if (has('kish', 'church', 'famull', 'kapel', 'chapel')) return 'church';
@@ -59,14 +64,18 @@ export function iconForAgenda(item: AgendaItem): IconKind {
   if (has('foto', 'fotograf', 'photo', 'camera', 'kamer', 'album')) return 'camera';
   if (has('lule', 'buqet', 'bouquet', 'flower', 'trëndafil', 'trendafil')) return 'flowers';
   if (has('bride', 'nus', 'entrance', 'entry', 'ardhja', 'hyrja', 'hyrje', 'dhëndr', 'dhendr', 'walk')) return 'bride';
+  if (has('honeymoon', 'mjalt', 'muaji', 'aeroplan', 'avion', 'fluturim', 'flight', 'plane')) return 'plane';
   if (has('makin', 'veturë', 'veture', 'car', 'limuzin', 'transport', 'nisja', 'udhëtim', 'udhetim', 'departure', 'depart')) return 'car';
   if (has('dinner', 'darka', 'darkë', 'darke', 'food', 'ushqim', 'meal', 'buffet', 'lunch', 'drek')) return 'dinner';
   if (has('cake', 'tort', 'ëmbëls', 'embels', 'dessert', 'sweet')) return 'cake';
+  // Guest book before the microphone: "Libri i urimeve" carries "urim" (a well-wish) but is a book.
+  if (has('libri', 'librin', 'guestbook', 'guest book', 'impresion', 'përshtypje', 'pershtypje', 'nënshkrim', 'nenshkrim')) return 'guestbook';
   if (has('urim', 'congrat', 'felic', 'fjalim', 'speech', 'intervist', 'interview', 'mikrofon', 'wish', 'greet', 'urimet')) return 'mic';
   if (has('dhurat', 'zarf', 'gift', 'envelope', 'bakshish')) return 'gift';
   if (has('qiri', 'qirinj', 'candle')) return 'candle';
   if (has('pëllumb', 'pellumb', 'dove', 'zog', 'bird')) return 'doves';
   if (has('vall', 'vals', 'dance', 'danc', 'waltz', 'kërcim', 'kercim', 'first')) return 'dance';
+  if (has('balon', 'balloon', 'dekor', 'decor', 'zbukur', 'stolis')) return 'balloons';
   if (has('fishek', 'firework', 'shkëndij', 'shkendij', 'fireworks')) return 'fireworks';
   if (has('party', 'aheng', 'muzik', 'music', 'dj', 'band', 'grup', 'gëzim', 'gezim')) return 'music';
   return 'heart';
@@ -232,6 +241,52 @@ function drawIcon(doc: jsPDF, kind: IconKind, cx: number, cy: number, r: number,
         doc.lines([[s * 0.7, -s * 0.85, s * 1.3, -s * 0.85, s * 2, 0]], bx - s, by, [1, 1], 'S');
       bird(cx - r * 0.28, cy + r * 0.35, r * 0.72); // near bird
       bird(cx + r * 0.55, cy - r * 0.4, r * 0.5); // far bird
+      break;
+    }
+    case 'balloons': {
+      // A little cluster of balloons, strings gathered at the foot.
+      const balloon = (bx: number, by: number, br: number) => {
+        doc.ellipse(bx, by, br, br * 1.15, 'S'); // balloon body
+        doc.line(bx, by + br * 1.15, cx, cy + r); // string to the gather point
+      };
+      balloon(cx, cy - r * 0.55, r * 0.42);
+      balloon(cx - r * 0.55, cy - r * 0.25, r * 0.38);
+      balloon(cx + r * 0.55, cy - r * 0.25, r * 0.38);
+      break;
+    }
+    case 'plane': {
+      // Side-view aeroplane for the honeymoon send-off.
+      doc.ellipse(cx, cy, r * 0.95, r * 0.32, 'S'); // fuselage
+      doc.triangle(cx - r * 0.1, cy - r * 0.28, cx + r * 0.5, cy - r * 0.28, cx + r * 0.12, cy - r * 0.9, 'S'); // tail fin
+      doc.triangle(cx - r * 0.35, cy, cx + r * 0.25, cy, cx - r * 0.05, cy + r * 0.7, 'S'); // wing
+      doc.setFillColor(...color);
+      doc.circle(cx + r * 0.72, cy, r * 0.08, 'F'); // cockpit window
+      break;
+    }
+    case 'guestbook': {
+      // An open guest book with a couple of ruled lines on each page.
+      const Ax = cx, Ay = cy - r * 0.6; // top of the spine
+      const Dx = cx, Dy = cy + r * 0.85; // foot of the spine
+      doc.line(Ax, Ay, Dx, Dy); // spine
+      doc.line(Ax, Ay, cx - r, cy - r * 0.35); // left top edge
+      doc.line(cx - r, cy - r * 0.35, cx - r, cy + r * 0.6); // left outer edge
+      doc.line(cx - r, cy + r * 0.6, Dx, Dy); // left bottom edge
+      doc.line(Ax, Ay, cx + r, cy - r * 0.35); // right top edge
+      doc.line(cx + r, cy - r * 0.35, cx + r, cy + r * 0.6); // right outer edge
+      doc.line(cx + r, cy + r * 0.6, Dx, Dy); // right bottom edge
+      doc.line(cx - r * 0.72, cy, cx - r * 0.28, cy); // page rules
+      doc.line(cx + r * 0.28, cy, cx + r * 0.72, cy);
+      doc.line(cx - r * 0.72, cy + r * 0.3, cx - r * 0.28, cy + r * 0.3);
+      doc.line(cx + r * 0.28, cy + r * 0.3, cx + r * 0.72, cy + r * 0.3);
+      break;
+    }
+    case 'clock': {
+      doc.circle(cx, cy, r * 0.9, 'S'); // face
+      doc.line(cx, cy - r * 0.9, cx, cy - r * 0.72); // 12 o'clock marker
+      doc.line(cx, cy, cx, cy - r * 0.55); // hour hand
+      doc.line(cx, cy, cx + r * 0.46, cy + r * 0.2); // minute hand
+      doc.setFillColor(...color);
+      doc.circle(cx, cy, r * 0.08, 'F'); // centre pin
       break;
     }
     case 'fireworks': {
@@ -406,37 +461,50 @@ export function renderInvitation(doc: jsPDF, style: Style, c: Content): void {
   if (c.venue) centered(c.venue, 14, { style: 'bold', font: style.nameFont, gap: c.address ? 1 : 6 });
   if (c.address) centered(c.address, 10, { font: 'helvetica', color: style.muted, gap: 6, lineHeight: 5 });
 
-  // Icon schedule timeline — the heart of the redesign.
-  const agenda = c.agenda.slice(0, 6);
+  // Icon schedule timeline — the heart of the redesign. Program points flow left-to-right and
+  // wrap onto further rows (up to PER_ROW per row), so a long day still fits on the one keepsake
+  // page instead of being truncated. Icons are sized for a full row and stay uniform across rows;
+  // a short final row is centred under the block.
+  const PER_ROW = 6;
+  const MAX_ROWS = 2;
+  const agenda = c.agenda.slice(0, PER_ROW * MAX_ROWS);
   if (agenda.length) {
     rule(30);
     centered(c.scheduleHeading.toUpperCase(), 9, { font: 'helvetica', color: style.accent, gap: 6, lineHeight: 4, spacing: 0.8 });
-    const slot = contentWidth / agenda.length;
+    const perRow = Math.min(agenda.length, PER_ROW);
+    const slot = contentWidth / perRow;
     const r = Math.min(slot * 0.26, 5.5);
-    const startX = cx - contentWidth / 2 + slot / 2;
-    const iconY = y + r;
-    agenda.forEach((item, i) => {
-      const ix = startX + i * slot;
-      drawIcon(doc, iconForAgenda(item), ix, iconY, r, style.accent);
-      let ty = iconY + r + 4.5;
-      if (item.time?.trim()) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...style.ink);
-        doc.text(item.time.trim(), ix, ty, { align: 'center' });
-        ty += 4;
-      }
-      if (item.title.trim()) {
-        doc.setFont(style.nameFont, style.nameFont === 'times' ? 'italic' : 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...style.muted);
-        for (const line of (doc.splitTextToSize(item.title.trim(), slot - 2) as string[]).slice(0, 2)) {
-          doc.text(line, ix, ty, { align: 'center' });
-          ty += 3.4;
+    let curY = y;
+    for (let start = 0; start < agenda.length; start += perRow) {
+      const row = agenda.slice(start, start + perRow);
+      const iconY = curY + r;
+      const rowStartX = cx - (row.length * slot) / 2 + slot / 2;
+      let rowBottom = iconY + r + 4.5;
+      row.forEach((item, i) => {
+        const ix = rowStartX + i * slot;
+        drawIcon(doc, iconForAgenda(item), ix, iconY, r, style.accent);
+        let ty = iconY + r + 4.5;
+        if (item.time?.trim()) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(...style.ink);
+          doc.text(item.time.trim(), ix, ty, { align: 'center' });
+          ty += 4;
         }
-      }
-    });
-    y = iconY + r + 4.5 + 14;
+        if (item.title.trim()) {
+          doc.setFont(style.nameFont, style.nameFont === 'times' ? 'italic' : 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(...style.muted);
+          for (const line of (doc.splitTextToSize(item.title.trim(), slot - 2) as string[]).slice(0, 2)) {
+            doc.text(line, ix, ty, { align: 'center' });
+            ty += 3.4;
+          }
+        }
+        rowBottom = Math.max(rowBottom, ty);
+      });
+      curY = rowBottom + 6; // gap before the next row
+    }
+    y = curY + 8;
   }
 
   if (c.note) {
