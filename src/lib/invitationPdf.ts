@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 import type { AgendaItem, EventState, InvitationTemplate } from '../types';
 import type { Translator } from './tableDisplay';
 import type { Language } from './i18n';
@@ -710,7 +710,9 @@ export async function exportInvitationPdf(state: EventState, t: Translator, lang
     rsvpPhone: details.rsvpPhone?.trim() ?? '',
   };
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  // Pull in jsPDF only when an invitation is actually exported, keeping it out of the initial load.
+  const { default: JsPDF } = await import('jspdf');
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   renderInvitation(doc, style, content);
   doc.save(`${slug(state.eventName)}-invitation-${template}.pdf`);
 }

@@ -312,6 +312,7 @@ export const en = {
     invitation: 'Invitation…',
     invitationDesc: 'Guest invitation with details',
     qr: 'QR code',
+    qrShort: 'Share',
     qrDesc: 'Scannable share link',
     shortcut: 'Add to Home Screen',
     shortcutDesc: 'One-tap shortcut on your phone',

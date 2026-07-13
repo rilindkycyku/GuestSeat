@@ -314,6 +314,7 @@ export const sq = {
     invitation: 'Ftesa…',
     invitationDesc: 'Ftesë për të ftuarit me detaje',
     qr: 'Kod QR',
+    qrShort: 'Ndaje',
     qrDesc: 'Lidhje e skanueshme',
     shortcut: 'Shto në ekranin bazë',
     shortcutDesc: 'Shkurtore me një prekje në telefon',
