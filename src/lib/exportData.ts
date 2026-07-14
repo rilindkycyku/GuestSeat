@@ -718,6 +718,12 @@ export async function exportAsTableCards(state: EventState, t: Translator, lang:
   const slotY = [outer, outer + cardH + gutter];
   const pad = 7;
 
+  // Event-detail line for each card's header (venue · date · time), so a card still explains
+  // itself once cut away from the sheet. Built once; degrades gracefully when details are absent.
+  const cardDateStr = details.date ? formatEventDate(details.date, lang) : '';
+  const cardWhen = [cardDateStr, details.time?.trim()].filter(Boolean).join(' · ');
+  const cardMeta = [details.venue?.trim(), cardWhen].filter(Boolean).join('  ·  ');
+
   const drawCutGuides = () => {
     doc.setDrawColor(...cutGuide);
     doc.setLineWidth(0.2);
@@ -745,23 +751,37 @@ export async function exportAsTableCards(state: EventState, t: Translator, lang:
     const centerX = x + cardW / 2;
     let cy = y + pad + 1;
 
-    // Event name, small and italic, so a separated card still says which event it belongs to.
+    // --- Header: event name and details, so a card still identifies its event once separated. ---
     if (state.eventName?.trim()) {
       doc.setFont('times', 'italic');
-      doc.setFontSize(8);
-      doc.setTextColor(...muted);
+      doc.setFontSize(10);
+      doc.setTextColor(...gold);
       const line = (doc.splitTextToSize(state.eventName, innerW) as string[])[0] ?? '';
-      doc.text(line, centerX, cy + 2, { align: 'center' });
+      doc.text(line, centerX, cy + 3, { align: 'center' });
       cy += 5.5;
     }
+    if (cardMeta) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      for (const line of doc.splitTextToSize(cardMeta, innerW) as string[]) {
+        doc.text(line, centerX, cy + 2, { align: 'center' });
+        cy += 3.5;
+      }
+    }
+    cy += 1.5;
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.25);
+    doc.line(x + pad + 5, cy, x + cardW - pad - 5, cy);
+    cy += 5;
 
-    // Table name — the headline of the card.
+    // --- Table name — the hero of the card. ---
     doc.setFont('times', 'normal');
-    doc.setFontSize(17);
+    doc.setFontSize(21);
     doc.setTextColor(...gold);
     for (const line of doc.splitTextToSize(tableDisplayName(table, t), innerW) as string[]) {
-      doc.text(line, centerX, cy + 5, { align: 'center' });
-      cy += 6.8;
+      doc.text(line, centerX, cy + 6, { align: 'center' });
+      cy += 8.2;
     }
     cy += 0.5;
 
@@ -769,44 +789,52 @@ export async function exportAsTableCards(state: EventState, t: Translator, lang:
     const meta = [sideLabel(table, t), ...tagLabels(table, tagsById)].filter(Boolean).join(' · ');
     if (meta) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(9);
       doc.setTextColor(...ink);
       for (const line of doc.splitTextToSize(meta, innerW) as string[]) {
-        doc.text(line, centerX, cy + 2, { align: 'center' });
-        cy += 4.4;
+        doc.text(line, centerX, cy + 3, { align: 'center' });
+        cy += 4.6;
       }
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(8);
     doc.setTextColor(...muted);
-    doc.text(`${guests.length}/${table.capacity}`, centerX, cy + 2, { align: 'center' });
-    cy += 4.5;
+    doc.text(`${guests.length}/${table.capacity}`, centerX, cy + 2.5, { align: 'center' });
+    cy += 5;
 
     // Divider before the guest list.
     doc.setDrawColor(...goldSoft);
     doc.setLineWidth(0.3);
     doc.line(x + pad, cy, x + cardW - pad, cy);
-    cy += 4;
+    cy += 3;
 
-    // Guest list — numbered, sized to the crowd so a full table still fits the quadrant. Manual
-    // layout (rather than autoTable) keeps every card confined to its slot, never page-breaking.
-    const fontSize = guests.length > 12 ? 7 : guests.length > 9 ? 8 : 9;
-    const lineH = fontSize <= 7 ? 3.9 : fontSize <= 8 ? 4.3 : 4.8;
+    // --- Guest list — enlarged to fill the free space so names read from across the table. ---
+    // Manual layout keeps every card inside its slot (never page-breaking); the font grows to fill
+    // the remaining height within sensible bounds, and the block is vertically centred.
+    const listTop = cy;
+    const listBottom = y + cardH - pad - 1;
+    const availH = listBottom - listTop;
+    const n = Math.max(guests.length, 1);
+    const lineH = Math.max(4.6, Math.min(9.5, availH / n));
+    const fontSize = Math.max(9, Math.min(16, lineH / 0.5));
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(fontSize);
-    doc.setTextColor(...body);
-    const maxY = y + cardH - pad;
+    let gy = listTop + Math.max(0, (availH - n * lineH) / 2);
     for (let i = 0; i < guests.length; i++) {
       const g = guests[i];
       const marker = g.rsvp === 'declined' ? ` (${t('rsvp.declinedShort')})` : '';
       const wrapped = doc.splitTextToSize(`${i + 1}. ${fullName(g)}${marker}`, innerW - 1) as string[];
-      if (cy + wrapped.length * lineH > maxY) {
+      if (gy + wrapped.length * lineH > listBottom + 0.5) {
+        doc.setFontSize(9);
         doc.setTextColor(...muted);
-        doc.text(`… +${guests.length - i}`, x + pad + 1, cy + 3);
+        doc.text(`… +${guests.length - i}`, x + pad + 1, gy + 3);
         break;
       }
-      doc.text(wrapped, x + pad + 1, cy + 3);
-      cy += wrapped.length * lineH;
+      doc.setTextColor(...body);
+      for (const sub of wrapped) {
+        doc.text(sub, x + pad + 1, gy + lineH * 0.72);
+        gy += lineH;
+      }
     }
   };
 
