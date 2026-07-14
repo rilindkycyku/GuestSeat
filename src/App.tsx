@@ -1042,7 +1042,10 @@ export default function App() {
             </div>
           </div>
         </main>
-        <Credits />
+        {/* Extra bottom room on phones so the fixed quick-add button doesn't float over the credit. */}
+        <div className="pb-20 sm:pb-0">
+          <Credits />
+        </div>
       </div>
 
       {/* Mobile speed-dial: the most common actions one thumb-tap away — add guest/table plus the

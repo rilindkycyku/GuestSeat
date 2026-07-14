@@ -38,7 +38,7 @@ export function EventPicker({ events, onOpen, onNew, onRename, onDelete }: Event
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-8 relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-16 sm:py-12 relative">
       <SettingsControls className="absolute top-4 right-4" />
       <div className="w-full max-w-3xl mx-auto">
         <div className="text-center mb-8">
