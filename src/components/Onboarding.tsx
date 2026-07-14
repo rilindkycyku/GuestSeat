@@ -4,6 +4,7 @@ import { parseImportedCsv } from '../lib/importCsv';
 import { useLanguage } from '../hooks/useLanguage';
 import { EVENT_TYPES } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
+import { Credits } from './Credits';
 import type { EventType, Guest, Table, TableNamingMode } from '../types';
 
 interface OnboardingProps {
@@ -75,7 +76,7 @@ export function Onboarding({
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 relative">
+    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 px-4 py-16 sm:py-12 relative">
       <SettingsControls className="absolute top-4 right-4" />
       {onBack && (
         <button
@@ -85,7 +86,7 @@ export function Onboarding({
           ← {t('events.myEvents')}
         </button>
       )}
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl m-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white text-2xl mb-4 shadow-lg shadow-indigo-600/20">
             🪑
@@ -242,6 +243,8 @@ export function Onboarding({
           </button>
           <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t('onboarding.tryDemoHint')}</p>
         </div>
+
+        <Credits />
       </div>
     </div>
   );
