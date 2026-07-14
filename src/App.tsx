@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
 import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
+import { EventPicker } from './components/EventPicker';
 import { UnseatedPanel } from './components/UnseatedPanel';
 import { TableCard } from './components/TableCard';
 import { FloorTable } from './components/FloorTable';
@@ -39,6 +40,7 @@ import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareL
 import { tableDisplayName } from './lib/tableDisplay';
 import { tagColorClasses } from './lib/tagColors';
 import type { EventState, Guest, Table, TableSide, TableTag } from './types';
+import type { EventSummary } from './lib/db';
 
 /** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
 type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
@@ -46,6 +48,14 @@ type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
 export default function App() {
   const {
     state,
+    ready,
+    activeId,
+    events,
+    createEvent,
+    switchEvent,
+    closeEvent,
+    deleteEvent,
+    renameEvent,
     loadFromImport,
     mergeFromImport,
     loadSharedState,
@@ -77,6 +87,9 @@ export default function App() {
   const { t } = useLanguage();
 
   const [query, setQuery] = useState('');
+  // When true, show onboarding to create another event even though saved events already exist
+  // (reached via "New event" on the picker). Cleared once an event is created or the picker returns.
+  const [creatingNew, setCreatingNew] = useState(false);
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [toast, setToast] = useState<{ msg: string; action?: { label: string; onClick: () => void } } | null>(null);
@@ -470,7 +483,7 @@ export default function App() {
         resetAll();
         setSettingsOpen(false);
         showToast(
-          t('settings.resetData'),
+          t('events.deleted', { name: snapshot?.eventName?.trim() || t('events.untitled') }),
           snapshot ? { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) } : undefined
         );
       },
@@ -549,26 +562,83 @@ export default function App() {
     </div>
   );
 
-  if (!state) {
-    // A shared list arriving via a QR/share link decodes into a confirm prompt even before any
-    // event exists, so the ConfirmModal and toast must render here too — otherwise the prompt is
-    // set but never shown until the user loads something (e.g. the demo) that reveals the main UI.
+  // Create a new event from the onboarding flow, then leave the "creating" state.
+  const startEvent = (init: Partial<EventState>) => {
+    createEvent(init);
+    setCreatingNew(false);
+  };
+
+  const handleDeleteEvent = (ev: EventSummary) => {
+    const name = ev.eventName?.trim() || t('events.untitled');
+    askConfirm({
+      message: t('events.deleteConfirm', { name }),
+      confirmLabel: t('events.delete'),
+      danger: true,
+      onConfirm: () => {
+        deleteEvent(ev.id);
+        showToast(t('events.deleted', { name }));
+      },
+    });
+  };
+
+  // Close the open event back to the events picker — the event stays saved and can be reopened.
+  const handleCloseToPicker = () => {
+    setMenuOpen(false);
+    setCreatingNew(false);
+    closeEvent();
+  };
+
+  // The onboarding screen, optionally with a Back link (shown when other events already exist).
+  const onboardingScreen = (onBack?: () => void) => (
+    <Onboarding
+      onBack={onBack}
+      onImported={(guests, tables, name, eventType) =>
+        startEvent({ guests, tables, eventName: name, ...(eventType !== 'wedding' ? { details: { eventType } } : {}) })
+      }
+      onLoadDemo={() => startEvent(getDemoEventState())}
+      onStartBlank={(eventType) => {
+        const cfg = eventTypeConfig(eventType);
+        startEvent({
+          eventName: eventType === 'wedding' ? t('header.defaultEventName') : t(cfg.labelKey),
+          ...(eventType !== 'wedding' ? { details: { eventType } } : {}),
+        });
+      }}
+      seedTraditions={seedTraditions}
+      onSeedTraditionsChange={setSeedTraditions}
+    />
+  );
+
+  // Hold the first paint until IndexedDB has been read, so existing events never flash onboarding.
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <span
+          className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"
+          role="status"
+          aria-label={t('common.close')}
+        />
+      </div>
+    );
+  }
+
+  if (!activeId || !state) {
+    // No event open: show the picker when others exist (and we're not explicitly creating a new
+    // one), otherwise the onboarding screen. A shared list arriving via a QR/share link decodes
+    // into a confirm prompt here too, so the ConfirmModal and toast must render in both branches.
+    const showPicker = events.length > 0 && !creatingNew;
     return (
       <>
-        <Onboarding
-          onImported={(guests, tables, name, eventType) => {
-            loadFromImport(guests, tables, name);
-            if (eventType !== 'wedding') updateEventDetails({ eventType });
-          }}
-          onLoadDemo={() => loadSharedState(getDemoEventState())}
-          onStartBlank={(eventType) => {
-            const cfg = eventTypeConfig(eventType);
-            loadFromImport([], [], eventType === 'wedding' ? t('header.defaultEventName') : t(cfg.labelKey));
-            if (eventType !== 'wedding') updateEventDetails({ eventType });
-          }}
-          seedTraditions={seedTraditions}
-          onSeedTraditionsChange={setSeedTraditions}
-        />
+        {showPicker ? (
+          <EventPicker
+            events={events}
+            onOpen={(id) => void switchEvent(id)}
+            onNew={() => setCreatingNew(true)}
+            onRename={renameEvent}
+            onDelete={handleDeleteEvent}
+          />
+        ) : (
+          onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
+        )}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {toastNode}
       </>
@@ -653,6 +723,14 @@ export default function App() {
                 onShowInvitation={() => setInvitationOpen(true)}
                 onShowQr={() => setQrOpen(true)}
               />
+              <button
+                onClick={handleCloseToPicker}
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+                title={t('events.myEvents')}
+                aria-label={t('events.myEvents')}
+              >
+                📁
+              </button>
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
@@ -770,6 +848,12 @@ export default function App() {
                   setMenuOpen(false);
                 }}
               />
+              <button
+                onClick={handleCloseToPicker}
+                className="col-span-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                📁 {t('events.myEvents')}
+              </button>
             </div>
           )}
 
@@ -1119,6 +1203,10 @@ export default function App() {
           onEditInvitation={() => {
             setSettingsOpen(false);
             setInvitationOpen(true);
+          }}
+          onSwitchEvents={() => {
+            setSettingsOpen(false);
+            handleCloseToPicker();
           }}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}

@@ -1,17 +1,153 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EventDetails, EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
 import { makeEventState, makeId } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
-import { clearState, loadState, saveState } from '../lib/storage';
+import {
+  type EventSummary,
+  type StoredEvent,
+  deleteEventRecord,
+  getAllEvents,
+  getEvent,
+  getActiveId,
+  migrateLegacyState,
+  putEvent,
+  setActiveId,
+  summarize,
+} from '../lib/db';
+
+/** Assemble a fresh {@link EventState} from a partial, preserving tags & details (which makeEventState drops). */
+function buildState(initial: Partial<EventState>): EventState {
+  return {
+    eventName: initial.eventName ?? 'Guest List',
+    guests: initial.guests ?? [],
+    tables: initial.tables ?? [],
+    ...(initial.tags ? { tags: initial.tags } : {}),
+    ...(initial.details ? { details: initial.details } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/** True when two summary rows are display-identical, so the picker list can skip a needless re-render. */
+function sameSummary(a: EventSummary, b: EventSummary): boolean {
+  return (
+    a.eventName === b.eventName &&
+    a.updatedAt === b.updatedAt &&
+    a.guestCount === b.guestCount &&
+    a.tableCount === b.tableCount &&
+    a.eventType === b.eventType
+  );
+}
 
 export function useEventState() {
-  // Seed only with the user's saved state. When there's nothing saved this is null, which
-  // lets the app open on the onboarding screen so each user starts with their own list.
-  const [state, setState] = useState<EventState | null>(() => loadState());
+  // The event currently open (null while on the events picker / onboarding), the id it's stored
+  // under, and lightweight summaries of every saved event for the picker. `ready` gates the first
+  // render until IndexedDB has been read, so we don't flash onboarding over existing events.
+  const [state, setState] = useState<EventState | null>(null);
+  const [activeId, setActiveIdState] = useState<string | null>(null);
+  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [ready, setReady] = useState(false);
 
+  // Latest activeId readable synchronously from callbacks with stable ([]) identities, so they don't
+  // need to close over the changing value (and so we never run side effects inside a state updater).
+  const activeIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (state) saveState(state);
-  }, [state]);
+    activeIdRef.current = activeId;
+  }, [activeId]);
+
+  // One-time load: migrate any legacy localStorage event, then hydrate the open event + the list.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await migrateLegacyState(makeId);
+        const all = await getAllEvents();
+        let active = await getActiveId();
+        if (active && !all.some((e) => e.id === active)) active = null;
+        const rec = active ? all.find((e) => e.id === active) : undefined;
+        if (cancelled) return;
+        setEvents(all.map(summarize));
+        setActiveIdState(rec ? active : null);
+        setState(rec ? rec.state : null);
+      } catch {
+        // IndexedDB unavailable (e.g. private mode with storage blocked) — start empty.
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist the open event on every change and keep its summary row in sync. The summary is only
+  // rewritten when a display-visible field actually changed, so ordinary edits (seating a guest,
+  // toggling a tag) don't churn the picker list.
+  useEffect(() => {
+    if (!ready || !activeId || !state) return;
+    const rec: StoredEvent = { id: activeId, state };
+    void putEvent(rec);
+    setEvents((prev) => {
+      const next = summarize(rec);
+      const idx = prev.findIndex((e) => e.id === activeId);
+      if (idx === -1) return [next, ...prev];
+      if (sameSummary(prev[idx], next)) return prev;
+      return prev.map((e) => (e.id === activeId ? next : e));
+    });
+  }, [state, activeId, ready]);
+
+  // Create a brand-new saved event and open it. Used by onboarding (import/blank/demo), by loading
+  // a shared list, and to re-materialize an event after an undo. Returns the new event's id.
+  const createEvent = useCallback((initial: Partial<EventState> = {}): string => {
+    const id = makeId('ev');
+    const newState = buildState(initial);
+    setActiveIdState(id);
+    setState(newState);
+    setEvents((prev) => [summarize({ id, state: newState }), ...prev.filter((e) => e.id !== id)]);
+    void putEvent({ id, state: newState });
+    void setActiveId(id);
+    return id;
+  }, []);
+
+  // Open an already-saved event, loading its full state from IndexedDB.
+  const switchEvent = useCallback(async (id: string) => {
+    const rec = await getEvent(id);
+    if (!rec) return;
+    setActiveIdState(id);
+    setState(rec.state);
+    void setActiveId(id);
+  }, []);
+
+  // Close the open event and return to the events picker — the event stays saved for later.
+  const closeEvent = useCallback(() => {
+    setActiveIdState(null);
+    setState(null);
+    void setActiveId(null);
+  }, []);
+
+  // Permanently delete a saved event. If it was the open one, fall back to the picker.
+  const deleteEvent = useCallback((id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    void deleteEventRecord(id);
+    if (activeIdRef.current === id) {
+      setActiveIdState(null);
+      setState(null);
+      void setActiveId(null);
+    }
+  }, []);
+
+  // Rename a saved event from the picker. The open event goes through setEventName instead.
+  const renameEvent = useCallback((id: string, name: string) => {
+    void (async () => {
+      const rec = await getEvent(id);
+      if (!rec) return;
+      const updated: StoredEvent = {
+        id,
+        state: { ...rec.state, eventName: name, updatedAt: new Date().toISOString() },
+      };
+      await putEvent(updated);
+      setEvents((prev) => prev.map((e) => (e.id === id ? summarize(updated) : e)));
+    })();
+  }, []);
 
   const loadFromImport = useCallback((guests: Guest[], tables: Table[], eventName?: string) => {
     setState(makeEventState({ guests, tables, eventName }));
@@ -29,23 +165,42 @@ export function useEventState() {
     });
   }, []);
 
+  // "Delete this event": permanently remove the open event and drop back to the picker / onboarding.
   const resetAll = useCallback(() => {
-    clearState();
-    // Clear back to the onboarding screen rather than reseeding any bundled list.
+    const curr = activeIdRef.current;
+    if (curr) {
+      setEvents((prev) => prev.filter((e) => e.id !== curr));
+      void deleteEventRecord(curr);
+    }
+    setActiveIdState(null);
     setState(null);
+    void setActiveId(null);
   }, []);
 
-  // Replace the whole event with a snapshot received via a share link. Guest/table IDs, tags
-  // and seating all come through intact, so the recipient sees an exact copy of the sender's list.
-  const loadSharedState = useCallback((shared: EventState) => {
-    setState({ ...shared, updatedAt: new Date().toISOString() });
-  }, []);
+  // Load a snapshot received via a share link as a brand-new event, so it sits alongside — rather
+  // than replacing — whatever the recipient was already working on. IDs, tags and seating come intact.
+  const loadSharedState = useCallback(
+    (shared: EventState) => {
+      createEvent({ ...shared });
+    },
+    [createEvent]
+  );
 
-  // Restore a previously captured snapshot verbatim — the backbone of the undo toasts shown
-  // after destructive actions (unseat all, reset, mark all, delete guest). Unlike loadSharedState
-  // this keeps the original updatedAt so an undo truly rewinds to the prior state.
+  // Restore a previously captured snapshot — the backbone of the undo toasts shown after destructive
+  // actions (unseat all, reset, mark all, delete guest). If an event is open it rewinds it in place;
+  // if the destructive action was a full reset (no open event), the snapshot is re-created as an event.
   const restoreSnapshot = useCallback((snapshot: EventState) => {
+    if (activeIdRef.current) {
+      setState(snapshot);
+      return;
+    }
+    // The event was fully deleted (undo after "Delete this event") — re-materialize it.
+    const id = makeId('ev');
+    setActiveIdState(id);
     setState(snapshot);
+    setEvents((prev) => [summarize({ id, state: snapshot }), ...prev]);
+    void putEvent({ id, state: snapshot });
+    void setActiveId(id);
   }, []);
 
   const setEventName = useCallback((eventName: string) => {
@@ -362,6 +517,14 @@ export function useEventState() {
 
   return {
     state,
+    ready,
+    activeId,
+    events,
+    createEvent,
+    switchEvent,
+    closeEvent,
+    deleteEvent,
+    renameEvent,
     loadFromImport,
     mergeFromImport,
     loadSharedState,

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { clearState } from '../lib/storage';
+import { clearAllData } from '../lib/db';
 
 interface Props {
   children: ReactNode;
@@ -53,8 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
   private handleReset = () => {
     const c = copy();
     if (window.confirm(c.resetConfirm)) {
-      clearState();
-      window.location.reload();
+      void clearAllData().finally(() => window.location.reload());
     }
   };
 
