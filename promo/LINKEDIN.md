@@ -3,7 +3,13 @@
 All screenshots use the built-in **demo list** (Elira & Arben — Demo Wedding),
 so no real guest data is shown.
 
-## Ready-to-post images (root of `promo/`)
+**The primary images are in Albanian** (UI + montage headlines), to pair with
+the Albanian post below. The English set is preserved under `promo/en/` with the
+same layout.
+
+## Ready-to-post images
+
+Albanian (root of `promo/`) — English equivalents live in `promo/en/`:
 
 - `guestseat-linkedin.png` — desktop hero (headline + board + feature thumbs)
 - `guestseat-mobile.png` — four phones (board, invitation, overview, QR)
@@ -19,6 +25,8 @@ so no real guest data is shown.
   m10 guest editor)
 - `pdf/` — the real exported PDFs (`guestseat-invitation.pdf`,
   `guestseat-seating-chart.pdf`) plus PNG previews of each
+
+(`promo/en/` holds the same three folders with the English UI.)
 
 **Tip:** for a LinkedIn carousel/document post, upload the numbered
 `screenshots/` (or `mobile/`) files in order — one screen per slide.
