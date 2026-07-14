@@ -99,6 +99,7 @@ export const en = {
     noMeals: 'No meal choices recorded yet.',
     mealUnset: 'No choice',
     arrived: 'Arrived',
+    checkin: 'Check-in',
   },
   checkin: {
     title: 'Check-in',
@@ -354,6 +355,8 @@ export const en = {
     jsonDesc: 'Full seating data',
     pdf: 'PDF',
     pdfDesc: 'Printable seating chart',
+    tableCards: 'Table cards',
+    tableCardsDesc: 'Cut-out cards, 4 per page',
     excel: 'Excel',
     excelDesc: 'Styled spreadsheet (.xlsx)',
     eventDetails: 'Event details…',

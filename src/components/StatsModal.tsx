@@ -19,6 +19,11 @@ export function StatsModal({ state, onClose }: { state: EventState; onClose: () 
     const declined = guests.filter((g) => g.rsvp === 'declined').length;
     const pending = total - coming - declined;
 
+    // Day-of check-in ("Regjistrimi"): everyone who hasn't declined can arrive, so measure
+    // arrivals against that pool to mirror the check-in screen's "X of Y arrived" counter.
+    const expected = total - declined;
+    const arrived = guests.filter((g) => g.arrived).length;
+
     const seatedByTable = new Map<string, number>();
     for (const g of guests) if (g.tableId) seatedByTable.set(g.tableId, (seatedByTable.get(g.tableId) ?? 0) + 1);
 
@@ -55,6 +60,8 @@ export function StatsModal({ state, onClose }: { state: EventState; onClose: () 
       coming,
       declined,
       pending,
+      expected,
+      arrived,
       tables: state.tables.length,
       full,
       over,
@@ -94,6 +101,24 @@ export function StatsModal({ state, onClose }: { state: EventState; onClose: () 
             <Tile value={s.declined} label={t('stats.declined')} tone="red" />
             <Tile value={s.pending} label={t('stats.pending')} tone="slate" />
           </div>
+
+          {/* Check-in (Regjistrimi): who has arrived on the day */}
+          <Section title={t('stats.checkin')}>
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {t('checkin.subtitle', { arrived: s.arrived, total: s.expected })}
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {s.expected ? Math.round((s.arrived / s.expected) * 100) : 0}%
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{ width: `${s.expected ? (s.arrived / s.expected) * 100 : 0}%` }}
+              />
+            </div>
+          </Section>
 
           {/* Tables */}
           <Section title={t('stats.tables')}>

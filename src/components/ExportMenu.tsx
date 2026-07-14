@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EventState } from '../types';
-import { exportAsExcel, exportAsJson, exportAsPdf } from '../lib/exportData';
+import { exportAsExcel, exportAsJson, exportAsPdf, exportAsTableCards } from '../lib/exportData';
 import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
@@ -150,6 +150,15 @@ export function ExportMenu({
             className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
           >
             {t('export.pdf')} <span className="text-slate-400 text-xs block">{t('export.pdfDesc')}</span>
+          </button>
+          <button
+            onClick={() => {
+              void exportAsTableCards(state, t, lang);
+              setOpen(false);
+            }}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+          >
+            {t('export.tableCards')} <span className="text-slate-400 text-xs block">{t('export.tableCardsDesc')}</span>
           </button>
           <button
             onClick={() => {
