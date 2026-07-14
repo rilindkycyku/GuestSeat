@@ -101,6 +101,7 @@ export const sq = {
     noMeals: 'Ende nuk ka zgjedhje menyje.',
     mealUnset: 'Pa zgjedhje',
     arrived: 'Kanë ardhur',
+    checkin: 'Regjistrimi',
   },
   checkin: {
     title: 'Regjistrimi',

@@ -99,6 +99,7 @@ export const en = {
     noMeals: 'No meal choices recorded yet.',
     mealUnset: 'No choice',
     arrived: 'Arrived',
+    checkin: 'Check-in',
   },
   checkin: {
     title: 'Check-in',
