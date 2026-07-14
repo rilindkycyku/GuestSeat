@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { eventTypeConfig } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
+import { Credits } from './Credits';
 import type { EventSummary } from '../lib/db';
 
 interface EventPickerProps {
@@ -131,6 +132,8 @@ export function EventPicker({ events, onOpen, onNew, onRename, onDelete }: Event
             })}
           </div>
         )}
+
+        <Credits />
       </div>
     </div>
   );

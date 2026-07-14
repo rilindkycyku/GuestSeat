@@ -4,6 +4,7 @@ import { parseImportedCsv } from '../lib/importCsv';
 import { useLanguage } from '../hooks/useLanguage';
 import { EVENT_TYPES } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
+import { Credits } from './Credits';
 import type { EventType, Guest, Table, TableNamingMode } from '../types';
 
 interface OnboardingProps {
@@ -242,6 +243,8 @@ export function Onboarding({
           </button>
           <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t('onboarding.tryDemoHint')}</p>
         </div>
+
+        <Credits />
       </div>
     </div>
   );
