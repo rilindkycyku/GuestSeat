@@ -566,6 +566,8 @@ export default function App() {
             loadFromImport([], [], eventType === 'wedding' ? t('header.defaultEventName') : t(cfg.labelKey));
             if (eventType !== 'wedding') updateEventDetails({ eventType });
           }}
+          seedTraditions={seedTraditions}
+          onSeedTraditionsChange={setSeedTraditions}
         />
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {toastNode}
@@ -1118,8 +1120,6 @@ export default function App() {
             setSettingsOpen(false);
             setInvitationOpen(true);
           }}
-          seedTraditions={seedTraditions}
-          onSeedTraditionsChange={setSeedTraditions}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
           systemTags={systemTags}
