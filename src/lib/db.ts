@@ -145,12 +145,22 @@ export function clearAllData(): Promise<void> {
   });
 }
 
+let migrationPromise: Promise<string | null> | null = null;
+
 /**
  * Move a pre-IndexedDB user's single localStorage event into the new store, once. Runs only when the
  * events store is still empty and the legacy key is present, so it never clobbers real IndexedDB data
  * and never re-imports after the user clears their events. Returns the migrated event's id, if any.
+ *
+ * Memoized so React StrictMode's double-invoked mount effect (dev) can't race two migrations into two
+ * duplicate events — concurrent callers all await the same run.
  */
-export async function migrateLegacyState(makeId: (prefix: string) => string): Promise<string | null> {
+export function migrateLegacyState(makeId: (prefix: string) => string): Promise<string | null> {
+  if (!migrationPromise) migrationPromise = runMigration(makeId);
+  return migrationPromise;
+}
+
+async function runMigration(makeId: (prefix: string) => string): Promise<string | null> {
   let raw: string | null = null;
   try {
     raw = localStorage.getItem(LEGACY_STATE_KEY);

@@ -483,7 +483,7 @@ export default function App() {
         resetAll();
         setSettingsOpen(false);
         showToast(
-          t('settings.resetData'),
+          t('events.deleted', { name: snapshot?.eventName?.trim() || t('events.untitled') }),
           snapshot ? { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) } : undefined
         );
       },

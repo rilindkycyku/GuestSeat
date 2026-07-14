@@ -70,7 +70,7 @@ export const sq = {
     unseatAll: 'Hiq të gjithë nga tavolinat',
     unseatAllConfirm: 'Të hiqen të gjithë të ftuarit nga tavolinat?',
     unseatedAll: 'Të gjithë u hoqën nga tavolinat.',
-    resetData: 'Rikthe listën fillestare',
+    resetData: 'Fshi këtë ngjarje',
   },
   autoSeat: {
     action: 'Ul automatikisht',
@@ -160,7 +160,7 @@ export const sq = {
     addTable: '+ Tavolinë',
     import: 'Importo',
     reset: 'Rivendos',
-    resetConfirm: 'Të rikthehet lista fillestare e të ftuarve? Ndryshimet tuaja do të humbasin.',
+    resetConfirm: 'Të fshihet kjo ngjarje? Të ftuarit, tavolinat dhe të gjitha të dhënat e saj do të hiqen përfundimisht.',
     menu: 'Menyja',
     renameHint: "Kliko për ta riemërtuar",
     clearSearch: 'Pastro kërkimin',

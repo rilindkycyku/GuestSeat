@@ -68,7 +68,7 @@ export const en = {
     unseatAll: 'Unseat all guests',
     unseatAllConfirm: 'Remove all guests from their tables?',
     unseatedAll: 'All guests unseated.',
-    resetData: 'Restore original list',
+    resetData: 'Delete this event',
   },
   autoSeat: {
     action: 'Auto-seat',
@@ -158,7 +158,7 @@ export const en = {
     addTable: '+ Table',
     import: 'Import',
     reset: 'Reset',
-    resetConfirm: 'Restore the original guest list? Your changes will be lost.',
+    resetConfirm: 'Delete this event? Its guests, tables and all its details will be permanently removed.',
     menu: 'Menu',
     renameHint: 'Click to rename',
     clearSearch: 'Clear search',
