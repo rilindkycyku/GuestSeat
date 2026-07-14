@@ -23,6 +23,133 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>This app needs JavaScript to run.</noscript>
+    <!-- Last-resort message, shown only if self-healing a broken cache still doesn't recover. -->
+    <div
+      id="boot-fallback"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #cbd5e1;
+        background: #0f172a;
+      "
+    >
+      <div style="font-size: 2.5rem">🪑</div>
+      <div style="font-size: 1rem; font-weight: 600; color: #f1f5f9">GuestSeat</div>
+      <div id="boot-fallback-msg" style="font-size: 0.875rem; max-width: 20rem">
+        S'u ngarkua faqja. Provoni ta ringarkoni. · Couldn't load the page. Please reload.
+      </div>
+      <button
+        type="button"
+        onclick="location.reload()"
+        style="
+          margin-top: 0.25rem;
+          padding: 0.5rem 1rem;
+          border: 0;
+          border-radius: 0.5rem;
+          background: #4f46e5;
+          color: #fff;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+        "
+      >
+        Ringarko · Reload
+      </button>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Self-healing boot guard. A blank screen on this PWA almost always means a stale service
+      // worker served a cached index.html that points at hashed asset chunks a later deploy
+      // removed — those 404, so the bundle never runs and even the in-app ErrorBoundary can't
+      // render. When we detect the shell hasn't mounted, wipe the caches/service worker and
+      // reload once (guarded against loops), which is the standard remedy for a wedged PWA.
+      (function () {
+        var RECOVER_FLAG = 'guestseat.recovering';
+
+        function appMounted() {
+          var root = document.getElementById('root');
+          return !!(root && root.childElementCount > 0);
+        }
+
+        function showFallback() {
+          var el = document.getElementById('boot-fallback');
+          if (el) el.style.display = 'flex';
+        }
+
+        var recovering = false;
+        function recover() {
+          if (recovering) return;
+          recovering = true;
+          // Only self-heal once per tab session so a genuinely broken build can't reload forever.
+          var alreadyTried = false;
+          try {
+            alreadyTried = sessionStorage.getItem(RECOVER_FLAG) === '1';
+            sessionStorage.setItem(RECOVER_FLAG, '1');
+          } catch (e) {}
+          if (alreadyTried) {
+            showFallback();
+            return;
+          }
+          var jobs = [];
+          if ('serviceWorker' in navigator) {
+            jobs.push(
+              navigator.serviceWorker
+                .getRegistrations()
+                .then(function (regs) {
+                  return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                })
+                .catch(function () {})
+            );
+          }
+          if (window.caches && caches.keys) {
+            jobs.push(
+              caches
+                .keys()
+                .then(function (keys) {
+                  return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                })
+                .catch(function () {})
+            );
+          }
+          var reload = function () { location.reload(); };
+          Promise.all(jobs).then(reload, reload);
+        }
+
+        // Catch the failure directly: a hashed build asset (JS/CSS under /assets/) that 404s
+        // fires an error event on its element during the capture phase.
+        window.addEventListener(
+          'error',
+          function (e) {
+            var el = e && e.target;
+            if (!el || el === window) return;
+            var src = el.src || el.href || '';
+            if ((el.tagName === 'SCRIPT' || el.tagName === 'LINK') && src.indexOf('/assets/') !== -1) {
+              recover();
+            }
+          },
+          true
+        );
+
+        // Fallback: if nothing has rendered a few seconds after load, assume a broken cache.
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            if (appMounted()) {
+              try { sessionStorage.removeItem(RECOVER_FLAG); } catch (e) {}
+            } else {
+              recover();
+            }
+          }, 5000);
+        });
+      })();
+    </script>
   </body>
 </html>
