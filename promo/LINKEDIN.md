@@ -57,7 +57,7 @@ Ju prezantoj **GuestSeat** 🎉
 
 Koha e listave në letër ka mbaruar.
 
-Është falas dhe punon tërësisht në shfletues 👉 [vendos linkun tënd]
+Është falas dhe punon tërësisht në shfletues 👉 https://guestseat.rilindkycyku.dev
 
 E ndërtuar me React + TypeScript. Do të kisha shumë qejf t'i lexoja mendimet
 tuaja. 🙌
@@ -76,7 +76,7 @@ përshtatej, prandaj e ndërtova një.
 uli të gjithë me një klik, ndiq RSVP-të, ndërto ftesën dhe ndaje tërë planin me
 një kod QR. Falas, offline, në shfletuesin tënd.
 
-Koha e listave në letër ka mbaruar. 👉 [vendos linkun tënd]
+Koha e listave në letër ka mbaruar. 👉 https://guestseat.rilindkycyku.dev
 
 #React #TypeScript #ProjektPersonal #Dasmë
 
@@ -106,7 +106,7 @@ Meet **GuestSeat** 🎉
 
 The age of paper seating charts is over.
 
-It's free and runs entirely in the browser 👉 [add your link]
+It's free and runs entirely in the browser 👉 https://guestseat.rilindkycyku.dev
 
 Built with React + TypeScript. I'd genuinely love your feedback. 🙌
 
@@ -124,12 +124,12 @@ I built one.
 auto-seat in one click, track RSVPs, build the invitation, and share the whole
 plan with a QR code. Free, offline, in your browser.
 
-The age of paper seating charts is over. 👉 [add your link]
+The age of paper seating charts is over. 👉 https://guestseat.rilindkycyku.dev
 
 #React #TypeScript #SideProject #BuildInPublic #Wedding
 
 ---
 
-**Before posting:** replace `[vendos linkun tënd]` / `[add your link]` with your
-live URL, and attach one of the montage images (or a `screenshots/` /
-`mobile/` carousel).
+**Before posting:** the live URL (https://guestseat.rilindkycyku.dev) is already
+in each post above — just attach one of the montage images (or a `screenshots/` /
+`mobile/` carousel) and publish.
