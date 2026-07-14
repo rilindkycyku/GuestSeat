@@ -69,6 +69,8 @@ export const en = {
     unseatAllConfirm: 'Remove all guests from their tables?',
     unseatedAll: 'All guests unseated.',
     resetData: 'Delete this event',
+    about: 'About',
+    developedBy: 'Developed by',
   },
   autoSeat: {
     action: 'Auto-seat',
