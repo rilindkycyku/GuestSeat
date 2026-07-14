@@ -19,9 +19,18 @@ interface OnboardingProps {
    */
   seedTraditions: boolean;
   onSeedTraditionsChange: (on: boolean) => void;
+  /** Return to the events picker instead of creating an event — shown only when events already exist. */
+  onBack?: () => void;
 }
 
-export function Onboarding({ onImported, onLoadDemo, onStartBlank, seedTraditions, onSeedTraditionsChange }: OnboardingProps) {
+export function Onboarding({
+  onImported,
+  onLoadDemo,
+  onStartBlank,
+  seedTraditions,
+  onSeedTraditionsChange,
+  onBack,
+}: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -68,6 +77,14 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank, seedTradition
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 relative">
       <SettingsControls className="absolute top-4 right-4" />
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          ← {t('events.myEvents')}
+        </button>
+      )}
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white text-2xl mb-4 shadow-lg shadow-indigo-600/20">

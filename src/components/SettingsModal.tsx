@@ -26,6 +26,7 @@ interface SettingsModalProps {
   onCheckIn: () => void;
   onEditEventDetails: () => void;
   onEditInvitation: () => void;
+  onSwitchEvents: () => void;
   onClose: () => void;
 }
 
@@ -215,6 +216,7 @@ export function SettingsModal({
   onCheckIn,
   onEditEventDetails,
   onEditInvitation,
+  onSwitchEvents,
   onClose,
 }: SettingsModalProps) {
   const { t, lang, setLang } = useLanguage();
@@ -235,6 +237,15 @@ export function SettingsModal({
         <ModalHeader icon="⚙️" title={t('settings.title')} onClose={onClose} />
 
         <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
+        <Section title={t('events.myEvents')} icon="📁">
+          <NavRow
+            icon="🗂️"
+            title={t('events.switchEvent')}
+            description={t('events.switchEventDesc')}
+            onClick={onSwitchEvents}
+          />
+        </Section>
+
         <Section title={t('settings.content')} icon="✨">
           <div className="space-y-2">
             <NavRow
