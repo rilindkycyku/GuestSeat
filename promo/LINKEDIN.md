@@ -1,28 +1,80 @@
 # GuestSeat — LinkedIn share kit
 
-Assets in this folder:
-
-- `guestseat-linkedin.png` — a single ready-to-post hero image (headline + main
-  board + feature thumbnails). Good as the image for a text post.
-- `screenshots/` — the individual full-resolution screenshots (great as a
-  LinkedIn **carousel / document** post, one screen per slide):
-  1. `01-onboarding.png` — landing / event-type picker
-  2. `02-board-list.png` — the seating board (hero)
-  3. `03-floor-plan.png` — round/long tables floor plan
-  4. `04-export-menu.png` — share & export menu
-  5. `05-invitation.png` — invitation builder
-  6. `06-qr-share.png` — share the whole plan via QR
-  7. `07-settings.png` — settings
-  8. `08-overview-stats.png` — live overview (RSVP, side balance, meals)
-  9. `09-guest-editor.png` — edit a guest
-  10. `10-board-dark.png` — dark mode
-
 All screenshots use the built-in **demo list** (Elira & Arben — Demo Wedding),
 so no real guest data is shown.
 
+## Ready-to-post images (root of `promo/`)
+
+- `guestseat-linkedin.png` — desktop hero (headline + board + feature thumbs)
+- `guestseat-mobile.png` — four phones (board, invitation, overview, QR)
+- `guestseat-exports.png` — the two PDF exports side by side
+
+## Individual assets
+
+- `screenshots/` — desktop full-res (01 onboarding · 02 board · 03 floor plan ·
+  04 export menu · 05 invitation · 06 QR · 07 settings · 08 overview ·
+  09 guest editor · 10 dark mode)
+- `mobile/` — phone full-res (m01 onboarding · m02 board · m03 floor · m04 menu ·
+  m05 settings · m06 QR · m07 dark · m08 overview · m09 invitation ·
+  m10 guest editor)
+- `pdf/` — the real exported PDFs (`guestseat-invitation.pdf`,
+  `guestseat-seating-chart.pdf`) plus PNG previews of each
+
+**Tip:** for a LinkedIn carousel/document post, upload the numbered
+`screenshots/` (or `mobile/`) files in order — one screen per slide.
+
 ---
 
-## Post text (story version — recommended)
+# 🇦🇱 Post (Albanian — story version, recommended)
+
+Para pak muajsh mora një detyrë që s'e prisja: të rregulloja uljen e mysafirëve
+në një dasmë familjare. 🪑
+
+Qindra mysafirë. Kush ulet me kë. Cilat familje s'guxojnë të ndahen. Kush e
+konfirmoi, kush jo. Dhe "sistemi" për të gjitha këto? Një tog letra, një
+stilolaps dhe shumë vija e fshirje.
+
+Kërkova një aplikacion që të ma lehtësonte punën — dhe s'gjeta asnjë që i
+përshtatej mënyrës si i bëjmë dasmat te ne. Prandaj e ndërtova vetë.
+
+Ju prezantoj **GuestSeat** 🎉
+
+→ Tërhiqni mysafirët nëpër tavolina, me limit vendesh për secilën
+→ Lidhni çiftet dhe familjet që të mos ndahen kurrë
+→ Ulni tërë listën automatikisht me një klik
+→ Ndiqni RSVP-në, gjellët dhe një pasqyrë të gjallë me një shikim
+→ Ndërtoni ftesën (me valle, tupanat, sofër…) dhe eksportoni një PDF gati për shtyp
+→ Ndajeni tërë planin me një kod QR — pa server, e tërë lista rri brenda linkut
+→ Punon plotësisht offline, në shfletues, në shqip dhe anglisht
+
+Koha e listave në letër ka mbaruar.
+
+Është falas dhe punon tërësisht në shfletues 👉 [vendos linkun tënd]
+
+E ndërtuar me React + TypeScript. Do të kisha shumë qejf t'i lexoja mendimet
+tuaja. 🙌
+
+#ZhvillimWeb #React #TypeScript #ProjektPersonal #Dasmë #Kosovë
+
+---
+
+# 🇦🇱 Post (Albanian — short version)
+
+Më kërkuan të rregulloja uljen e mysafirëve për një dasmë familjare — qindra
+mysafirë, e vetëm letra dhe stilolaps për ta bërë. S'gjeta aplikacion që të më
+përshtatej, prandaj e ndërtova një.
+
+**GuestSeat**: tërhiq mysafirët nëpër tavolina, mbaji çiftet e familjet bashkë,
+uli të gjithë me një klik, ndiq RSVP-të, ndërto ftesën dhe ndaje tërë planin me
+një kod QR. Falas, offline, në shfletuesin tënd.
+
+Koha e listave në letër ka mbaruar. 👉 [vendos linkun tënd]
+
+#React #TypeScript #ProjektPersonal #Dasmë
+
+---
+
+# 🇬🇧 Post (English — story version)
 
 A few months ago I was handed a job I didn't see coming: arrange the seating
 for a family wedding. 🪑
@@ -54,7 +106,7 @@ Built with React + TypeScript. I'd genuinely love your feedback. 🙌
 
 ---
 
-## Post text (short version)
+# 🇬🇧 Post (English — short version)
 
 I got asked to plan the seating for a family wedding — hundreds of guests, and
 nothing but paper and a pen to do it with. I couldn't find an app that fit, so
@@ -70,6 +122,6 @@ The age of paper seating charts is over. 👉 [add your link]
 
 ---
 
-**Before posting:** replace `[add your link]` with your live URL, and attach
-either `guestseat-linkedin.png` (single image) or the `screenshots/` files in
-order (carousel).
+**Before posting:** replace `[vendos linkun tënd]` / `[add your link]` with your
+live URL, and attach one of the montage images (or a `screenshots/` /
+`mobile/` carousel).
