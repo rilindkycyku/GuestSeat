@@ -12,9 +12,16 @@ interface OnboardingProps {
   onLoadDemo: () => void;
   /** Start with an empty event — no guests or tables — and build the list by hand. */
   onStartBlank: (eventType: EventType) => void;
+  /**
+   * App-wide preference: seed a fresh wedding invitation with the traditional Albanian program.
+   * It lives here, at the moment a new event is created, because that's the only point the schedule
+   * is seeded — an existing event already has its schedule, so the toggle couldn't affect it later.
+   */
+  seedTraditions: boolean;
+  onSeedTraditionsChange: (on: boolean) => void;
 }
 
-export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingProps) {
+export function Onboarding({ onImported, onLoadDemo, onStartBlank, seedTraditions, onSeedTraditionsChange }: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -93,6 +100,42 @@ export function Onboarding({ onImported, onLoadDemo, onStartBlank }: OnboardingP
             })}
           </div>
         </div>
+
+        {/* Only weddings have a traditional program to seed, so the toggle appears just for them. */}
+        {eventType === 'wedding' && (
+          <div className="mb-6">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={seedTraditions}
+              onClick={() => onSeedTraditionsChange(!seedTraditions)}
+              className="group w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-left"
+            >
+              <span className="shrink-0 w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-lg">
+                🪕
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {t('settings.seedTraditions')}
+                </span>
+                <span className="block text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  {t('settings.seedTraditionsDesc')}
+                </span>
+              </span>
+              <span
+                className={`shrink-0 w-10 h-6 rounded-full p-0.5 transition-colors ${
+                  seedTraditions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    seedTraditions ? 'translate-x-4' : ''
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
+        )}
 
         <div
           onDragOver={(e) => {

@@ -279,7 +279,7 @@ export const sq = {
       valle: 'Valle',
       brideSendoff: 'Marrja e nuses',
       cifteli: 'Çifteli',
-      krushqFeast: 'Sofra e krushqve',
+      krushqFeast: 'Sofra',
       doves: 'Pëllumbat',
       groom: 'Dhëndri',
       sunset: 'Perëndimi',

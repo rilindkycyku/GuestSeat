@@ -26,8 +26,6 @@ interface SettingsModalProps {
   onCheckIn: () => void;
   onEditEventDetails: () => void;
   onEditInvitation: () => void;
-  seedTraditions: boolean;
-  onSeedTraditionsChange: (on: boolean) => void;
   onClose: () => void;
 }
 
@@ -69,50 +67,6 @@ function NavRow({
       </span>
       <span className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
         ›
-      </span>
-    </button>
-  );
-}
-
-/** A labelled on/off switch row, used for boolean preferences. */
-function ToggleRow({
-  icon,
-  title,
-  description,
-  checked,
-  onChange,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-  checked: boolean;
-  onChange: (on: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="group w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-left"
-    >
-      <span className="shrink-0 w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-lg">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</span>
-        <span className="block text-xs text-slate-400 dark:text-slate-500 mt-0.5">{description}</span>
-      </span>
-      <span
-        className={`shrink-0 w-10 h-6 rounded-full p-0.5 transition-colors ${
-          checked ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
-        }`}
-      >
-        <span
-          className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-4' : ''
-          }`}
-        />
       </span>
     </button>
   );
@@ -261,8 +215,6 @@ export function SettingsModal({
   onCheckIn,
   onEditEventDetails,
   onEditInvitation,
-  seedTraditions,
-  onSeedTraditionsChange,
   onClose,
 }: SettingsModalProps) {
   const { t, lang, setLang } = useLanguage();
@@ -296,13 +248,6 @@ export function SettingsModal({
               title={t('invitation.editDetails')}
               description={t('invitation.editDetailsDesc')}
               onClick={onEditInvitation}
-            />
-            <ToggleRow
-              icon="🪕"
-              title={t('settings.seedTraditions')}
-              description={t('settings.seedTraditionsDesc')}
-              checked={seedTraditions}
-              onChange={onSeedTraditionsChange}
             />
           </div>
         </Section>

@@ -277,7 +277,7 @@ export const en = {
       valle: 'Valle (circle dance)',
       brideSendoff: "Bride's send-off",
       cifteli: 'Çifteli',
-      krushqFeast: "Krushqit's feast",
+      krushqFeast: 'Sofra',
       doves: 'Doves',
       groom: 'Groom',
       sunset: 'Golden hour',
