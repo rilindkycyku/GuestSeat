@@ -6,6 +6,7 @@ import type { Language } from '../lib/i18n';
 import type { TableTag, TagColor } from '../types';
 import { TAG_COLORS, TAG_COLOR_ORDER, tagColorClasses } from '../lib/tagColors';
 import { ModalHeader } from './ModalHeader';
+import { Credits } from './Credits';
 
 interface SettingsModalProps {
   viewMode: ViewMode;
@@ -363,6 +364,8 @@ export function SettingsModal({
             </button>
           </div>
         </Section>
+
+        <Credits compact />
         </div>
       </div>
     </div>

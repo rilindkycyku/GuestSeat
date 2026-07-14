@@ -71,6 +71,8 @@ export const sq = {
     unseatAllConfirm: 'Të hiqen të gjithë të ftuarit nga tavolinat?',
     unseatedAll: 'Të gjithë u hoqën nga tavolinat.',
     resetData: 'Fshi këtë ngjarje',
+    about: 'Rreth',
+    developedBy: 'Zhvilluar nga',
   },
   autoSeat: {
     action: 'Ul automatikisht',

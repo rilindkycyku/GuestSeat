@@ -12,6 +12,7 @@ import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
 import { ExportMenu } from './components/ExportMenu';
 import { SettingsModal } from './components/SettingsModal';
+import { Credits } from './components/Credits';
 import { StatsModal } from './components/StatsModal';
 import { CheckInScreen } from './components/CheckInScreen';
 import { InvitationModal } from './components/InvitationModal';
@@ -1041,6 +1042,7 @@ export default function App() {
             </div>
           </div>
         </main>
+        <Credits />
       </div>
 
       {/* Mobile speed-dial: the most common actions one thumb-tap away — add guest/table plus the
