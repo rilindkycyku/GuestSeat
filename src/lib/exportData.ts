@@ -674,6 +674,176 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
   doc.save(`${slug(state.eventName)}-seating.pdf`);
 }
 
+/**
+ * A "cut-out" seating export: one self-contained card per table, laid out four to an A4 sheet
+ * (2×2) with cut guides down the gutters, so a host can print, cut them apart and drop a card on
+ * each table. Every card repeats the event name and carries the table's own guest list, so each
+ * one stands alone once separated. Only tables with at least one seated guest get a card.
+ */
+export async function exportAsTableCards(state: EventState, t: Translator, lang: Language): Promise<void> {
+  const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const details = state.details ?? {};
+  const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const ink: [number, number, number] = [51, 51, 51];
+  const muted: [number, number, number] = [120, 120, 120];
+  const body: [number, number, number] = [60, 55, 45];
+  const gold: [number, number, number] = [176, 141, 87];
+  const goldSoft: [number, number, number] = [206, 183, 142];
+  const cream: [number, number, number] = [250, 247, 241];
+  const cutGuide: [number, number, number] = [180, 180, 180];
+
+  // Seated guests, bucketed by table.
+  const guestsByTable = new Map<string, Guest[]>();
+  for (const g of state.guests) {
+    if (g.tableId && state.tables.some((tb) => tb.id === g.tableId)) {
+      const list = guestsByTable.get(g.tableId) ?? [];
+      list.push(g);
+      guestsByTable.set(g.tableId, list);
+    }
+  }
+  const cards = [...state.tables]
+    .filter((tb) => (guestsByTable.get(tb.id)?.length ?? 0) > 0)
+    .sort((a, b) => tableDisplayName(a, t).localeCompare(tableDisplayName(b, t), undefined, { numeric: true }));
+
+  // 2×2 grid geometry: four A6-ish cards per A4, with a gutter between them to cut along.
+  const outer = 10;
+  const gutter = 10;
+  const cardW = (pageWidth - outer * 2 - gutter) / 2;
+  const cardH = (pageHeight - outer * 2 - gutter) / 2;
+  const slotX = [outer, outer + cardW + gutter];
+  const slotY = [outer, outer + cardH + gutter];
+  const pad = 7;
+
+  const drawCutGuides = () => {
+    doc.setDrawColor(...cutGuide);
+    doc.setLineWidth(0.2);
+    doc.setLineDashPattern([1.3, 1.3], 0);
+    const cx = outer + cardW + gutter / 2;
+    const cy = outer + cardH + gutter / 2;
+    doc.line(cx, 5, cx, pageHeight - 5);
+    doc.line(5, cy, pageWidth - 5, cy);
+    doc.setLineDashPattern([], 0);
+  };
+
+  const drawCard = (table: Table, x: number, y: number) => {
+    const guests = [...(guestsByTable.get(table.id) ?? [])].sort((a, b) => fullName(a).localeCompare(fullName(b)));
+
+    // Card sheet: cream fill with a gold double border — the border doubles as the cut line.
+    doc.setFillColor(...cream);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(x, y, cardW, cardH, 2.5, 2.5, 'FD');
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.15);
+    doc.roundedRect(x + 1.4, y + 1.4, cardW - 2.8, cardH - 2.8, 2, 2, 'S');
+
+    const innerW = cardW - pad * 2;
+    const centerX = x + cardW / 2;
+    let cy = y + pad + 1;
+
+    // Event name, small and italic, so a separated card still says which event it belongs to.
+    if (state.eventName?.trim()) {
+      doc.setFont('times', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...muted);
+      const line = (doc.splitTextToSize(state.eventName, innerW) as string[])[0] ?? '';
+      doc.text(line, centerX, cy + 2, { align: 'center' });
+      cy += 5.5;
+    }
+
+    // Table name — the headline of the card.
+    doc.setFont('times', 'normal');
+    doc.setFontSize(17);
+    doc.setTextColor(...gold);
+    for (const line of doc.splitTextToSize(tableDisplayName(table, t), innerW) as string[]) {
+      doc.text(line, centerX, cy + 5, { align: 'center' });
+      cy += 6.8;
+    }
+    cy += 0.5;
+
+    // Side + custom tags, then the fill count.
+    const meta = [sideLabel(table, t), ...tagLabels(table, tagsById)].filter(Boolean).join(' · ');
+    if (meta) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...ink);
+      for (const line of doc.splitTextToSize(meta, innerW) as string[]) {
+        doc.text(line, centerX, cy + 2, { align: 'center' });
+        cy += 4.4;
+      }
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text(`${guests.length}/${table.capacity}`, centerX, cy + 2, { align: 'center' });
+    cy += 4.5;
+
+    // Divider before the guest list.
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.3);
+    doc.line(x + pad, cy, x + cardW - pad, cy);
+    cy += 4;
+
+    // Guest list — numbered, sized to the crowd so a full table still fits the quadrant. Manual
+    // layout (rather than autoTable) keeps every card confined to its slot, never page-breaking.
+    const fontSize = guests.length > 12 ? 7 : guests.length > 9 ? 8 : 9;
+    const lineH = fontSize <= 7 ? 3.9 : fontSize <= 8 ? 4.3 : 4.8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...body);
+    const maxY = y + cardH - pad;
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      const marker = g.rsvp === 'declined' ? ` (${t('rsvp.declinedShort')})` : '';
+      const wrapped = doc.splitTextToSize(`${i + 1}. ${fullName(g)}${marker}`, innerW - 1) as string[];
+      if (cy + wrapped.length * lineH > maxY) {
+        doc.setTextColor(...muted);
+        doc.text(`… +${guests.length - i}`, x + pad + 1, cy + 3);
+        break;
+      }
+      doc.text(wrapped, x + pad + 1, cy + 3);
+      cy += wrapped.length * lineH;
+    }
+  };
+
+  if (cards.length === 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...muted);
+    doc.text(t('export.noGuestsSeated'), pageWidth / 2, pageHeight / 2, { align: 'center' });
+  } else {
+    cards.forEach((table, idx) => {
+      const slot = idx % 4;
+      if (slot === 0) {
+        if (idx > 0) doc.addPage();
+        drawCutGuides();
+      }
+      drawCard(table, slotX[slot % 2], slotY[Math.floor(slot / 2)]);
+    });
+  }
+
+  // Branded footer with page numbers, in the outer margin below the bottom row of cards.
+  const dateStr = details.date ? formatEventDate(details.date, lang) : new Date().toLocaleDateString();
+  const footerLabel = `${t('export.madeWith', { brand: BRAND })}  ·  ${dateStr}`;
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    const fy = pageHeight - 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...muted);
+    doc.text(footerLabel, outer, fy);
+    doc.setTextColor(...gold);
+    doc.text(`${p} / ${totalPages}`, pageWidth - outer, fy, { align: 'right' });
+  }
+
+  doc.save(`${slug(state.eventName)}-table-cards.pdf`);
+}
+
 /** Format an ISO `YYYY-MM-DD` date into a long, localized, human string. */
 export function formatEventDate(iso: string, lang: Language): string {
   const [y, m, d] = iso.split('-').map(Number);

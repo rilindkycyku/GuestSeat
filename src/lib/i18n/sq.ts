@@ -357,6 +357,8 @@ export const sq = {
     jsonDesc: 'Të dhënat e plota të vendeve',
     pdf: 'PDF',
     pdfDesc: 'Skema e printueshme e vendeve',
+    tableCards: 'Kartat e tavolinave',
+    tableCardsDesc: 'Karta për t’i prerë, 4 për faqe',
     excel: 'Excel',
     excelDesc: 'Tabelë e stilizuar (.xlsx)',
     eventDetails: 'Detajet e eventit…',
