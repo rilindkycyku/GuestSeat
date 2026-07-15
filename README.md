@@ -1,6 +1,6 @@
 # GuestSeat 🪑💍
 
-![GuestSeat — seating board](promo/en/screenshots/02-board-list.png)
+![GuestSeat — seat every guest right, in minutes](promo/en/montage/hero.png)
 
 **GuestSeat** is a web app for planning wedding (or any event) table seating from a guest-list JSON file. Drag guests onto tables, build a print-ready invitation, and share the whole plan with a QR code — no server, the entire list travels inside the link. It runs fully offline, right in your browser.
 
@@ -27,6 +27,8 @@
 ---
 
 ## 📸 Screenshots
+
+![Everything for the big day, in one board](promo/en/montage/showcase.png)
 
 | Onboarding | Seating board |
 | :---: | :---: |
