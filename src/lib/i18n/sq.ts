@@ -2,6 +2,7 @@ import type { TranslationDict } from './en';
 
 export const sq = {
   common: {
+    loading: 'Po hapet…',
     cancel: 'Anulo',
     save: 'Ruaj',
     delete: 'Fshi',
@@ -212,6 +213,17 @@ export const sq = {
     title: 'Të ftuar pa vend',
     allSeated: 'Të gjithë janë ulur 🎉',
     dragHint: "Tërhiqni të ftuarit këtu për t'i zhvendosur.",
+  },
+  dnd: {
+    instructions:
+      'Shtypni Space për të marrë një të ftuar, pastaj shtypni shigjetat për të kaluar nga një tavolinë në tjetrën dhe Space përsëri për ta ulur. Enter mbi një të ftuar hap ndryshimin, Escape e anulon zhvendosjen.',
+    pickedUp: 'U marr {{guest}}. Shtypni shigjetat për të zgjedhur tavolinën, pastaj Space për ta ulur.',
+    overTable: '{{guest}} është mbi {{table}}.',
+    overUnseated: '{{guest}} është mbi listën e të ftuarve pa vend.',
+    seated: '{{guest}} u ul te {{table}}.',
+    unseatedGuest: '{{guest}} u kthye te lista e të ftuarve pa vend.',
+    droppedNowhere: '{{guest}} mbeti ku ishte.',
+    cancelled: 'Zhvendosja u anulua. {{guest}} mbeti ku ishte.',
   },
   guestEditor: {
     title: 'Ndrysho të ftuarin',

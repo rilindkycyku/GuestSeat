@@ -4,6 +4,7 @@ import { qrDataUrl, QrTooLargeError } from '../lib/qr';
 import { encodeStateToLink, toQrPayloadUrl } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 
 /**
  * Shows a scannable QR code for the current event's share link, so a guest can
@@ -70,7 +71,11 @@ export function QrModal({
   const shareNative = async () => {
     if (!link) return;
     try {
-      await navigator.share({ title: state.eventName, text: t('share.shareText', { name: state.eventName }), url: link });
+      await navigator.share({
+        title: state.eventName,
+        text: t('share.shareText', { name: state.eventName }),
+        url: link,
+      });
     } catch (err) {
       // AbortError = the user dismissed the share sheet; stay silent for that.
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -88,23 +93,20 @@ export function QrModal({
   const tooLarge = status === 'tooLarge';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('share.qrTitle')}
+      panelClassName="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
     >
-      <div
-        className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="📱" title={t('share.qrTitle')} onClose={onClose} />
+      <ModalHeader icon="📱" title={t('share.qrTitle')} onClose={onClose} />
 
-        <div className="p-6">
+      <div className="p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           {tooLarge ? t('share.qrTooLarge') : t('share.qrDesc')}
         </p>
 
         {/* The QR itself — or, when the list is too big for one, a friendly panel that points
-            to the sharing buttons below instead of dead-ending on an error. */}
+          to the sharing buttons below instead of dead-ending on an error. */}
         <div className="flex items-center justify-center rounded-2xl bg-white p-4 border border-slate-200 dark:border-slate-700 min-h-[220px]">
           {status === 'ready' && dataUrl ? (
             <img src={dataUrl} alt={t('share.qrTitle')} className="w-52 h-52" />
@@ -121,7 +123,7 @@ export function QrModal({
         </div>
 
         {/* Share actions. When the QR is too large these become the primary way to share;
-            for a normal QR they're a convenient secondary path. */}
+          for a normal QR they're a convenient secondary path. */}
         {link && (
           <div className="mt-4 space-y-2">
             {canShare && (
@@ -154,8 +156,7 @@ export function QrModal({
             </button>
           </div>
         )}
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

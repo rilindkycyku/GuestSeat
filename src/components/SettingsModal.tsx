@@ -6,6 +6,7 @@ import type { Language } from '../lib/i18n';
 import type { TableTag, TagColor } from '../types';
 import { TAG_COLORS, TAG_COLOR_ORDER, tagColorClasses } from '../lib/tagColors';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 import { Credits } from './Credits';
 
 interface SettingsModalProps {
@@ -128,7 +129,9 @@ function TagManager({
       {/* Built-in Groom/Bride tags: always present, cannot be renamed or removed. */}
       {systemTags.map((tag) => (
         <div key={tag.id} className="flex items-center gap-2">
-          <span className={`shrink-0 w-7 h-7 rounded-full ${tagColorClasses(tag.color).dot} ring-2 ring-white dark:ring-slate-900 shadow`} />
+          <span
+            className={`shrink-0 w-7 h-7 rounded-full ${tagColorClasses(tag.color).dot} ring-2 ring-white dark:ring-slate-900 shadow`}
+          />
           <span className="flex-1 min-w-0 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 truncate">
             {tag.label}
           </span>
@@ -155,7 +158,9 @@ function TagManager({
                       setOpenColorId(null);
                     }}
                     className={`w-6 h-6 rounded-full ${TAG_COLORS[c].dot} ${
-                      c === tag.color ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 ring-slate-400' : ''
+                      c === tag.color
+                        ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 ring-slate-400'
+                        : ''
                     }`}
                   />
                 ))}
@@ -176,7 +181,9 @@ function TagManager({
           </button>
         </div>
       ))}
-      {tags.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 pt-0.5">{t('tags.settingsHint')}</p>}
+      {tags.length === 0 && (
+        <p className="text-xs text-slate-400 dark:text-slate-500 pt-0.5">{t('tags.settingsHint')}</p>
+      )}
       <div className="flex items-center gap-2 pt-1">
         <input
           value={draft}
@@ -227,17 +234,14 @@ export function SettingsModal({
     'w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('settings.title')}
+      panelClassName="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
     >
-      <div
-        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="⚙️" title={t('settings.title')} onClose={onClose} />
+      <ModalHeader icon="⚙️" title={t('settings.title')} onClose={onClose} />
 
-        <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
+      <div className="overflow-y-auto p-4 sm:p-5 space-y-3">
         <Section title={t('events.myEvents')} icon="📁">
           <NavRow
             icon="🗂️"
@@ -266,9 +270,24 @@ export function SettingsModal({
 
         <Section title={t('settings.seating')} icon="🎯">
           <div className="space-y-2">
-            <NavRow icon="✨" title={t('settings.autoSeat')} description={t('settings.autoSeatDesc')} onClick={onAutoSeat} />
-            <NavRow icon="📊" title={t('settings.overview')} description={t('settings.overviewDesc')} onClick={onOverview} />
-            <NavRow icon="🎉" title={t('settings.checkIn')} description={t('settings.checkInDesc')} onClick={onCheckIn} />
+            <NavRow
+              icon="✨"
+              title={t('settings.autoSeat')}
+              description={t('settings.autoSeatDesc')}
+              onClick={onAutoSeat}
+            />
+            <NavRow
+              icon="📊"
+              title={t('settings.overview')}
+              description={t('settings.overviewDesc')}
+              onClick={onOverview}
+            />
+            <NavRow
+              icon="🎉"
+              title={t('settings.checkIn')}
+              description={t('settings.checkInDesc')}
+              onClick={onCheckIn}
+            />
           </div>
         </Section>
 
@@ -366,8 +385,7 @@ export function SettingsModal({
         </Section>
 
         <Credits compact />
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

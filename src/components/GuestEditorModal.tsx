@@ -5,6 +5,7 @@ import { tableDisplayName } from '../lib/tableDisplay';
 import { tagColorClasses } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 
 interface GuestEditorModalProps {
   guest: Guest;
@@ -107,17 +108,14 @@ export function GuestEditorModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('guestEditor.title')}
+      panelClassName="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
     >
-      <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
+      <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
 
-        <div className="overflow-y-auto p-6">
+      <div className="overflow-y-auto p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -141,7 +139,11 @@ export function GuestEditorModal({
         <div className="grid grid-cols-3 gap-1.5 mb-3">
           {(
             [
-              { value: undefined, label: t('rsvp.pending'), active: 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white' },
+              {
+                value: undefined,
+                label: t('rsvp.pending'),
+                active: 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white',
+              },
               { value: 'confirmed', label: t('rsvp.confirmed'), active: 'bg-emerald-500 text-white' },
               { value: 'declined', label: t('rsvp.declined'), active: 'bg-red-500 text-white' },
             ] as const
@@ -161,7 +163,9 @@ export function GuestEditorModal({
           ))}
         </div>
 
-        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('guestEditor.table')}</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+          {t('guestEditor.table')}
+        </label>
         <div className="mb-3">
           <TableSelect tables={tables} tags={tags} seatedCount={seatedCount} value={tableId} onChange={setTableId} />
         </div>
@@ -344,8 +348,7 @@ export function GuestEditorModal({
             </button>
           </div>
         </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

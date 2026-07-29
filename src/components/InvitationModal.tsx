@@ -17,6 +17,7 @@ import { exportInvitationPdf, INVITATION_TEMPLATES, iconForAgenda, type IconKind
 import { eventTypeConfig } from '../lib/eventTypes';
 import { useLanguage } from '../hooks/useLanguage';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 
 /** Emoji shown next to a schedule row in the editor, echoing the icon the PDF draws for it. */
 const ICON_EMOJI: Record<IconKind, string> = {
@@ -315,17 +316,15 @@ export function InvitationModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('invitation.title')}
+      panelClassName="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+      closeOnBackdrop={false}
     >
-      <div
-        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="💌" title={t('invitation.title')} onClose={onClose} />
+      <ModalHeader icon="💌" title={t('invitation.title')} onClose={onClose} />
 
-        <div className="overflow-y-auto p-6">
+      <div className="overflow-y-auto p-6">
         <div className="space-y-4">
           <div>
             <label className={labelClass}>{t('invitation.introMessage')}</label>
@@ -384,7 +383,9 @@ export function InvitationModal({
               >
                 + {t('invitation.addOther')}
               </button>
-              <p className="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">{t('invitation.timelineHint')}</p>
+              <p className="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+                {t('invitation.timelineHint')}
+              </p>
             </div>
           </div>
 
@@ -469,7 +470,9 @@ export function InvitationModal({
                     >
                       {t(tpl.labelKey)}
                     </span>
-                    <span className="block text-[10px] text-slate-400 dark:text-slate-500 leading-tight">{t(tpl.descKey)}</span>
+                    <span className="block text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                      {t(tpl.descKey)}
+                    </span>
                   </button>
                 );
               })}
@@ -492,8 +495,7 @@ export function InvitationModal({
             {t('share.qrTitle')}
           </button>
         </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

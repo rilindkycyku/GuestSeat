@@ -1,5 +1,6 @@
 export const en = {
   common: {
+    loading: 'Loading…',
     cancel: 'Cancel',
     save: 'Save',
     delete: 'Delete',
@@ -210,6 +211,17 @@ export const en = {
     title: 'Unseated Guests',
     allSeated: 'Everyone is seated 🎉',
     dragHint: 'Drag guests here to unseat them.',
+  },
+  dnd: {
+    instructions:
+      'Press Space to pick up a guest, then use the arrow keys to move between tables and Space again to seat them. Press Enter on a guest to edit them, or Escape to cancel a move.',
+    pickedUp: 'Picked up {{guest}}. Use the arrow keys to choose a table, then press Space to seat them.',
+    overTable: '{{guest}} is over {{table}}.',
+    overUnseated: '{{guest}} is over the unseated list.',
+    seated: '{{guest}} was seated at {{table}}.',
+    unseatedGuest: '{{guest}} was moved back to the unseated list.',
+    droppedNowhere: '{{guest}} was left where they were.',
+    cancelled: 'Move cancelled. {{guest}} stayed where they were.',
   },
   guestEditor: {
     title: 'Edit guest',

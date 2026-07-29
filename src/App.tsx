@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, type DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
 import { useLanguage } from './hooks/useLanguage';
@@ -37,6 +45,7 @@ import {
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat } from './lib/autoSeat';
+import { boardCoordinateGetter } from './lib/keyboardDnd';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { tagColorClasses } from './lib/tagColors';
@@ -149,8 +158,52 @@ export default function App() {
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    // Space picks a guest up and puts them down; Enter is left alone because a guest chip is a real
+    // button whose Enter still opens the editor. Arrow keys hop between tables (see
+    // {@link boardCoordinateGetter}) instead of nudging the chip by pixels.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: boardCoordinateGetter,
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    })
   );
+
+  // Everything a screen reader hears during a keyboard drag. dnd-kit ships English defaults; these
+  // route through the app's own dictionary so an Albanian user isn't read to in English.
+  const dndAccessibility = useMemo(() => {
+    const nameOf = (id: string | number) => {
+      const guest = state?.guests.find((g) => g.id === String(id));
+      return guest ? (guest.surname ? `${guest.name} ${guest.surname}` : guest.name) : String(id);
+    };
+    const targetOf = (id: string | number | undefined) => {
+      if (id == null) return null;
+      if (id === 'unseated') return null;
+      const table = state?.tables.find((tb) => tb.id === String(id));
+      return table ? tableDisplayName(table, t) : String(id);
+    };
+    return {
+      screenReaderInstructions: { draggable: t('dnd.instructions') },
+      announcements: {
+        onDragStart: ({ active }: { active: { id: string | number } }) =>
+          t('dnd.pickedUp', { guest: nameOf(active.id) }),
+        onDragOver: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) => {
+          if (!over) return undefined;
+          const table = targetOf(over.id);
+          return table
+            ? t('dnd.overTable', { guest: nameOf(active.id), table })
+            : t('dnd.overUnseated', { guest: nameOf(active.id) });
+        },
+        onDragEnd: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) => {
+          const guest = nameOf(active.id);
+          if (!over) return t('dnd.droppedNowhere', { guest });
+          const table = targetOf(over.id);
+          return table ? t('dnd.seated', { guest, table }) : t('dnd.unseatedGuest', { guest });
+        },
+        onDragCancel: ({ active }: { active: { id: string | number } }) =>
+          t('dnd.cancelled', { guest: nameOf(active.id) }),
+      },
+    };
+  }, [state, t]);
 
   const toastTimer = useRef<number | undefined>(undefined);
   const showToast = (msg: string, action?: { label: string; onClick: () => void }) => {
@@ -546,19 +599,32 @@ export default function App() {
 
   // A single toast that optionally carries an Undo button; reused by both the onboarding and
   // main screens so an undo after "Reset" (which drops back to onboarding) is still reachable.
-  const toastNode = toast && (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium pl-4 pr-2 py-2 rounded-xl shadow-lg z-50 max-w-[calc(100vw-2rem)]">
-      <span className="truncate">{toast.msg}</span>
-      {toast.action && (
-        <button
-          onClick={() => {
-            toast.action?.onClick();
-            setToast(null);
-          }}
-          className="shrink-0 rounded-lg bg-white/15 dark:bg-slate-900/10 hover:bg-white/25 dark:hover:bg-slate-900/20 px-2.5 py-1 text-indigo-300 dark:text-indigo-600 font-semibold"
-        >
-          {toast.action.label}
-        </button>
+  // The toast is how the app reports what just happened — "24 guests seated", "list imported" — and
+  // where a 6-second Undo lives. The live region is always mounted, empty or not: a `role="status"`
+  // element that appears at the same moment as its text is unreliably announced, so only the message
+  // inside it comes and goes.
+  const toastNode = (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] pointer-events-none"
+    >
+      {toast && (
+        <div className="pointer-events-auto flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium pl-4 pr-2 py-2 rounded-xl shadow-lg">
+          <span className="truncate">{toast.msg}</span>
+          {toast.action && (
+            <button
+              onClick={() => {
+                toast.action?.onClick();
+                setToast(null);
+              }}
+              className="shrink-0 rounded-lg bg-white/15 dark:bg-slate-900/10 hover:bg-white/25 dark:hover:bg-slate-900/20 px-2.5 py-1 text-indigo-300 dark:text-indigo-600 font-semibold"
+            >
+              {toast.action.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -621,7 +687,7 @@ export default function App() {
         <span
           className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"
           role="status"
-          aria-label={t('common.close')}
+          aria-label={t('common.loading')}
         />
       </div>
     );
@@ -657,7 +723,7 @@ export default function App() {
   const declinedCount = state.guests.filter((g) => g.rsvp === 'declined').length;
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd} accessibility={dndAccessibility}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
         <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-3">
