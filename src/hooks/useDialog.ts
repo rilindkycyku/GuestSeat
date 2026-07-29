@@ -23,10 +23,20 @@ export function useDialog<T extends HTMLElement = HTMLDivElement>(onClose: () =>
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+  // Whatever had focus when the dialog opened, captured during the *first render* rather than in the
+  // effect below. React applies `autoFocus` while committing the dialog's children, which happens
+  // before passive effects run — so by effect time the "previously focused" element is already a
+  // field inside the dialog, and remembering that would restore focus to a node about to be removed.
+  const openerRef = useRef<HTMLElement | null | undefined>(undefined);
+  if (openerRef.current === undefined) {
+    const active = document.activeElement as HTMLElement | null;
+    openerRef.current = active && active !== document.body ? active : null;
+  }
+
   useEffect(() => {
     const token = Symbol('dialog');
     openDialogs.push(token);
-    const opener = document.activeElement as HTMLElement | null;
+    const opener = openerRef.current;
 
     // Move focus in, unless the panel already has it — a field with `autoFocus` inside has been
     // focused by React by now, and stealing that back would undo it.

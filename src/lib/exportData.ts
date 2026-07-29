@@ -953,12 +953,16 @@ export async function exportAsPlaceCards(state: EventState, t: Translator, lang:
     const at = (dy: number) => (flip ? y + halfH - dy : y + dy);
     const opts = flip ? { align: 'center' as const, angle: 180 as const } : { align: 'center' as const };
 
+    // Four bands down each half — event, name, table, details — placed as fractions of the half's
+    // height so the rhythm survives a change to how many cards share a sheet.
+    const band = { event: halfH * 0.19, name: halfH * 0.53, table: halfH * 0.75, meta: halfH * 0.9 };
+
     if (state.eventName?.trim()) {
       doc.setFont('times', 'italic');
       doc.setFontSize(8.5);
       doc.setTextColor(...gold);
       const line = (doc.splitTextToSize(state.eventName, innerW) as string[])[0] ?? '';
-      doc.text(line, centerX, at(7), opts);
+      doc.text(line, centerX, at(band.event), opts);
     }
 
     doc.setFont('times', 'normal');
@@ -970,18 +974,18 @@ export async function exportAsPlaceCards(state: EventState, t: Translator, lang:
       nameSize -= 1;
       doc.setFontSize(nameSize);
     }
-    doc.text(fullName(guest), centerX, at(halfH / 2 + 3), opts);
+    doc.text(fullName(guest), centerX, at(band.name), opts);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(...gold);
-    doc.text(tableDisplayName(table, t), centerX, at(halfH - 12), opts);
+    doc.text(tableDisplayName(table, t), centerX, at(band.table), opts);
 
     if (meta) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(...muted);
-      doc.text(meta, centerX, at(halfH - 5), opts);
+      doc.text(meta, centerX, at(band.meta), opts);
     }
   };
 

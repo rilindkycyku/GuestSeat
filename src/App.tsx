@@ -1,15 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
+import { useBoardDnd } from './hooks/useBoardDnd';
+import { useTableTags, type TableFilter } from './hooks/useTableTags';
+import { useGuestBadges } from './hooks/useGuestBadges';
+import { useToast } from './hooks/useToast';
+import { Toast } from './components/Toast';
+import {
+  countSeated,
+  groupGuestsByTable,
+  matchGuests,
+  tablesToRender as narrowToMatches,
+  tablesWithMatches,
+  unseatedFor,
+} from './lib/boardSearch';
 import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
 import { EventPicker } from './components/EventPicker';
@@ -46,16 +51,12 @@ import {
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
-import { autoSeat, type AutoSeatResult, seatedFeuds } from './lib/autoSeat';
-import { boardCoordinateGetter } from './lib/keyboardDnd';
+import { autoSeat, type AutoSeatResult } from './lib/autoSeat';
 import { clearShareParam, decodeSharedState, readFindSeatFlag, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { tagColorClasses } from './lib/tagColors';
-import type { EventState, Guest, Table, TableSide, TableTag } from './types';
+import type { EventState, Guest } from './types';
 import type { EventSummary } from './lib/db';
-
-/** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
-type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
 
 export default function App() {
   const {
@@ -99,6 +100,7 @@ export default function App() {
     toggleGuestTag,
   } = useEventState();
   const { t } = useLanguage();
+  const { toast, showToast, dismissToast } = useToast();
 
   const [query, setQuery] = useState('');
   // When true, show onboarding to create another event even though saved events already exist
@@ -106,7 +108,6 @@ export default function App() {
   const [creatingNew, setCreatingNew] = useState(false);
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; action?: { label: string; onClick: () => void } } | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
@@ -163,62 +164,7 @@ export default function App() {
     saveSeedTraditions(seedTraditions);
   }, [seedTraditions]);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
-    // Space picks a guest up and puts them down; Enter is left alone because a guest chip is a real
-    // button whose Enter still opens the editor. Arrow keys hop between tables (see
-    // {@link boardCoordinateGetter}) instead of nudging the chip by pixels.
-    useSensor(KeyboardSensor, {
-      coordinateGetter: boardCoordinateGetter,
-      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
-    })
-  );
-
-  // Everything a screen reader hears during a keyboard drag. dnd-kit ships English defaults; these
-  // route through the app's own dictionary so an Albanian user isn't read to in English.
-  const dndAccessibility = useMemo(() => {
-    const nameOf = (id: string | number) => {
-      const guest = state?.guests.find((g) => g.id === String(id));
-      return guest ? (guest.surname ? `${guest.name} ${guest.surname}` : guest.name) : String(id);
-    };
-    const targetOf = (id: string | number | undefined) => {
-      if (id == null) return null;
-      if (id === 'unseated') return null;
-      const table = state?.tables.find((tb) => tb.id === String(id));
-      return table ? tableDisplayName(table, t) : String(id);
-    };
-    return {
-      screenReaderInstructions: { draggable: t('dnd.instructions') },
-      announcements: {
-        onDragStart: ({ active }: { active: { id: string | number } }) =>
-          t('dnd.pickedUp', { guest: nameOf(active.id) }),
-        onDragOver: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) => {
-          if (!over) return undefined;
-          const table = targetOf(over.id);
-          return table
-            ? t('dnd.overTable', { guest: nameOf(active.id), table })
-            : t('dnd.overUnseated', { guest: nameOf(active.id) });
-        },
-        onDragEnd: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) => {
-          const guest = nameOf(active.id);
-          if (!over) return t('dnd.droppedNowhere', { guest });
-          const table = targetOf(over.id);
-          return table ? t('dnd.seated', { guest, table }) : t('dnd.unseatedGuest', { guest });
-        },
-        onDragCancel: ({ active }: { active: { id: string | number } }) =>
-          t('dnd.cancelled', { guest: nameOf(active.id) }),
-      },
-    };
-  }, [state, t]);
-
-  const toastTimer = useRef<number | undefined>(undefined);
-  const showToast = (msg: string, action?: { label: string; onClick: () => void }) => {
-    window.clearTimeout(toastTimer.current);
-    setToast({ msg, action });
-    // Give people longer to reach for an Undo than for a plain confirmation.
-    toastTimer.current = window.setTimeout(() => setToast(null), action ? 6000 : 3000);
-  };
+  const { sensors, accessibility: dndAccessibility } = useBoardDnd(state, t);
 
   // A destructive action + an "Undo" that rewinds to the snapshot captured just before it.
   const runWithUndo = (snapshot: EventState | null, act: () => void, msg: string) => {
@@ -234,166 +180,39 @@ export default function App() {
 
   const capacityTable = capacityTableId ? (tableById.get(capacityTableId) ?? null) : null;
 
-  const linkBadges = useMemo(() => {
-    const map = new Map<string, { status: 'together' | 'apart'; title: string }>();
-    if (!state) return map;
-    for (const g of state.guests) {
-      if (!g.linkedGuestIds?.length) continue;
-      const partners = g.linkedGuestIds.map((id) => guestById.get(id)).filter((p): p is Guest => !!p);
-      if (partners.length === 0) continue;
-      const together = g.tableId != null && partners.every((p) => p.tableId === g.tableId);
-      const names = partners.map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name)).join(', ');
-      map.set(g.id, {
-        status: together ? 'together' : 'apart',
-        title: `${t('guestEditor.linkedGuests')}: ${names}`,
-      });
-    }
-    return map;
-  }, [state, guestById, t]);
+  const { linkBadges, feudBadges } = useGuestBadges(state, t);
 
-  // Keep-apart pairs someone seated together by hand. Auto-seating never creates these; the board
-  // marks them rather than refusing the drop, because overriding a feud is a legitimate choice.
-  const feudBadges = useMemo(() => {
-    const map = new Map<string, { title: string }>();
-    if (!state) return map;
-    for (const [guestId, clashes] of seatedFeuds(state.guests)) {
-      const names = clashes.map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name)).join(', ');
-      map.set(guestId, { title: t('guestEditor.apartWarning', { names }) });
-    }
-    return map;
-  }, [state, t]);
+  const {
+    customTags,
+    systemTags,
+    allTags,
+    assignedIdsFor,
+    filteredTables,
+    visibleTableIds,
+    tagCounts,
+    toggleTag,
+    createTagForTable,
+    createTagForGuest,
+  } = useTableTags(state, tableFilter, t, { updateTable, toggleTableTag, toggleGuestTag, addTag });
 
-  const customTags = useMemo(() => state?.tags ?? [], [state]);
+  const seatedCount = useMemo(() => countSeated(state?.guests ?? []), [state]);
 
-  // Groom & Bride are always-present, non-removable "system" tags backed by the table's
-  // single `side` field; custom tags live in state.tags. Both show up in the same lists.
-  const systemTags: TableTag[] = useMemo(
-    () => [
-      { id: 'groom', label: t('tables.side.groom'), color: 'sky' },
-      { id: 'bride', label: t('tables.side.bride'), color: 'rose' },
-    ],
-    [t]
+  const matchedIds = useMemo(
+    () => (state ? matchGuests(state, query, visibleTableIds, t) : null),
+    [state, query, visibleTableIds, t]
   );
 
-  const allTags = useMemo(() => [...systemTags, ...customTags], [systemTags, customTags]);
-
-  // The tag ids applied to a table, merging the wedding side with its custom tags.
-  const assignedIdsFor = useCallback((tb: Table) => [...(tb.side ? [tb.side] : []), ...(tb.tagIds ?? [])], []);
-
-  // The set of guest-level tag ids present at each table, so a tag applied only to guests
-  // (e.g. "Bride's family" on a shared long table) still counts and filters that table in.
-  const guestTagIdsByTable = useMemo(() => {
-    const m = new Map<string, Set<string>>();
-    for (const g of state?.guests ?? []) {
-      if (!g.tableId || !g.tagIds?.length) continue;
-      const set = m.get(g.tableId) ?? new Set<string>();
-      for (const id of g.tagIds) set.add(id);
-      m.set(g.tableId, set);
-    }
-    return m;
-  }, [state]);
-
-  const tableHasTag = useCallback(
-    (tb: Table, id: string) => tb.side === id || tb.tagIds?.includes(id) || guestTagIdsByTable.get(tb.id)?.has(id),
-    [guestTagIdsByTable]
+  const matchedTableIds = useMemo(
+    () => (state ? tablesWithMatches(state.guests, matchedIds) : null),
+    [matchedIds, state]
   );
-
-  const filteredTables = useMemo(() => {
-    if (!state) return [];
-    if (tableFilter.kind === 'all') return state.tables;
-    const id = tableFilter.tagId;
-    return state.tables.filter((tb) => tableHasTag(tb, id));
-  }, [state, tableFilter, tableHasTag]);
-
-  const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
-
-  const tagCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const tb of state?.tables ?? []) {
-      if (tb.side) counts.set(tb.side, (counts.get(tb.side) ?? 0) + 1);
-      // Union of table-level tags and any guest tags at the table, so each tag counts a table once.
-      const ids = new Set([...(tb.tagIds ?? []), ...(guestTagIdsByTable.get(tb.id) ?? [])]);
-      for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-    return counts;
-  }, [state, guestTagIdsByTable]);
-
-  // Toggle a tag on a table. Groom/Bride map to the mutually-exclusive `side`; custom tags stack.
-  const toggleTag = useCallback(
-    (tableId: string, tagId: string) => {
-      if (tagId === 'groom' || tagId === 'bride') {
-        const current = state?.tables.find((tb) => tb.id === tableId)?.side;
-        updateTable(tableId, { side: current === tagId ? undefined : (tagId as TableSide) });
-      } else {
-        toggleTableTag(tableId, tagId);
-      }
-    },
-    [state, updateTable, toggleTableTag]
-  );
-
-  // Create a custom tag and immediately apply it to the table the user is tagging.
-  const createTagForTable = useCallback(
-    (tableId: string, label: string) => {
-      const id = addTag(label);
-      toggleTableTag(tableId, id);
-    },
-    [addTag, toggleTableTag]
-  );
-
-  // Create a custom tag and immediately apply it to the guest being edited.
-  const createTagForGuest = useCallback(
-    (guestId: string, label: string) => {
-      const id = addTag(label);
-      toggleGuestTag(guestId, id);
-    },
-    [addTag, toggleGuestTag]
-  );
-
-  const seatedCount = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const g of state?.guests ?? []) {
-      if (g.tableId) m.set(g.tableId, (m.get(g.tableId) ?? 0) + 1);
-    }
-    return m;
-  }, [state]);
-
-  const matchedIds = useMemo(() => {
-    if (!state) return null;
-    const q = query.trim().toLowerCase();
-    if (!q) return null;
-    const isVisible = (g: Guest) => !g.tableId || visibleTableIds.has(g.tableId);
-    const set = new Set<string>();
-    for (const g of state.guests) {
-      if (!isVisible(g)) continue;
-      const table = g.tableId ? tableById.get(g.tableId) : undefined;
-      const haystack = `${g.name} ${g.surname ?? ''} ${table ? tableDisplayName(table, t) : ''}`.toLowerCase();
-      if (haystack.includes(q)) set.add(g.id);
-    }
-    // Also surface linked partners of any direct match, so connected guests always show together.
-    for (const id of [...set]) {
-      for (const linkedId of guestById.get(id)?.linkedGuestIds ?? []) {
-        const linked = guestById.get(linkedId);
-        if (linked && isVisible(linked)) set.add(linkedId);
-      }
-    }
-    return set;
-  }, [state, query, tableById, visibleTableIds, t, guestById]);
-
-  const matchedTableIds = useMemo(() => {
-    if (!matchedIds || !state) return null;
-    const set = new Set<string>();
-    for (const g of state.guests) {
-      if (g.tableId && matchedIds.has(g.id)) set.add(g.tableId);
-    }
-    return set;
-  }, [matchedIds, state]);
 
   const isSearching = query.trim().length > 0;
 
-  const tablesToRender = useMemo(() => {
-    if (!isSearching || !matchedTableIds) return filteredTables;
-    return filteredTables.filter((tb) => matchedTableIds.has(tb.id));
-  }, [filteredTables, isSearching, matchedTableIds]);
+  const tablesToRender = useMemo(
+    () => narrowToMatches(filteredTables, matchedTableIds, isSearching),
+    [filteredTables, isSearching, matchedTableIds]
+  );
 
   useEffect(() => {
     if (!matchedTableIds || matchedTableIds.size === 0) return;
@@ -403,25 +222,9 @@ export default function App() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [matchedTableIds, state?.tables]);
 
-  const guestsByTable = useMemo(() => {
-    const m = new Map<string, Guest[]>();
-    for (const g of state?.guests ?? []) {
-      if (!g.tableId) continue;
-      const list = m.get(g.tableId) ?? [];
-      list.push(g);
-      m.set(g.tableId, list);
-    }
-    for (const list of m.values()) {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    }
-    return m;
-  }, [state]);
+  const guestsByTable = useMemo(() => groupGuestsByTable(state?.guests ?? []), [state]);
 
-  const unseatedGuests = useMemo(() => {
-    const list = (state?.guests ?? []).filter((g) => !g.tableId);
-    const filtered = matchedIds ? list.filter((g) => matchedIds.has(g.id)) : list;
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-  }, [state, matchedIds]);
+  const unseatedGuests = useMemo(() => unseatedFor(state?.guests ?? [], matchedIds), [state, matchedIds]);
 
   const handleImportFile = async (file: File, mode: 'replace' | 'merge') => {
     try {
@@ -643,36 +446,7 @@ export default function App() {
 
   // A single toast that optionally carries an Undo button; reused by both the onboarding and
   // main screens so an undo after "Reset" (which drops back to onboarding) is still reachable.
-  // The toast is how the app reports what just happened — "24 guests seated", "list imported" — and
-  // where a 6-second Undo lives. The live region is always mounted, empty or not: a `role="status"`
-  // element that appears at the same moment as its text is unreliably announced, so only the message
-  // inside it comes and goes.
-  const toastNode = (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      data-print="hide"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] pointer-events-none"
-    >
-      {toast && (
-        <div className="pointer-events-auto flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium pl-4 pr-2 py-2 rounded-xl shadow-lg">
-          <span className="truncate">{toast.msg}</span>
-          {toast.action && (
-            <button
-              onClick={() => {
-                toast.action?.onClick();
-                setToast(null);
-              }}
-              className="shrink-0 rounded-lg bg-white/15 dark:bg-slate-900/10 hover:bg-white/25 dark:hover:bg-slate-900/20 px-2.5 py-1 text-indigo-300 dark:text-indigo-600 font-semibold"
-            >
-              {toast.action.label}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const toastNode = <Toast toast={toast} onAction={dismissToast} />;
 
   // Create a new event from the onboarding flow, then leave the "creating" state.
   const startEvent = (init: Partial<EventState>) => {
@@ -1035,7 +809,7 @@ export default function App() {
 
           <div className="min-w-0 w-full">
             {state.tables.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div data-print="hide" className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <button
                     onClick={() => setTableFilter({ kind: 'all' })}

@@ -33,7 +33,14 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feu
       style={style}
       {...listeners}
       {...attributes}
-      onClick={onClick}
+      // dnd-kit's mouse sensor calls preventDefault on mousedown (so a drag doesn't select text),
+      // which also stops the browser from focusing the button. Focusing it here keeps the chip the
+      // element a dialog can hand focus back to when it closes — and leaves it ready for Space to
+      // pick the guest up straight after a click.
+      onClick={(e) => {
+        e.currentTarget.focus();
+        onClick?.();
+      }}
       title={guest.notes}
       data-testid="guest-chip"
       data-guest-id={guest.id}
