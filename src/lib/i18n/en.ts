@@ -229,6 +229,15 @@ export const en = {
     droppedNowhere: '{{guest}} was left where they were.',
     cancelled: 'Move cancelled. {{guest}} stayed where they were.',
   },
+  findSeat: {
+    title: 'Find your seat',
+    yourName: 'Your name',
+    placeholder: 'Start typing your name…',
+    hint: 'Type at least two letters of your name.',
+    noMatch: 'No guest by that name. Try your surname, or ask at the door.',
+    noTableYet: 'No table assigned yet.',
+    openFullPlan: 'I’m helping to plan — open the full list',
+  },
   guestEditor: {
     apartGuests: 'Keep apart',
     apartGuestsHint:
@@ -385,6 +394,8 @@ export const en = {
     pdfDesc: 'Printable seating chart',
     tableCards: 'Table cards',
     tableCardsDesc: 'Cut-out cards, 4 per page',
+    placeCards: 'Place cards',
+    placeCardsDesc: 'One folded card per guest, 4 per page',
     excel: 'Excel',
     excelDesc: 'Styled spreadsheet (.xlsx)',
     eventDetails: 'Event details…',
@@ -433,6 +444,10 @@ export const en = {
     },
   },
   share: {
+    qrModePlan: 'Full plan',
+    qrModePlanDesc: 'Opens the whole list — for a co-planner or helper',
+    qrModeGuest: 'For guests',
+    qrModeGuestDesc: 'Opens "find your seat" — nothing can be edited',
     share: 'Share via apps…',
     shareDesc: 'Send via WhatsApp, email…',
     shareText: 'Here is the seating list for {{name}}',

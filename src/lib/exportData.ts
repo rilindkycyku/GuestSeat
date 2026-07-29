@@ -20,7 +20,13 @@ export function fullName(g: Guest): string {
 }
 
 export function slug(name: string): string {
-  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'event';
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'event'
+  );
 }
 
 /** The app name stamped onto every export, so a printed sheet says where it came from. */
@@ -163,7 +169,14 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
         if (e > s) ws.mergeCells(r.number, s, r.number, e);
         const cell = ws.getCell(r.number, s);
         const [label, value] = cells[i];
-        cell.value = label ? { richText: [{ font: { bold: true, color: { argb: XL.labelFg }, name: 'Calibri', size: 9 }, text: `${label}:  ` }, { font: { color: { argb: XL.valueFg }, name: 'Calibri', size: 9 }, text: value }] } : '';
+        cell.value = label
+          ? {
+              richText: [
+                { font: { bold: true, color: { argb: XL.labelFg }, name: 'Calibri', size: 9 }, text: `${label}:  ` },
+                { font: { color: { argb: XL.valueFg }, name: 'Calibri', size: 9 }, text: value },
+              ],
+            }
+          : '';
         cell.fill = fill(XL.headerBg);
         cell.alignment = { vertical: 'middle', horizontal: i === 2 ? 'right' : i === 1 ? 'center' : 'left', indent: 1 };
         for (let c = s; c <= e; c++) ws.getCell(r.number, c).fill = fill(XL.headerBg);
@@ -248,7 +261,12 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       cell.fill = fill(bg);
       cell.font = font();
       cell.border = border();
-      cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'center' : 'left', indent: c === 1 ? 0 : 1, wrapText: c >= 9 };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: c === 1 ? 'center' : 'left',
+        indent: c === 1 ? 0 : 1,
+        wrapText: c >= 9,
+      };
     }
   });
   brandFooter(guests, gCols.length);
@@ -310,7 +328,12 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       cell.fill = fill(bg);
       cell.font = font();
       cell.border = border();
-      cell.alignment = { vertical: 'middle', horizontal: c === 1 || c === 5 ? 'center' : 'left', indent: c === 1 || c === 5 ? 0 : 1, wrapText: c === 6 };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: c === 1 || c === 5 ? 'center' : 'left',
+        indent: c === 1 || c === 5 ? 0 : 1,
+        wrapText: c === 6,
+      };
     }
   });
   // Totals row.
@@ -345,10 +368,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
 export async function exportAsPdf(state: EventState, t: Translator, lang: Language): Promise<void> {
   // Load jsPDF on demand so the ~250 kB library stays out of the initial bundle — it's only
   // needed the moment someone actually exports a PDF.
-  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
-    import('jspdf'),
-    import('jspdf-autotable'),
-  ]);
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const details = state.details ?? {};
   const tagsById = new Map((state.tags ?? []).map((tag) => [tag.id, tag]));
@@ -514,7 +534,11 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
     doc.text(
-      t('export.summary', { guests: state.guests.length, tables: tables.length, date: new Date().toLocaleDateString() }),
+      t('export.summary', {
+        guests: state.guests.length,
+        tables: tables.length,
+        date: new Date().toLocaleDateString(),
+      }),
       marginX,
       hy + 3
     );
@@ -870,6 +894,140 @@ export async function exportAsTableCards(state: EventState, t: Translator, lang:
   }
 
   doc.save(`${slug(state.eventName)}-table-cards.pdf`);
+}
+
+/**
+ * Per-guest place cards: folded tent cards that stand on the table, four to an A4 sheet.
+ *
+ * The sibling export {@link exportAsTableCards} prints one card per *table* listing who sits there
+ * — for the door or the table itself. This prints one card per *guest*, which is what tells a guest
+ * where to sit once they've found their table. Each card is a strip with the name printed twice, the
+ * upper half upside down, so folding along the dashed centre line gives a card readable from both
+ * sides of the table.
+ *
+ * Only seated guests get a card (a card with no table on it has nothing to say), and guests who
+ * declined are skipped.
+ */
+export async function exportAsPlaceCards(state: EventState, t: Translator, lang: Language): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const details = state.details ?? {};
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const muted: [number, number, number] = [120, 120, 120];
+  const body: [number, number, number] = [60, 55, 45];
+  const gold: [number, number, number] = [176, 141, 87];
+  const goldSoft: [number, number, number] = [206, 183, 142];
+  const cream: [number, number, number] = [250, 247, 241];
+  const foldGuide: [number, number, number] = [190, 190, 190];
+
+  const tableById = new Map(state.tables.map((tb) => [tb.id, tb]));
+  const cards = state.guests
+    .filter((g) => g.rsvp !== 'declined' && g.tableId && tableById.has(g.tableId))
+    .sort((a, b) => {
+      const byTable = tableDisplayName(tableById.get(a.tableId!)!, t).localeCompare(
+        tableDisplayName(tableById.get(b.tableId!)!, t),
+        undefined,
+        { numeric: true }
+      );
+      return byTable !== 0 ? byTable : fullName(a).localeCompare(fullName(b));
+    });
+
+  // Four strips per page, each folded across its middle — so a card is half a strip tall.
+  const outer = 12;
+  const perPage = 4;
+  const cardW = pageWidth - outer * 2;
+  const cardH = (pageHeight - outer * 2) / perPage;
+  const halfH = cardH / 2;
+
+  const dateStr = details.date ? formatEventDate(details.date, lang) : '';
+  const meta = [details.venue?.trim(), dateStr].filter(Boolean).join('  ·  ');
+
+  /** One half of a strip. `flip` prints it rotated 180°, which is the half above the fold. */
+  const drawHalf = (guest: Guest, x: number, y: number, flip: boolean) => {
+    const table = tableById.get(guest.tableId!)!;
+    const centerX = x + cardW / 2;
+    const innerW = cardW - 24;
+    // Rotated text is placed from the opposite corner, so every offset is mirrored about the centre.
+    const at = (dy: number) => (flip ? y + halfH - dy : y + dy);
+    const opts = flip ? { align: 'center' as const, angle: 180 as const } : { align: 'center' as const };
+
+    if (state.eventName?.trim()) {
+      doc.setFont('times', 'italic');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...gold);
+      const line = (doc.splitTextToSize(state.eventName, innerW) as string[])[0] ?? '';
+      doc.text(line, centerX, at(7), opts);
+    }
+
+    doc.setFont('times', 'normal');
+    doc.setTextColor(...body);
+    // Shrink the name only as far as it takes to fit on one line — a two-line place card reads badly.
+    let nameSize = 22;
+    doc.setFontSize(nameSize);
+    while (nameSize > 12 && doc.getTextWidth(fullName(guest)) > innerW) {
+      nameSize -= 1;
+      doc.setFontSize(nameSize);
+    }
+    doc.text(fullName(guest), centerX, at(halfH / 2 + 3), opts);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...gold);
+    doc.text(tableDisplayName(table, t), centerX, at(halfH - 12), opts);
+
+    if (meta) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...muted);
+      doc.text(meta, centerX, at(halfH - 5), opts);
+    }
+  };
+
+  const drawCard = (guest: Guest, index: number) => {
+    const y = outer + index * cardH;
+    doc.setFillColor(...cream);
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(outer, y, cardW, cardH, 2, 2, 'FD');
+
+    // The fold line, dashed so it reads as "fold here" rather than "cut here".
+    doc.setDrawColor(...foldGuide);
+    doc.setLineWidth(0.2);
+    doc.setLineDashPattern([1.2, 1.2], 0);
+    doc.line(outer + 4, y + halfH, outer + cardW - 4, y + halfH);
+    doc.setLineDashPattern([], 0);
+
+    drawHalf(guest, outer, y, true); // above the fold: upside down, so it stands up readable
+    drawHalf(guest, outer, y + halfH, false);
+  };
+
+  if (cards.length === 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...muted);
+    doc.text(t('export.noGuestsSeated'), pageWidth / 2, pageHeight / 2, { align: 'center' });
+  } else {
+    cards.forEach((guest, idx) => {
+      if (idx > 0 && idx % perPage === 0) doc.addPage();
+      drawCard(guest, idx % perPage);
+    });
+  }
+
+  const footerLabel = `${t('export.madeWith', { brand: BRAND })}  ·  ${dateStr || new Date().toLocaleDateString()}`;
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...muted);
+    doc.text(footerLabel, outer, pageHeight - 4);
+    doc.setTextColor(...gold);
+    doc.text(`${p} / ${totalPages}`, pageWidth - outer, pageHeight - 4, { align: 'right' });
+  }
+
+  doc.save(`${slug(state.eventName)}-place-cards.pdf`);
 }
 
 /** Format an ISO `YYYY-MM-DD` date into a long, localized, human string. */

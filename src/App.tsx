@@ -23,6 +23,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { Credits } from './components/Credits';
 import { StatsModal } from './components/StatsModal';
 import { CheckInScreen } from './components/CheckInScreen';
+import { FindSeatScreen } from './components/FindSeatScreen';
 import { InvitationModal } from './components/InvitationModal';
 import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
@@ -47,7 +48,7 @@ import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat, type AutoSeatResult, seatedFeuds } from './lib/autoSeat';
 import { boardCoordinateGetter } from './lib/keyboardDnd';
-import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
+import { clearShareParam, decodeSharedState, readFindSeatFlag, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { tagColorClasses } from './lib/tagColors';
 import type { EventState, Guest, Table, TableSide, TableTag } from './types';
@@ -123,6 +124,9 @@ export default function App() {
   const [invitationOpen, setInvitationOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  // A plan received through a *guest* link: held in memory only, never saved, and shown as the
+  // read-only seat lookup until someone says they're actually here to plan.
+  const [findSeatState, setFindSeatState] = useState<EventState | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,8 +135,7 @@ export default function App() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      const typing =
-        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
       const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
       if (cmdK || (e.key === '/' && !typing)) {
         e.preventDefault();
@@ -500,11 +503,16 @@ export default function App() {
     if (!param) return;
     sharedHandledRef.current = true;
     let cancelled = false;
+    const forGuests = readFindSeatFlag();
     void decodeSharedState(param).then((shared) => {
       if (cancelled) return;
       clearShareParam();
       if (!shared) {
         showToast(t('share.invalid'));
+        return;
+      }
+      if (forGuests) {
+        setFindSeatState(shared);
         return;
       }
       askConfirm({
@@ -592,7 +600,9 @@ export default function App() {
     }
     assignSeats(assignments);
     const msg =
-      leftUnseated > 0 ? t('autoSeat.someLeft', { count: seated, left: leftUnseated }) : t('autoSeat.seated', { count: seated });
+      leftUnseated > 0
+        ? t('autoSeat.someLeft', { count: seated, left: leftUnseated })
+        : t('autoSeat.seated', { count: seated });
     showToast(msg, { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) });
     // Who was left behind, and why, is the part someone can act on — so it gets a dialog, not a line.
     if (unplaced.length) setAutoSeatReport({ seated, unplaced });
@@ -642,6 +652,7 @@ export default function App() {
       role="status"
       aria-live="polite"
       aria-atomic="true"
+      data-print="hide"
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] pointer-events-none"
     >
       {toast && (
@@ -714,6 +725,28 @@ export default function App() {
     />
   );
 
+  // A guest link short-circuits the whole planner: no saved events are involved, so this renders
+  // before the IndexedDB gate below.
+  if (findSeatState) {
+    return (
+      <FindSeatScreen
+        state={findSeatState}
+        onOpenFullPlan={() => {
+          const shared = findSeatState;
+          setFindSeatState(null);
+          askConfirm({
+            message: t('share.receivedConfirm', { name: shared.eventName, count: shared.guests.length }),
+            confirmLabel: t('share.load'),
+            onConfirm: () => {
+              loadSharedState(shared);
+              showToast(t('share.loaded', { count: shared.guests.length }));
+            },
+          });
+        }}
+      />
+    );
+  }
+
   // Hold the first paint until IndexedDB has been read, so existing events never flash onboarding.
   if (!ready) {
     return (
@@ -746,7 +779,7 @@ export default function App() {
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
-      {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
+        {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
       </>
     );
@@ -760,7 +793,10 @@ export default function App() {
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd} accessibility={dndAccessibility}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3">
+        <header
+          data-print="hide"
+          className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3"
+        >
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-xl shrink-0">🪑</span>
             <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
@@ -1163,7 +1199,7 @@ export default function App() {
       {quickAddOpen && (
         <div className="sm:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
       )}
-      <div className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+      <div data-print="hide" className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
         {quickAddOpen && (
           <>
             <button
@@ -1237,9 +1273,7 @@ export default function App() {
               danger: true,
               onConfirm: () => {
                 const snapshot = state;
-                const name = editingGuest.surname
-                  ? `${editingGuest.name} ${editingGuest.surname}`
-                  : editingGuest.name;
+                const name = editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name;
                 setEditingGuestId(null);
                 runWithUndo(snapshot, () => removeGuest(editingGuest.id), t('guestEditor.deleted', { name }));
               },

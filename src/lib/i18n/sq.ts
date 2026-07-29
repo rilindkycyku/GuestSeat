@@ -231,6 +231,15 @@ export const sq = {
     droppedNowhere: '{{guest}} mbeti ku ishte.',
     cancelled: 'Zhvendosja u anulua. {{guest}} mbeti ku ishte.',
   },
+  findSeat: {
+    title: 'Gjeni vendin tuaj',
+    yourName: 'Emri juaj',
+    placeholder: 'Shkruani emrin tuaj…',
+    hint: 'Shkruani së paku dy shkronja të emrit.',
+    noMatch: 'Nuk u gjet ky emër. Provoni mbiemrin, ose pyetni te hyrja.',
+    noTableYet: 'Nuk ka tavolinë të caktuar.',
+    openFullPlan: 'Po ndihmoj në organizim — hapi listën e plotë',
+  },
   guestEditor: {
     apartGuests: 'Mbaji ndaras',
     apartGuestsHint:
@@ -387,6 +396,8 @@ export const sq = {
     pdfDesc: 'Skema e printueshme e vendeve',
     tableCards: 'Kartat e tavolinave',
     tableCardsDesc: 'Karta për t’i prerë, 4 për faqe',
+    placeCards: 'Karta emrash',
+    placeCardsDesc: 'Një kartë e palosur për të ftuar, 4 për faqe',
     excel: 'Excel',
     excelDesc: 'Tabelë e stilizuar (.xlsx)',
     eventDetails: 'Detajet e eventit…',
@@ -435,6 +446,10 @@ export const sq = {
     },
   },
   share: {
+    qrModePlan: 'Plani i plotë',
+    qrModePlanDesc: 'Hap tërë listën — për bashkë-organizatorin',
+    qrModeGuest: 'Për të ftuarit',
+    qrModeGuestDesc: 'Hap „gjeni vendin tuaj" — nuk mund të ndryshohet asgjë',
     share: 'Ndaj me aplikacione…',
     shareDesc: 'Dërgo me WhatsApp, email…',
     shareText: 'Kjo është lista e vendeve për {{name}}',

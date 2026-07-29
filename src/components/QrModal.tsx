@@ -29,14 +29,18 @@ export function QrModal({
   const [link, setLink] = useState<string | null>(null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'tooLarge' | 'failed'>('loading');
+  // Who the code is for. A guest scanning at the door wants their table, not an offer to import
+  // 200 names into their phone — so the guest code opens the read-only seat lookup instead.
+  const [mode, setMode] = useState<'guest' | 'plan'>('guest');
 
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   useEffect(() => {
     let cancelled = false;
+    setStatus('loading');
     (async () => {
       try {
-        const url = await encodeStateToLink(state);
+        const url = await encodeStateToLink(state, mode === 'guest');
         if (cancelled) return;
         setLink(url);
         try {
@@ -55,7 +59,7 @@ export function QrModal({
     return () => {
       cancelled = true;
     };
-  }, [state]);
+  }, [state, mode]);
 
   const copyLink = async () => {
     if (!link) return;
@@ -101,8 +105,31 @@ export function QrModal({
       <ModalHeader icon="📱" title={t('share.qrTitle')} onClose={onClose} />
 
       <div className="p-6">
+        {/* Mode switch: the same payload, opened two different ways. */}
+        <div className="mb-4 grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          {(
+            [
+              { value: 'guest', label: t('share.qrModeGuest') },
+              { value: 'plan', label: t('share.qrModePlan') },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setMode(opt.value)}
+              aria-pressed={mode === opt.value}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                mode === opt.value
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          {tooLarge ? t('share.qrTooLarge') : t('share.qrDesc')}
+          {tooLarge ? t('share.qrTooLarge') : mode === 'guest' ? t('share.qrModeGuestDesc') : t('share.qrModePlanDesc')}
         </p>
 
         {/* The QR itself — or, when the list is too big for one, a friendly panel that points

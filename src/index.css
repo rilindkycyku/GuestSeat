@@ -12,3 +12,41 @@ body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
+
+/*
+ * Printing the board. The PDF exports are the polished way to get seating onto paper, but Ctrl-P is
+ * what people reach for, and it used to print the app: sticky header, floating button, a search box
+ * and — in dark mode — a black page. Dark mode is dropped by `useTheme` while the print dialog is
+ * open (the `dark` class carries every dark colour, so removing it prints the light theme); the rest
+ * is here.
+ */
+@media print {
+  /* Interactive chrome has nothing to say on paper. Guest chips are buttons too, so this is opt-in
+     rather than a blanket rule on `button`. */
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Panels scroll on screen and must not clip on paper. */
+  [data-testid='unseated-panel'],
+  [data-table-id] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* A table's guests belong on one page with its heading. */
+  [data-table-id] {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

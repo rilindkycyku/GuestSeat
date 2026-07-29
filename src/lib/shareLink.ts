@@ -23,6 +23,10 @@ import { makeEventState, makeId, parseImportedJson } from './importGuests';
  */
 
 const HASH_KEY = 's';
+// Marks a link built for guests rather than for a co-planner: the app opens it straight into the
+// find-your-seat lookup instead of offering to import the plan. It rides in the hash alongside the
+// payload, so a guest link still reaches no server, and an older app simply ignores the extra key.
+const FIND_KEY = 'f';
 
 // Payload markers (first character of the encoded string). Current markers are upper-case so
 // they sit inside QR alphanumeric mode alongside the base42 body; the lower-case markers are
@@ -182,7 +186,7 @@ function fromCompact(data: CompactState): EventState | null {
       const g: Guest = {
         id: guestIds[i],
         name,
-        tableId: tableIdx != null && tableIdx >= 0 ? tableIds[tableIdx] ?? null : null,
+        tableId: tableIdx != null && tableIdx >= 0 ? (tableIds[tableIdx] ?? null) : null,
       };
       if (surname) g.surname = surname;
       if (notes) g.notes = notes;
@@ -202,8 +206,7 @@ function fromCompact(data: CompactState): EventState | null {
   return { eventName, guests, tables, tags, details: details ?? undefined, updatedAt };
 }
 
-const hasCompression =
-  typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+const hasCompression = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
 
 function fromBase64Url(value: string): Uint8Array<ArrayBuffer> {
   const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -281,8 +284,13 @@ async function gunzip(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   return new Response(stream).text();
 }
 
-/** Build a shareable URL for the current page that encodes the given state in its hash. */
-export async function encodeStateToLink(state: EventState): Promise<string> {
+/**
+ * Build a shareable URL for the current page that encodes the given state in its hash.
+ *
+ * `forGuests` marks the link as a guest link (see {@link FIND_KEY}) — the same payload, opened into
+ * the seat lookup rather than an import prompt.
+ */
+export async function encodeStateToLink(state: EventState, forGuests = false): Promise<string> {
   // Compact + gzip when the browser supports it — the only form small enough to fit a big
   // list into a QR code. Fall back to plain full JSON only when CompressionStream is missing.
   // Either way the bytes are base42-encoded so the QR can use its alphanumeric mode.
@@ -290,7 +298,7 @@ export async function encodeStateToLink(state: EventState): Promise<string> {
     ? MARK_COMPACT_GZIP_B42 + toBase42(await gzip(JSON.stringify(toCompact(state))))
     : MARK_FULL_PLAIN_B42 + toBase42(new TextEncoder().encode(JSON.stringify(state)));
   const url = new URL(window.location.href);
-  url.hash = `${HASH_KEY}=${payload}`;
+  url.hash = `${HASH_KEY}=${payload}${forGuests ? `&${FIND_KEY}=1` : ''}`;
   return url.toString();
 }
 
@@ -322,6 +330,13 @@ export function readShareParam(): string | null {
   const hash = window.location.hash.replace(/^#/, '');
   if (!hash) return null;
   return new URLSearchParams(hash).get(HASH_KEY);
+}
+
+/** True when the URL's share payload is a guest link, i.e. it should open the seat lookup. */
+export function readFindSeatFlag(): boolean {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return false;
+  return new URLSearchParams(hash).get(FIND_KEY) === '1';
 }
 
 /** Strip the share payload from the URL so a refresh doesn't re-trigger the import prompt. */

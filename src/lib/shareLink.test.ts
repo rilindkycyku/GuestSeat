@@ -3,6 +3,7 @@ import {
   clearShareParam,
   decodeSharedState,
   encodeStateToLink,
+  readFindSeatFlag,
   readShareParam,
   toQrPayloadUrl,
 } from './shareLink';
@@ -270,6 +271,20 @@ describe('link plumbing', () => {
     win.setHash('#s=AABBCC');
     clearShareParam();
     expect(readShareParam()).toBeNull();
+  });
+
+  it('marks a guest link, and only a guest link', async () => {
+    const win = stubWindow();
+    const guestLink = await encodeStateToLink(fullFixture(), true);
+    win.setHash(new URL(guestLink).hash);
+    expect(readFindSeatFlag()).toBe(true);
+    // The payload itself is the same either way — only how the app opens it differs.
+    expect(payloadOf(guestLink)).toBe(payloadOf(await encodeStateToLink(fullFixture())));
+    expect(await decodeSharedState(payloadOf(guestLink))).not.toBeNull();
+
+    const plainLink = await encodeStateToLink(fullFixture());
+    win.setHash(new URL(plainLink).hash);
+    expect(readFindSeatFlag()).toBe(false);
   });
 
   it('upper-cases only the origin of a QR payload URL', () => {
