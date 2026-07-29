@@ -74,6 +74,12 @@ export const en = {
     developedBy: 'Developed by',
   },
   autoSeat: {
+    unplacedTitle: 'Not everyone found a seat',
+    unplacedNoRoom: 'No table had {{count}} free seats together.',
+    unplacedKeepApart: 'The only tables with room hold someone they must not sit with.',
+    unplacedHint: 'Add a table, raise a capacity, or relax a keep-apart, then auto-seat again.',
+    seatedAnyway: '{{count}} seated.',
+    feudWarning: '{{name}} must not sit with {{other}} — seated anyway.',
     action: 'Auto-seat',
     confirm: 'Auto-seat {{count}} unseated guests into the available tables?',
     seated: 'Seated {{count}} guests.',
@@ -224,6 +230,14 @@ export const en = {
     cancelled: 'Move cancelled. {{guest}} stayed where they were.',
   },
   guestEditor: {
+    apartGuests: 'Keep apart',
+    apartGuestsHint:
+      'Guests who must not share a table. Auto-seating keeps them apart; seating them together by hand is still allowed, and the board flags it.',
+    apartClash: '{{name}} is at {{table}} — the same table as this guest.',
+    apartWarning: 'Must not sit with {{names}}, who are at this table.',
+    allowTogether: 'Remove',
+    searchToKeepApart: 'Search a guest to keep apart…',
+    cantKeepLinkedApart: 'Linked guests can’t also be kept apart — unlink them first.',
     title: 'Edit guest',
     name: 'Name',
     surname: 'Surname',

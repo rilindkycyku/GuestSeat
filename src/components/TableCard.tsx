@@ -15,6 +15,8 @@ interface TableCardProps {
   assignedTagIds: string[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
+  /** Guests sharing a table with someone they're kept apart from, by guest id. */
+  feudBadges: Map<string, { title: string }>;
   highlighted: boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -33,6 +35,7 @@ export function TableCard({
   assignedTagIds,
   matchedIds,
   linkBadges,
+  feudBadges,
   highlighted,
   collapsed,
   onToggleCollapse,
@@ -139,7 +142,9 @@ export function TableCard({
       {!collapsed && (
         <div className="flex-1 space-y-1.5 min-h-[52px]">
           {guests.length === 0 && (
-            <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">{t('tables.dropHere')}</p>
+            <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-3 select-none">
+              {t('tables.dropHere')}
+            </p>
           )}
           {guestGroups.map((group) =>
             group.length > 1 ? (
@@ -156,6 +161,7 @@ export function TableCard({
                     guest={g}
                     highlighted={matchedIds ? matchedIds.has(g.id) : false}
                     linkBadge={linkBadges.get(g.id)}
+                    feudBadge={feudBadges.get(g.id)}
                     onClick={() => onGuestClick(g)}
                     tags={tags}
                     compact
@@ -168,6 +174,7 @@ export function TableCard({
                 guest={group[0]}
                 highlighted={matchedIds ? matchedIds.has(group[0].id) : false}
                 linkBadge={linkBadges.get(group[0].id)}
+                feudBadge={feudBadges.get(group[0].id)}
                 onClick={() => onGuestClick(group[0])}
                 tags={tags}
                 compact

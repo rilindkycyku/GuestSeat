@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type {
-  EventDetails,
-  EventState,
-  Guest,
-  ImportResult,
-  RsvpStatus,
-  Table,
-  TableTag,
-  TagColor,
-} from '../types';
+import type { EventDetails, EventState, Guest, ImportResult, RsvpStatus, Table, TableTag, TagColor } from '../types';
 import { makeEventState, makeId, mergeTags } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
 import {
@@ -387,27 +378,55 @@ export function useEventState() {
     });
   }, []);
 
-  const linkGuests = useCallback((guestIdA: string, guestIdB: string) => {
-    if (guestIdA === guestIdB) return;
-    setState((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        guests: prev.guests.map((g) => {
-          if (g.id === guestIdA) {
-            const links = g.linkedGuestIds ?? [];
-            return links.includes(guestIdB) ? g : { ...g, linkedGuestIds: [...links, guestIdB] };
-          }
-          if (g.id === guestIdB) {
-            const links = g.linkedGuestIds ?? [];
-            return links.includes(guestIdA) ? g : { ...g, linkedGuestIds: [...links, guestIdA] };
-          }
-          return g;
-        }),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  }, []);
+  // Linked ("must sit together") and kept-apart ("must not share a table") are the same shape of
+  // data: a mutual list of guest ids on both guests. One helper keeps them mutual — a one-sided
+  // reference would make a couple look linked from one chip and loose from the other, and would let
+  // auto-seating honour a feud in one direction only.
+  const setMutual = useCallback(
+    (field: 'linkedGuestIds' | 'apartGuestIds', guestIdA: string, guestIdB: string, linked: boolean) => {
+      if (guestIdA === guestIdB) return;
+      setState((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          guests: prev.guests.map((g) => {
+            if (g.id !== guestIdA && g.id !== guestIdB) return g;
+            const otherId = g.id === guestIdA ? guestIdB : guestIdA;
+            const current = g[field] ?? [];
+            if (linked === current.includes(otherId)) return g;
+            const next = linked ? [...current, otherId] : current.filter((id) => id !== otherId);
+            if (next.length) return { ...g, [field]: next };
+            const { [field]: _dropped, ...rest } = g;
+            return rest;
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+    []
+  );
+
+  const linkGuests = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('linkedGuestIds', guestIdA, guestIdB, true),
+    [setMutual]
+  );
+
+  const unlinkGuests = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('linkedGuestIds', guestIdA, guestIdB, false),
+    [setMutual]
+  );
+
+  // "These two must not share a table" — the feuding relatives every guest list has. Auto-seating
+  // honours it; seating them together by hand stays possible, and the board flags it instead.
+  const keepApart = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('apartGuestIds', guestIdA, guestIdB, true),
+    [setMutual]
+  );
+
+  const allowTogether = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('apartGuestIds', guestIdA, guestIdB, false),
+    [setMutual]
+  );
 
   const setAllRsvp = useCallback((rsvp: RsvpStatus | undefined) => {
     setState((prev) => {
@@ -506,24 +525,6 @@ export function useEventState() {
     });
   }, []);
 
-  const unlinkGuests = useCallback((guestIdA: string, guestIdB: string) => {
-    setState((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        guests: prev.guests.map((g) => {
-          if (g.id === guestIdA || g.id === guestIdB) {
-            const otherId = g.id === guestIdA ? guestIdB : guestIdA;
-            if (!g.linkedGuestIds?.includes(otherId)) return g;
-            return { ...g, linkedGuestIds: g.linkedGuestIds.filter((id) => id !== otherId) };
-          }
-          return g;
-        }),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  }, []);
-
   return {
     state,
     ready,
@@ -554,6 +555,8 @@ export function useEventState() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    keepApart,
+    allowTogether,
     setAllRsvp,
     unseatAll,
     addTag,

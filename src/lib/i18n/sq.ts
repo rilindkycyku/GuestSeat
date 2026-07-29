@@ -76,6 +76,12 @@ export const sq = {
     developedBy: 'Zhvilluar nga',
   },
   autoSeat: {
+    unplacedTitle: 'Nuk gjetën vend të gjithë',
+    unplacedNoRoom: 'Asnjë tavolinë nuk kishte {{count}} vende të lira bashkë.',
+    unplacedKeepApart: 'Tavolinat e vetme me vend mbajnë dikë me të cilin nuk duhet të ulen.',
+    unplacedHint: 'Shtoni një tavolinë, rritni kapacitetin, ose hiqni një kufizim, pastaj riprovoni.',
+    seatedAnyway: '{{count}} u ulën.',
+    feudWarning: '{{name}} nuk duhet të ulet me {{other}} — u ul gjithsesi.',
     action: 'Ul automatikisht',
     confirm: 'Të ulen automatikisht {{count}} të ftuar pa vend në tavolinat e lira?',
     seated: 'U ulën {{count}} të ftuar.',
@@ -226,6 +232,14 @@ export const sq = {
     cancelled: 'Zhvendosja u anulua. {{guest}} mbeti ku ishte.',
   },
   guestEditor: {
+    apartGuests: 'Mbaji ndaras',
+    apartGuestsHint:
+      'Të ftuar që nuk duhet të ulen në një tavolinë. Ulja automatike i mban ndaras; me dorë mund t’i ulni bashkë, dhe tabela e shënon.',
+    apartClash: '{{name}} është te {{table}} — po ajo tavolinë me këtë të ftuar.',
+    apartWarning: 'Nuk duhet të ulet me {{names}}, që janë te kjo tavolinë.',
+    allowTogether: 'Hiqe',
+    searchToKeepApart: 'Kërko një të ftuar për të mbajtur ndaras…',
+    cantKeepLinkedApart: 'Të ftuarit e lidhur nuk mbahen ndaras — shkëputni lidhjen së pari.',
     title: 'Ndrysho të ftuarin',
     name: 'Emri',
     surname: 'Mbiemri',

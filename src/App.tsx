@@ -28,6 +28,7 @@ import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
+import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
 import {
@@ -44,7 +45,7 @@ import {
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
-import { autoSeat } from './lib/autoSeat';
+import { autoSeat, type AutoSeatResult, seatedFeuds } from './lib/autoSeat';
 import { boardCoordinateGetter } from './lib/keyboardDnd';
 import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
@@ -86,6 +87,8 @@ export default function App() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    keepApart,
+    allowTogether,
     setAllRsvp,
     unseatAll,
     addTag,
@@ -113,6 +116,7 @@ export default function App() {
   const [seedTraditions, setSeedTraditions] = useState<boolean>(() => loadSeedTraditions());
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
+  const [autoSeatReport, setAutoSeatReport] = useState<Pick<AutoSeatResult, 'seated' | 'unplaced'> | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
@@ -243,6 +247,18 @@ export default function App() {
     }
     return map;
   }, [state, guestById, t]);
+
+  // Keep-apart pairs someone seated together by hand. Auto-seating never creates these; the board
+  // marks them rather than refusing the drop, because overriding a feud is a legitimate choice.
+  const feudBadges = useMemo(() => {
+    const map = new Map<string, { title: string }>();
+    if (!state) return map;
+    for (const [guestId, clashes] of seatedFeuds(state.guests)) {
+      const names = clashes.map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name)).join(', ');
+      map.set(guestId, { title: t('guestEditor.apartWarning', { names }) });
+    }
+    return map;
+  }, [state, t]);
 
   const customTags = useMemo(() => state?.tags ?? [], [state]);
 
@@ -437,6 +453,20 @@ export default function App() {
       }
     }
     seatGuest(guestId, targetTableId);
+    if (!targetTableId || !state) return;
+    // Allowed, but say so — otherwise a keep-apart quietly stops meaning anything.
+    const guest = guestById.get(guestId);
+    const clashes = (guest?.apartGuestIds ?? [])
+      .map((id) => guestById.get(id))
+      .filter((other): other is Guest => !!other && other.tableId === targetTableId);
+    if (guest && clashes.length) {
+      showToast(
+        t('autoSeat.feudWarning', {
+          name: guest.surname ? `${guest.name} ${guest.surname}` : guest.name,
+          other: clashes.map((c) => (c.surname ? `${c.name} ${c.surname}` : c.name)).join(', '),
+        })
+      );
+    }
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -553,15 +583,19 @@ export default function App() {
       return;
     }
     const snapshot = state;
-    const { assignments, seated, leftUnseated } = autoSeat(state);
+    const { assignments, seated, leftUnseated, unplaced } = autoSeat(state);
     if (seated === 0) {
-      showToast(t('autoSeat.noRoom'));
+      // Nothing moved, so there is nothing to undo — just say why, in as much detail as we have.
+      if (unplaced.length) setAutoSeatReport({ seated, unplaced });
+      else showToast(t('autoSeat.noRoom'));
       return;
     }
     assignSeats(assignments);
     const msg =
       leftUnseated > 0 ? t('autoSeat.someLeft', { count: seated, left: leftUnseated }) : t('autoSeat.seated', { count: seated });
     showToast(msg, { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) });
+    // Who was left behind, and why, is the part someone can act on — so it gets a dialog, not a line.
+    if (unplaced.length) setAutoSeatReport({ seated, unplaced });
   };
 
   const handleResetArrivals = () => {
@@ -712,6 +746,7 @@ export default function App() {
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
+      {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
       </>
     );
@@ -955,6 +990,7 @@ export default function App() {
               guests={unseatedGuests}
               matchedIds={matchedIds}
               linkBadges={linkBadges}
+              feudBadges={feudBadges}
               tags={customTags}
               onGuestClick={(g) => setEditingGuestId(g.id)}
               onAutoSeat={handleAutoSeat}
@@ -1073,6 +1109,7 @@ export default function App() {
                     assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
+                    feudBadges={feudBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onEditCapacity={() => setCapacityTableId(table.id)}
                     onDuplicateTable={() => handleDuplicateTable(table.id)}
@@ -1090,6 +1127,7 @@ export default function App() {
                     assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
+                    feudBadges={feudBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
                     onToggleCollapse={() => {
@@ -1209,6 +1247,8 @@ export default function App() {
           }
           onClose={() => setEditingGuestId(null)}
           onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
+          onKeepApart={(otherId) => keepApart(editingGuest.id, otherId)}
+          onAllowTogether={(otherId) => allowTogether(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
           onSeatGuest={trySeatGuest}
           onToggleTag={(tagId) => toggleGuestTag(editingGuest.id, tagId)}
@@ -1227,6 +1267,7 @@ export default function App() {
       )}
 
       {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
+      {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
 
       {invitationOpen && (
         <InvitationModal
