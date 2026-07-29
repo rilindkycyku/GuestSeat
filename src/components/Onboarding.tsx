@@ -5,10 +5,10 @@ import { useLanguage } from '../hooks/useLanguage';
 import { EVENT_TYPES } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
 import { Credits } from './Credits';
-import type { EventType, Guest, Table, TableNamingMode } from '../types';
+import type { EventType, ImportResult, TableNamingMode } from '../types';
 
 interface OnboardingProps {
-  onImported: (guests: Guest[], tables: Table[], eventName: string | undefined, eventType: EventType) => void;
+  onImported: (result: ImportResult, fallbackName: string, eventType: EventType) => void;
   /** Load the fully-featured demo event (tags, sides, links, RSVP, invitation details). */
   onLoadDemo: () => void;
   /** Start with an empty event — no guests or tables — and build the list by hand. */
@@ -44,14 +44,10 @@ export function Onboarding({
       setError(null);
       try {
         const text = await file.text();
-        if (file.name.toLowerCase().endsWith('.csv')) {
-          const { guests, tables } = parseImportedCsv(text);
-          onImported(guests, tables, t('header.defaultEventName'), eventType);
-          return;
-        }
-        const json = JSON.parse(text);
-        const { guests, tables, eventName } = parseImportedJson(json, t('tables.namePrefix'), namingMode);
-        onImported(guests, tables, eventName ?? t('header.defaultEventName'), eventType);
+        const result = file.name.toLowerCase().endsWith('.csv')
+          ? parseImportedCsv(text)
+          : parseImportedJson(JSON.parse(text), t('tables.namePrefix'), namingMode);
+        onImported(result, t('header.defaultEventName'), eventType);
       } catch (err) {
         if (err instanceof ImportError) {
           setError(t(`import.errors.${err.code}`));

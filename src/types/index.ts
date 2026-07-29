@@ -16,6 +16,12 @@ export interface Guest {
   /** IDs of other guests this guest is linked to (couples, families, plus-ones). Always mutual. */
   linkedGuestIds?: string[];
   /**
+   * IDs of guests this one must *not* share a table with — the feuding relatives every family
+   * has. Always mutual, like {@link linkedGuestIds}, and honoured by auto-seating; seating two
+   * of them together by hand is still allowed, but the board flags it.
+   */
+  apartGuestIds?: string[];
+  /**
    * IDs of custom tags (see EventState.tags) applied to this guest — e.g. "Bride's family",
    * "Groom's friends". Lets guests sharing one table (a long banquet table) be color-coded by group.
    */
@@ -150,7 +156,11 @@ export interface EventState {
   updatedAt: string;
 }
 
-/** Raw shapes we accept on import, before normalization. */
+/**
+ * Raw shapes we accept on import, before normalization. Fields are typed as `unknown` where a
+ * hand-edited or third-party file could plausibly carry the wrong type — the importer validates
+ * each one rather than trusting it (see `lib/importGuests.ts`).
+ */
 export type ImportGuestEntry =
   | string
   | {
@@ -165,10 +175,37 @@ export type ImportGuestEntry =
       tableName?: string;
       notes?: string;
       group?: string;
-      linkedGuestIds?: string[];
+      linkedGuestIds?: unknown;
+      /** Guests this one must not share a table with (see {@link Guest.apartGuestIds}). */
+      apartGuestIds?: unknown;
+      /** Tag ids applied to the guest; validated against the file's own tag list. */
+      tagIds?: unknown;
+      rsvp?: unknown;
+      meal?: unknown;
+      arrived?: unknown;
     };
 
 export type ImportShape =
   | ImportGuestEntry[]
   | { [group: string]: ImportGuestEntry[] }
-  | { guests: ImportGuestEntry[]; tables?: Partial<Table>[]; eventName?: string };
+  | {
+      guests: ImportGuestEntry[];
+      tables?: Partial<Table>[];
+      eventName?: string;
+      /** The event's tag palette — guest and table `tagIds` refer into this list. */
+      tags?: unknown;
+      /** Invitation details (couple, venue, date, schedule…). */
+      details?: unknown;
+    };
+
+/**
+ * A parsed import, ready to become an {@link EventState}. Everything the exporter writes comes
+ * back out — a GuestSeat JSON export re-imported must round-trip without losing fields.
+ */
+export interface ImportResult {
+  guests: Guest[];
+  tables: Table[];
+  eventName?: string;
+  tags?: TableTag[];
+  details?: EventDetails;
+}

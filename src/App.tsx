@@ -354,15 +354,15 @@ export default function App() {
   const handleImportFile = async (file: File, mode: 'replace' | 'merge') => {
     try {
       const text = await file.text();
-      const { guests, tables, eventName } = file.name.toLowerCase().endsWith('.csv')
+      const result = file.name.toLowerCase().endsWith('.csv')
         ? parseImportedCsv(text)
         : parseImportedJson(JSON.parse(text), t('tables.namePrefix'));
       if (mode === 'replace') {
-        loadFromImport(guests, tables, eventName ?? t('header.defaultEventName'));
-        showToast(t('import.loaded', { count: guests.length }));
+        loadFromImport(result, t('header.defaultEventName'));
+        showToast(t('import.loaded', { count: result.guests.length }));
       } else {
-        mergeFromImport(guests, tables);
-        showToast(t('import.importedMore', { count: guests.length }));
+        mergeFromImport(result);
+        showToast(t('import.importedMore', { count: result.guests.length }));
       }
     } catch (err) {
       if (err instanceof ImportError) showToast(t(`import.errors.${err.code}`));
@@ -593,8 +593,13 @@ export default function App() {
   const onboardingScreen = (onBack?: () => void) => (
     <Onboarding
       onBack={onBack}
-      onImported={(guests, tables, name, eventType) =>
-        startEvent({ guests, tables, eventName: name, ...(eventType !== 'wedding' ? { details: { eventType } } : {}) })
+      onImported={(result, fallbackName, eventType) =>
+        startEvent({
+          ...result,
+          eventName: result.eventName ?? fallbackName,
+          // A chosen event type applies only when the file didn't already carry invitation details.
+          ...(eventType !== 'wedding' && !result.details ? { details: { eventType } } : {}),
+        })
       }
       onLoadDemo={() => startEvent(getDemoEventState())}
       onStartBlank={(eventType) => {

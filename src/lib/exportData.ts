@@ -37,10 +37,10 @@ function sideLabel(table: Table | undefined, t: Translator): string {
   return t(`tables.side.${table.side}`);
 }
 
-/** Labels of the custom tags applied to a table, in their defined order. */
-function tagLabels(table: Table | undefined, tagsById: Map<string, TableTag>): string[] {
-  if (!table?.tagIds) return [];
-  return table.tagIds.map((id) => tagsById.get(id)?.label).filter((label): label is string => !!label);
+/** Labels for a list of tag ids, in the order given, skipping any that no longer exist. */
+function tagLabels(tagIds: string[] | undefined, tagsById: Map<string, TableTag>): string[] {
+  if (!tagIds) return [];
+  return tagIds.map((id) => tagsById.get(id)?.label).filter((label): label is string => !!label);
 }
 
 function rsvpLabel(g: Guest, t: Translator): string {
@@ -235,7 +235,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       g.surname ?? '',
       g.tableId ? (table ? tableDisplayName(table, t) : t('export.fields.unknownTable')) : t('export.fields.unseated'),
       sideLabel(table, t),
-      tagLabels(table, tagsById).join(', '),
+      tagLabels(g.tagIds, tagsById).join(', '),
       rsvpLabel(g, t),
       g.meal ?? '',
       linked,
@@ -299,7 +299,7 @@ export async function exportAsExcel(state: EventState, t: Translator, lang: Lang
       idx + 1,
       tableDisplayName(tb, t),
       sideLabel(tb, t),
-      tagLabels(tb, tagsById).join(', '),
+      tagLabels(tb.tagIds, tagsById).join(', '),
       `${list.length}/${tb.capacity}`,
       list.map((g) => fullName(g)).join(', '),
     ]);
@@ -639,7 +639,7 @@ export async function exportAsPdf(state: EventState, t: Translator, lang: Langua
     for (const table of section.tables) {
       const guests = guestsByTable.get(table.id) ?? [];
       const side = sideLabel(table, t);
-      const tags = tagLabels(table, tagsById);
+      const tags = tagLabels(table?.tagIds, tagsById);
       const heading = `${tableDisplayName(table, t)}${side ? ` (${side})` : ''}${
         tags.length ? ` · ${tags.join(', ')}` : ''
       } — ${guests.length}/${table.capacity}`;
@@ -786,7 +786,7 @@ export async function exportAsTableCards(state: EventState, t: Translator, lang:
     cy += 0.5;
 
     // Side + custom tags, then the fill count.
-    const meta = [sideLabel(table, t), ...tagLabels(table, tagsById)].filter(Boolean).join(' · ');
+    const meta = [sideLabel(table, t), ...tagLabels(table?.tagIds, tagsById)].filter(Boolean).join(' · ');
     if (meta) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);

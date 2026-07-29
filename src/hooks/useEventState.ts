@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EventDetails, EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
-import { makeEventState, makeId } from '../lib/importGuests';
+import type {
+  EventDetails,
+  EventState,
+  Guest,
+  ImportResult,
+  RsvpStatus,
+  Table,
+  TableTag,
+  TagColor,
+} from '../types';
+import { makeEventState, makeId, mergeTags } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
 import {
   type EventSummary,
@@ -15,17 +24,7 @@ import {
   summarize,
 } from '../lib/db';
 
-/** Assemble a fresh {@link EventState} from a partial, preserving tags & details (which makeEventState drops). */
-function buildState(initial: Partial<EventState>): EventState {
-  return {
-    eventName: initial.eventName ?? 'Guest List',
-    guests: initial.guests ?? [],
-    tables: initial.tables ?? [],
-    ...(initial.tags ? { tags: initial.tags } : {}),
-    ...(initial.details ? { details: initial.details } : {}),
-    updatedAt: new Date().toISOString(),
-  };
-}
+const buildState = makeEventState;
 
 /** True when two summary rows are display-identical, so the picker list can skip a needless re-render. */
 function sameSummary(a: EventSummary, b: EventSummary): boolean {
@@ -149,17 +148,27 @@ export function useEventState() {
     })();
   }, []);
 
-  const loadFromImport = useCallback((guests: Guest[], tables: Table[], eventName?: string) => {
-    setState(makeEventState({ guests, tables, eventName }));
+  // Replace the open event with an imported one. The whole parse result is carried over — tags and
+  // invitation details included — so re-importing a GuestSeat export gives back what was exported.
+  const loadFromImport = useCallback((result: ImportResult, fallbackName?: string) => {
+    setState(makeEventState({ ...result, eventName: result.eventName ?? fallbackName }));
   }, []);
 
-  const mergeFromImport = useCallback((guests: Guest[], tables: Table[] = []) => {
+  // "Add to this event": append imported guests and tables, folding the imported tag palette into
+  // the existing one (see {@link mergeTags}) so tag references survive an id collision between
+  // two separately-created events.
+  const mergeFromImport = useCallback((result: ImportResult) => {
     setState((prev) => {
       const base = prev ?? makeEventState();
+      const merged = mergeTags(base.tags ?? [], result.tags ?? [], result.guests, result.tables);
       return {
         ...base,
-        guests: [...base.guests, ...guests],
-        tables: [...base.tables, ...tables],
+        guests: [...base.guests, ...merged.guests],
+        tables: [...base.tables, ...merged.tables],
+        ...(merged.tags.length ? { tags: merged.tags } : {}),
+        // An import only fills in details the open event is missing — it never overwrites the
+        // invitation someone has already written.
+        ...(result.details ? { details: { ...result.details, ...base.details } } : {}),
         updatedAt: new Date().toISOString(),
       };
     });
