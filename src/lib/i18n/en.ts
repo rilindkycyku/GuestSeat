@@ -411,6 +411,12 @@ export const en = {
   },
   export: {
     label: 'Export',
+    groups: {
+      share: 'Share the link',
+      print: 'Print (PDF)',
+      files: 'Files',
+      app: 'App',
+    },
     json: 'JSON',
     jsonDesc: 'Full seating data',
     pdf: 'PDF',

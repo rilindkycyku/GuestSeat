@@ -413,6 +413,12 @@ export const sq = {
   },
   export: {
     label: 'Eksporto',
+    groups: {
+      share: 'Ndaj lidhjen',
+      print: 'Printo (PDF)',
+      files: 'Skedarë',
+      app: 'Aplikacioni',
+    },
     json: 'JSON',
     jsonDesc: 'Të dhënat e plota të vendeve',
     pdf: 'PDF',
