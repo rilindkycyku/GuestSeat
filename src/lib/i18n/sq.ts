@@ -186,6 +186,15 @@ export const sq = {
     quickAdd: 'Shto shpejt',
     seatedProgress: '{{seated}} nga {{total}} të ulur',
   },
+  nav: {
+    openMenu: 'Hap menynë',
+    closeMenu: 'Mbyll menynë',
+    add: 'Shto',
+    guest: 'I ftuar',
+    table: 'Tavolinë',
+    data: 'Lista & ndarja',
+    event: 'Ngjarja',
+  },
   tables: {
     namePrefix: 'Tavolina',
     noTablesYet: "Ende s'ka tavolina.",
@@ -404,6 +413,13 @@ export const sq = {
   },
   export: {
     label: 'Eksporto',
+    shareLabel: 'Ndaj',
+    groups: {
+      share: 'Ndaj lidhjen',
+      print: 'Printo (PDF)',
+      files: 'Skedarë',
+      app: 'Aplikacioni',
+    },
     json: 'JSON',
     jsonDesc: 'Të dhënat e plota të vendeve',
     pdf: 'PDF',

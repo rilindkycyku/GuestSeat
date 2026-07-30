@@ -1,30 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
-import type { EventState } from '../types';
-import { exportAsExcel, exportAsJson, exportAsPdf, exportAsPlaceCards, exportAsTableCards } from '../lib/exportData';
-import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
-import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { useExportActions } from '../hooks/useExportActions';
+import type { EventState } from '../types';
 
-export function ExportMenu({
-  state,
-  fullWidth,
-  onToast,
-  onShowInvitation,
-  onShowQr,
-}: {
+interface ExportMenuProps {
   state: EventState;
-  fullWidth?: boolean;
+  /** `share` offers the live link (apps, copy, QR); `export` offers paper and files. */
+  kind: 'share' | 'export';
   onToast?: (msg: string) => void;
   onShowInvitation?: () => void;
   onShowQr?: () => void;
-}) {
-  const { t, lang } = useLanguage();
+}
+
+/**
+ * One of the nav bar's two dropdowns over {@link useExportActions}. Sharing a link and cutting out
+ * place cards used to sit in a single ten-row menu that ran off the bottom of the screen; split in
+ * two, each one is short enough to show whole.
+ */
+export function ExportMenu({ state, kind, onToast, onShowInvitation, onShowQr }: ExportMenuProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-  const { state: installState, promptInstall } = useInstallPrompt();
-  // Offer the shortcut only where there's a path to install: a native prompt, or iOS's manual flow.
-  const canInstall = installState === 'available' || installState === 'ios';
+  const actions = useExportActions({ state, onToast, onShowInvitation, onShowQr });
+  const groups = kind === 'share' ? actions.share : actions.output;
 
   useEffect(() => {
     if (!open) return;
@@ -35,150 +33,37 @@ export function ExportMenu({
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const copyLink = async () => {
-    setOpen(false);
-    try {
-      const url = await encodeStateToLink(state);
-      await navigator.clipboard.writeText(url);
-      onToast?.(t('share.copied'));
-    } catch {
-      onToast?.(t('share.failed'));
-    }
-  };
-
-  // Native share sheet (WhatsApp, email, AirDrop…) carrying the auto-load link; falls back to copy.
-  const shareLink = async () => {
-    setOpen(false);
-    try {
-      const url = await encodeStateToLink(state);
-      await navigator.share({ title: state.eventName, text: t('share.shareText', { name: state.eventName }), url });
-    } catch (err) {
-      // AbortError = the user dismissed the share sheet; stay silent for that.
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      try {
-        await navigator.clipboard.writeText(await encodeStateToLink(state));
-        onToast?.(t('share.copied'));
-      } catch {
-        onToast?.(t('share.failed'));
-      }
-    }
-  };
-
-  // Install the app as a home-screen shortcut. On Chrome/Edge this fires the native prompt; on
-  // iOS there's no programmatic install, so we point the user at the Share → Add flow instead.
-  const addToHomeScreen = async () => {
-    setOpen(false);
-    if (installState === 'ios') {
-      onToast?.(t('export.shortcutIosHint'));
-      return;
-    }
-    const outcome = await promptInstall();
-    if (outcome === 'accepted') onToast?.(t('export.shortcutAdded'));
-  };
-
   return (
-    <div className={`relative ${fullWidth ? 'w-full' : ''}`} ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5 ${fullWidth ? 'w-full justify-center' : ''}`}
+        aria-expanded={open}
+        className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5"
       >
-        {t('export.label')}
+        {kind === 'share' ? t('export.shareLabel') : t('export.label')}
         <span className="text-xs">▾</span>
       </button>
       {open && (
-        <div
-          className={`absolute mt-1 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20 ${fullWidth ? 'left-0' : 'right-0'}`}
-        >
-          {canShare && (
-            <button
-              onClick={() => void shareLink()}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              {t('share.share')} <span className="text-slate-400 text-xs block">{t('share.shareDesc')}</span>
-            </button>
-          )}
-          <button
-            onClick={() => void copyLink()}
-            className={`w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 ${canShare ? 'border-t border-slate-100 dark:border-slate-800' : ''}`}
-          >
-            {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
-          </button>
-          {canInstall && (
-            <button
-              onClick={() => void addToHomeScreen()}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.shortcut')} <span className="text-slate-400 text-xs block">{t('export.shortcutDesc')}</span>
-            </button>
-          )}
-          {onShowInvitation && (
-            <button
-              onClick={() => {
-                onShowInvitation();
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.invitation')}{' '}
-              <span className="text-slate-400 text-xs block">{t('export.invitationDesc')}</span>
-            </button>
-          )}
-          {onShowQr && (
-            <button
-              onClick={() => {
-                onShowQr();
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.qr')} <span className="text-slate-400 text-xs block">{t('export.qrDesc')}</span>
-            </button>
-          )}
-          <button
-            onClick={() => {
-              exportAsJson(state);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.json')} <span className="text-slate-400 text-xs block">{t('export.jsonDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsPdf(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.pdf')} <span className="text-slate-400 text-xs block">{t('export.pdfDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsTableCards(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.tableCards')} <span className="text-slate-400 text-xs block">{t('export.tableCardsDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsPlaceCards(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.placeCards')} <span className="text-slate-400 text-xs block">{t('export.placeCardsDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsExcel(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.excel')} <span className="text-slate-400 text-xs block">{t('export.excelDesc')}</span>
-          </button>
+        <div className="absolute right-0 mt-1 w-60 max-h-[80vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-20 p-1.5">
+          {groups.map((group) => (
+            <div key={group.key}>
+              <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                {group.label}
+              </div>
+              {group.actions.map((action) => (
+                <button
+                  key={action.key}
+                  onClick={() => {
+                    action.onClick();
+                    setOpen(false);
+                  }}
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  {action.label} <span className="text-slate-400 text-xs block">{action.desc}</span>
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </div>

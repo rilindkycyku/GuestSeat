@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type Theme = 'light' | 'dark';
 
@@ -10,7 +10,19 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-export function useTheme() {
+interface ThemeContextValue {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+/**
+ * One source of truth for the theme. It used to be plain component state, which was fine while the
+ * only switch lived inside Settings — but the nav bar carries one too now, and two copies of the
+ * state would drift apart the moment either one was used.
+ */
+export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   // True only while the print dialog is open. Every dark colour in the app comes from a `dark:`
   // utility under the `dark` class, so there is no CSS way to undo them inside `@media print` —
@@ -47,5 +59,13 @@ export function useTheme() {
     setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
   }, []);
 
-  return { theme, toggleTheme };
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
+  return ctx;
 }
