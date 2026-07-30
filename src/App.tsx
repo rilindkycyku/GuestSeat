@@ -23,7 +23,7 @@ import { TableCard } from './components/TableCard';
 import { FloorTable } from './components/FloorTable';
 import { GuestEditorModal } from './components/GuestEditorModal';
 import { AddGuestModal } from './components/AddGuestModal';
-import { ExportMenu } from './components/ExportMenu';
+import { NavBar } from './components/NavBar';
 import { SettingsModal } from './components/SettingsModal';
 import { Credits } from './components/Credits';
 import { StatsModal } from './components/StatsModal';
@@ -109,9 +109,7 @@ export default function App() {
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
-  const [menuOpen, setMenuOpen] = useState(false);
   const [tableFilter, setTableFilter] = useState<TableFilter>({ kind: 'all' });
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
   const [tableColumns, setTableColumns] = useState<TableColumns>(() => loadTableColumns());
@@ -128,7 +126,6 @@ export default function App() {
   // A plan received through a *guest* link: held in memory only, never saved, and shown as the
   // read-only seat lookup until someone says they're actually here to plan.
   const [findSeatState, setFindSeatState] = useState<EventState | null>(null);
-  const importInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts: "/" or ⌘/Ctrl-K jumps to search from anywhere (skipped while typing in a
@@ -484,7 +481,6 @@ export default function App() {
 
   // Close the open event back to the events picker — the event stays saved and can be reopened.
   const handleCloseToPicker = () => {
-    setMenuOpen(false);
     setCreatingNew(false);
     closeEvent();
   };
@@ -574,240 +570,27 @@ export default function App() {
     );
   }
 
-  const totalGuests = state.guests.length;
-  const totalSeated = state.guests.filter((g) => g.tableId).length;
-  const confirmedCount = state.guests.filter((g) => g.rsvp === 'confirmed').length;
-  const declinedCount = state.guests.filter((g) => g.rsvp === 'declined').length;
-
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd} accessibility={dndAccessibility}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-        <header
-          data-print="hide"
-          className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3"
-        >
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xl shrink-0">🪑</span>
-            <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
-              {nameDraft !== null ? (
-                <input
-                  autoFocus
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  onBlur={() => {
-                    setEventName(nameDraft.trim() || state.eventName);
-                    setNameDraft(null);
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                  className="font-bold text-base sm:text-lg bg-transparent border-b border-indigo-400 outline-none text-slate-900 dark:text-white min-w-0"
-                />
-              ) : (
-                <button
-                  onClick={() => setNameDraft(state.eventName)}
-                  className="font-bold text-base sm:text-lg text-slate-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
-                  title={t('header.renameHint')}
-                >
-                  {state.eventName}
-                </button>
-              )}
-              <span className="text-[11px] sm:text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 shrink-0">
-                {totalSeated}/{totalGuests}
-              </span>
-              {(confirmedCount > 0 || declinedCount > 0) && (
-                <span
-                  className="hidden sm:inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-medium shrink-0"
-                  title={t('rsvp.label')}
-                >
-                  <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    {confirmedCount}
-                  </span>
-                  <span className="inline-flex items-center gap-0.5 text-red-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                    {declinedCount}
-                  </span>
-                </span>
-              )}
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
-              <button
-                onClick={() => setAddingGuest(true)}
-                className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 shadow-sm shadow-indigo-600/20"
-              >
-                {t('header.addGuest')}
-              </button>
-              <button
-                onClick={() => addTable(t('tables.namePrefix'))}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('header.addTable')}
-              </button>
-              <button
-                onClick={() => importInputRef.current?.click()}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('header.import')}
-              </button>
-              <ExportMenu
-                state={state}
-                onToast={showToast}
-                onShowInvitation={() => setInvitationOpen(true)}
-                onShowQr={() => setQrOpen(true)}
-              />
-              <button
-                onClick={handleCloseToPicker}
-                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
-                title={t('events.myEvents')}
-                aria-label={t('events.myEvents')}
-              >
-                📁
-              </button>
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
-                title={t('settings.title')}
-                aria-label={t('settings.title')}
-              >
-                ⚙️
-              </button>
-            </div>
-
-            <div className="sm:hidden ml-auto flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
-                aria-label={t('settings.title')}
-              >
-                ⚙️
-              </button>
-              <button
-                onClick={() => setMenuOpen((o) => !o)}
-                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center"
-                aria-label={t('header.menu')}
-              >
-                {menuOpen ? '✕' : '☰'}
-              </button>
-            </div>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept="application/json,.json,text/csv,.csv"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleImportFile(file, 'replace');
-                e.target.value = '';
-              }}
-            />
-          </div>
-
-          <div className="relative mt-2.5">
-            <input
-              ref={searchInputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                // Escape clears a query, or blurs the empty field so focus returns to the board.
-                if (e.key === 'Escape') {
-                  if (query) setQuery('');
-                  else (e.target as HTMLInputElement).blur();
-                }
-              }}
-              placeholder={t('header.searchPlaceholder')}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-16 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
-            />
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-            {!query && (
-              <kbd className="hidden sm:flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-slate-200 dark:border-slate-700 text-[10px] font-medium text-slate-400 pointer-events-none select-none">
-                /
-              </kbd>
-            )}
-            {query && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {matchedIds && <span className="text-xs text-slate-400 tabular-nums">{matchedIds.size}</span>}
-                <button
-                  onClick={() => setQuery('')}
-                  aria-label={t('header.clearSearch')}
-                  title={t('header.clearSearch')}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-
-          {menuOpen && (
-            <div className="sm:hidden mt-2.5 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  setAddingGuest(true);
-                  setMenuOpen(false);
-                }}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('header.addGuest')}
-              </button>
-              <button
-                onClick={() => {
-                  addTable(t('tables.namePrefix'));
-                  setMenuOpen(false);
-                }}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('header.addTable')}
-              </button>
-              <button
-                onClick={() => {
-                  importInputRef.current?.click();
-                  setMenuOpen(false);
-                }}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                {t('header.import')}
-              </button>
-              <ExportMenu
-                state={state}
-                fullWidth
-                onToast={showToast}
-                onShowInvitation={() => {
-                  setInvitationOpen(true);
-                  setMenuOpen(false);
-                }}
-                onShowQr={() => {
-                  setQrOpen(true);
-                  setMenuOpen(false);
-                }}
-              />
-              <button
-                onClick={handleCloseToPicker}
-                className="col-span-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                📁 {t('events.myEvents')}
-              </button>
-            </div>
-          )}
-
-          {/* Slim seating-progress bar pinned to the header's bottom edge — an at-a-glance sense
-              of how far along the arrangement is without reading the count. */}
-          {totalGuests > 0 && (
-            <div
-              className="mt-2.5 h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={totalSeated}
-              aria-valuemin={0}
-              aria-valuemax={totalGuests}
-              aria-label={t('header.seatedProgress', { seated: totalSeated, total: totalGuests })}
-              title={t('header.seatedProgress', { seated: totalSeated, total: totalGuests })}
-            >
-              <div
-                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
-                style={{ width: `${Math.round((totalSeated / totalGuests) * 100)}%` }}
-              />
-            </div>
-          )}
-        </header>
+        <NavBar
+          state={state}
+          query={query}
+          onQueryChange={setQuery}
+          matchCount={matchedIds ? matchedIds.size : null}
+          searchInputRef={searchInputRef}
+          onRename={setEventName}
+          onAddGuest={() => setAddingGuest(true)}
+          onAddTable={() => addTable(t('tables.namePrefix'))}
+          onImportFile={(file) => void handleImportFile(file, 'replace')}
+          onOpenCheckIn={() => setCheckInOpen(true)}
+          onOpenOverview={() => setStatsOpen(true)}
+          onOpenEvents={handleCloseToPicker}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onShowInvitation={() => setInvitationOpen(true)}
+          onShowQr={() => setQrOpen(true)}
+          onToast={showToast}
+        />
 
         <main className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
           <div className="lg:sticky lg:top-[72px] lg:h-[calc(100vh-88px)]">
@@ -977,18 +760,18 @@ export default function App() {
           </div>
         </main>
         {/* Extra bottom room on phones so the fixed quick-add button doesn't float over the credit. */}
-        <div className="pb-20 sm:pb-0">
+        <div className="pb-20 md:pb-0">
           <Credits />
         </div>
       </div>
 
       {/* Mobile speed-dial: the most common actions one thumb-tap away — add guest/table plus the
-          day-of check-in and share QR — so they aren't buried behind the ☰ menu on phones (where
-          this app mostly lives). */}
+          day-of check-in and share QR — so they aren't buried behind the nav drawer on phones (where
+          this app mostly lives). Shown at exactly the widths where the nav bar collapses. */}
       {quickAddOpen && (
-        <div className="sm:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
+        <div className="md:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
       )}
-      <div data-print="hide" className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+      <div data-print="hide" className="md:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
         {quickAddOpen && (
           <>
             <button

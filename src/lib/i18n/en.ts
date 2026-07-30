@@ -184,6 +184,15 @@ export const en = {
     quickAdd: 'Quick add',
     seatedProgress: '{{seated}} of {{total}} seated',
   },
+  nav: {
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    add: 'Add',
+    guest: 'Guest',
+    table: 'Table',
+    data: 'List & sharing',
+    event: 'Event',
+  },
   tables: {
     namePrefix: 'Table',
     noTablesYet: 'No tables yet.',

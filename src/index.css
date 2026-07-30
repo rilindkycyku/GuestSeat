@@ -13,6 +13,16 @@ body {
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* The nav drawer slides in from the right edge instead of appearing on the spot. */
+@keyframes gs-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 /*
  * Printing the board. The PDF exports are the polished way to get seating onto paper, but Ctrl-P is
  * what people reach for, and it used to print the app: sticky header, floating button, a search box

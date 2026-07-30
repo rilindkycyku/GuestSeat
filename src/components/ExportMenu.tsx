@@ -5,19 +5,19 @@ import { encodeStateToLink } from '../lib/shareLink';
 import { useLanguage } from '../hooks/useLanguage';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
-export function ExportMenu({
-  state,
-  fullWidth,
-  onToast,
-  onShowInvitation,
-  onShowQr,
-}: {
+interface ExportMenuProps {
   state: EventState;
-  fullWidth?: boolean;
+  /**
+   * Render the choices in the flow of the page (an accordion) instead of a floating dropdown.
+   * Used inside the nav drawer, where an absolutely positioned menu would spill over the board.
+   */
+  inline?: boolean;
   onToast?: (msg: string) => void;
   onShowInvitation?: () => void;
   onShowQr?: () => void;
-}) {
+}
+
+export function ExportMenu({ state, inline, onToast, onShowInvitation, onShowQr }: ExportMenuProps) {
   const { t, lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,13 +27,13 @@ export function ExportMenu({
   const canInstall = installState === 'available' || installState === 'ios';
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || inline) return;
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  }, [open, inline]);
 
   const copyLink = async () => {
     setOpen(false);
@@ -76,109 +76,112 @@ export function ExportMenu({
     if (outcome === 'accepted') onToast?.(t('export.shortcutAdded'));
   };
 
+  const run = (action: () => void) => () => {
+    action();
+    setOpen(false);
+  };
+
+  // One list, rendered as either a dropdown or an accordion — the two used to be written out twice.
+  const items: { key: string; label: string; desc: string; onClick: () => void }[] = [
+    canShare && { key: 'share', label: t('share.share'), desc: t('share.shareDesc'), onClick: () => void shareLink() },
+    { key: 'copy', label: t('share.copyLink'), desc: t('share.copyLinkDesc'), onClick: () => void copyLink() },
+    canInstall && {
+      key: 'shortcut',
+      label: t('export.shortcut'),
+      desc: t('export.shortcutDesc'),
+      onClick: () => void addToHomeScreen(),
+    },
+    onShowInvitation && {
+      key: 'invitation',
+      label: t('export.invitation'),
+      desc: t('export.invitationDesc'),
+      onClick: run(onShowInvitation),
+    },
+    onShowQr && { key: 'qr', label: t('export.qr'), desc: t('export.qrDesc'), onClick: run(onShowQr) },
+    { key: 'json', label: t('export.json'), desc: t('export.jsonDesc'), onClick: run(() => exportAsJson(state)) },
+    {
+      key: 'pdf',
+      label: t('export.pdf'),
+      desc: t('export.pdfDesc'),
+      onClick: run(() => void exportAsPdf(state, t, lang)),
+    },
+    {
+      key: 'tableCards',
+      label: t('export.tableCards'),
+      desc: t('export.tableCardsDesc'),
+      onClick: run(() => void exportAsTableCards(state, t, lang)),
+    },
+    {
+      key: 'placeCards',
+      label: t('export.placeCards'),
+      desc: t('export.placeCardsDesc'),
+      onClick: run(() => void exportAsPlaceCards(state, t, lang)),
+    },
+    {
+      key: 'excel',
+      label: t('export.excel'),
+      desc: t('export.excelDesc'),
+      onClick: run(() => void exportAsExcel(state, t, lang)),
+    },
+  ].filter((item): item is { key: string; label: string; desc: string; onClick: () => void } => Boolean(item));
+
+  if (inline) {
+    return (
+      <div>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <span className="w-6 text-center text-base" aria-hidden>
+            📤
+          </span>
+          <span className="flex-1 text-left">{t('export.label')}</span>
+          <span className={`text-xs text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
+            ▾
+          </span>
+        </button>
+        {open && (
+          <div className="mt-0.5 ml-6 pl-3 border-l border-slate-200 dark:border-slate-700 flex flex-col">
+            {items.map((item) => (
+              <button
+                key={item.key}
+                onClick={item.onClick}
+                className="text-left px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {item.label}
+                <span className="block text-xs text-slate-400">{item.desc}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className={`relative ${fullWidth ? 'w-full' : ''}`} ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5 ${fullWidth ? 'w-full justify-center' : ''}`}
+        aria-expanded={open}
+        className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5"
       >
         {t('export.label')}
         <span className="text-xs">▾</span>
       </button>
       {open && (
-        <div
-          className={`absolute mt-1 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20 ${fullWidth ? 'left-0' : 'right-0'}`}
-        >
-          {canShare && (
+        <div className="absolute right-0 mt-1 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20">
+          {items.map((item, i) => (
             <button
-              onClick={() => void shareLink()}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              key={item.key}
+              onClick={item.onClick}
+              className={`w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                i > 0 ? 'border-t border-slate-100 dark:border-slate-800' : ''
+              }`}
             >
-              {t('share.share')} <span className="text-slate-400 text-xs block">{t('share.shareDesc')}</span>
+              {item.label} <span className="text-slate-400 text-xs block">{item.desc}</span>
             </button>
-          )}
-          <button
-            onClick={() => void copyLink()}
-            className={`w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 ${canShare ? 'border-t border-slate-100 dark:border-slate-800' : ''}`}
-          >
-            {t('share.copyLink')} <span className="text-slate-400 text-xs block">{t('share.copyLinkDesc')}</span>
-          </button>
-          {canInstall && (
-            <button
-              onClick={() => void addToHomeScreen()}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.shortcut')} <span className="text-slate-400 text-xs block">{t('export.shortcutDesc')}</span>
-            </button>
-          )}
-          {onShowInvitation && (
-            <button
-              onClick={() => {
-                onShowInvitation();
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.invitation')}{' '}
-              <span className="text-slate-400 text-xs block">{t('export.invitationDesc')}</span>
-            </button>
-          )}
-          {onShowQr && (
-            <button
-              onClick={() => {
-                onShowQr();
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-            >
-              {t('export.qr')} <span className="text-slate-400 text-xs block">{t('export.qrDesc')}</span>
-            </button>
-          )}
-          <button
-            onClick={() => {
-              exportAsJson(state);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.json')} <span className="text-slate-400 text-xs block">{t('export.jsonDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsPdf(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.pdf')} <span className="text-slate-400 text-xs block">{t('export.pdfDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsTableCards(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.tableCards')} <span className="text-slate-400 text-xs block">{t('export.tableCardsDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsPlaceCards(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.placeCards')} <span className="text-slate-400 text-xs block">{t('export.placeCardsDesc')}</span>
-          </button>
-          <button
-            onClick={() => {
-              void exportAsExcel(state, t, lang);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
-          >
-            {t('export.excel')} <span className="text-slate-400 text-xs block">{t('export.excelDesc')}</span>
-          </button>
+          ))}
         </div>
       )}
     </div>
