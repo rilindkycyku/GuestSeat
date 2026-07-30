@@ -1,5 +1,5 @@
-import type { EventState, Guest, RsvpStatus, Table, TableSide, TagColor } from '../types';
-import { makeId } from './importGuests';
+import type { EventState, Guest, RsvpStatus, Table, TableShape, TableSide, TagColor } from '../types';
+import { makeEventState, makeId, parseImportedJson } from './importGuests';
 
 /**
  * Share links carry a full EventState snapshot in the URL hash, so a guest list can be
@@ -23,6 +23,10 @@ import { makeId } from './importGuests';
  */
 
 const HASH_KEY = 's';
+// Marks a link built for guests rather than for a co-planner: the app opens it straight into the
+// find-your-seat lookup instead of offering to import the plan. It rides in the hash alongside the
+// payload, so a guest link still reaches no server, and an older app simply ignores the extra key.
+const FIND_KEY = 'f';
 
 // Payload markers (first character of the encoded string). Current markers are upper-case so
 // they sit inside QR alphanumeric mode alongside the base42 body; the lower-case markers are
@@ -39,9 +43,50 @@ const SIDE_CODES: Record<TableSide, number> = { groom: 1, bride: 2 };
 const SIDE_BY_CODE: Record<number, TableSide> = { 1: 'groom', 2: 'bride' };
 const RSVP_CODES: Record<RsvpStatus, number> = { confirmed: 1, declined: 2 };
 const RSVP_BY_CODE: Record<number, RsvpStatus> = { 1: 'confirmed', 2: 'declined' };
+const SHAPE_CODES: Record<TableShape, number> = { round: 1, long: 2 };
+const SHAPE_BY_CODE: Record<number, TableShape> = { 1: 'round', 2: 'long' };
 
-type CompactTable = [name: string, capacity: number, side: number, autoSuffix: string, tagIdx: number[]];
+// How many entries the first published version of each tuple had. Entries beyond these are the
+// later additions, and only they may be trimmed away when empty — an older decoder reads tuple
+// positions, so dropping an early entry would shift everything after it.
+const TABLE_ARITY_V1 = 5;
+const GUEST_ARITY_V1 = 6;
+
+/**
+ * Drop trailing empty entries — `''`, `0`, or `[]` — from a tuple, never cutting into its first
+ * `keepFirst` positions. This is what keeps the appended fields free: a guest with no meal, tags
+ * or feuds encodes to exactly the tuple it did before those fields existed.
+ */
+function trimTail<T extends unknown[]>(tuple: T, keepFirst: number): unknown[] {
+  const out: unknown[] = tuple.slice();
+  while (out.length > keepFirst) {
+    const last = out[out.length - 1];
+    const empty = last === '' || last === 0 || (Array.isArray(last) && last.length === 0);
+    if (!empty) break;
+    out.pop();
+  }
+  return out;
+}
+
+type CompactTable = [
+  name: string,
+  capacity: number,
+  side: number,
+  autoSuffix: string,
+  tagIdx: number[],
+  // Appended after v1 shipped — see the note on {@link CompactGuest}.
+  shape?: number,
+];
 type CompactTag = [label: string, color: string];
+/**
+ * A guest as a positional tuple. Entries after `linkedIdx` were appended once the format was
+ * already in the wild, and deliberately *without* bumping {@link COMPACT_VERSION}: a decoder that
+ * predates them ignores the extra entries, while this one treats missing entries as empty. Bumping
+ * the version instead would make every already-deployed copy of the app reject new links outright
+ * (`fromCompact` rejects an unknown version), which is a worse failure than an older client not
+ * showing meal choices. Trailing empty entries are trimmed on encode, so a list that uses none of
+ * these fields produces exactly the same bytes — and the same QR size — as before.
+ */
 type CompactGuest = [
   name: string,
   surname: string,
@@ -49,6 +94,10 @@ type CompactGuest = [
   rsvp: number,
   notes: string,
   linkedIdx: number[],
+  tagIdx?: number[],
+  meal?: string,
+  arrived?: number,
+  apartIdx?: number[],
 ];
 type CompactState = [
   version: number,
@@ -68,22 +117,44 @@ function toCompact(state: EventState): CompactState {
   const tagIndex = new Map(tags.map((tg, i) => [tg.id, i]));
   const guestIndex = new Map(state.guests.map((g, i) => [g.id, i]));
 
-  const cTables: CompactTable[] = tables.map((tb) => [
-    tb.name,
-    tb.capacity,
-    tb.side ? SIDE_CODES[tb.side] : 0,
-    tb.autoSuffix ?? '',
-    (tb.tagIds ?? []).map((id) => tagIndex.get(id)).filter((i): i is number => i != null),
-  ]);
+  const tagRefs = (ids: string[] | undefined) =>
+    (ids ?? []).map((id) => tagIndex.get(id)).filter((i): i is number => i != null);
+  const guestRefs = (ids: string[] | undefined) =>
+    (ids ?? []).map((id) => guestIndex.get(id)).filter((i): i is number => i != null);
+
+  const cTables = tables.map(
+    (tb) =>
+      trimTail(
+        [
+          tb.name,
+          tb.capacity,
+          tb.side ? SIDE_CODES[tb.side] : 0,
+          tb.autoSuffix ?? '',
+          tagRefs(tb.tagIds),
+          tb.shape ? SHAPE_CODES[tb.shape] : 0,
+        ],
+        TABLE_ARITY_V1
+      ) as CompactTable
+  );
   const cTags: CompactTag[] = tags.map((tg) => [tg.label, tg.color]);
-  const cGuests: CompactGuest[] = state.guests.map((g) => [
-    g.name,
-    g.surname ?? '',
-    g.tableId != null && tableIndex.has(g.tableId) ? tableIndex.get(g.tableId)! : -1,
-    g.rsvp ? RSVP_CODES[g.rsvp] : 0,
-    g.notes ?? '',
-    (g.linkedGuestIds ?? []).map((id) => guestIndex.get(id)).filter((i): i is number => i != null),
-  ]);
+  const cGuests = state.guests.map(
+    (g) =>
+      trimTail(
+        [
+          g.name,
+          g.surname ?? '',
+          g.tableId != null && tableIndex.has(g.tableId) ? tableIndex.get(g.tableId)! : -1,
+          g.rsvp ? RSVP_CODES[g.rsvp] : 0,
+          g.notes ?? '',
+          guestRefs(g.linkedGuestIds),
+          tagRefs(g.tagIds),
+          g.meal ?? '',
+          g.arrived ? 1 : 0,
+          guestRefs(g.apartGuestIds),
+        ],
+        GUEST_ARITY_V1
+      ) as CompactGuest
+  );
 
   return [COMPACT_VERSION, state.eventName, cTables, cTags, cGuests, state.details ?? null, state.updatedAt];
 }
@@ -97,35 +168,45 @@ function fromCompact(data: CompactState): EventState | null {
   const tags = (cTags ?? []).map(([label, color], i) => ({ id: tagIds[i], label, color: color as TagColor }));
 
   const tableIds = cTables.map(() => makeId('t'));
-  const tables: Table[] = cTables.map(([name, capacity, side, autoSuffix, tagIdx], i) => {
+  const tables: Table[] = cTables.map(([name, capacity, side, autoSuffix, tagIdx, shape], i) => {
     const tb: Table = { id: tableIds[i], name, capacity };
     if (side && SIDE_BY_CODE[side]) tb.side = SIDE_BY_CODE[side];
     if (autoSuffix) tb.autoSuffix = autoSuffix;
     const ids = (tagIdx ?? []).map((ti) => tagIds[ti]).filter((id): id is string => !!id);
     if (ids.length) tb.tagIds = ids;
+    if (shape && SHAPE_BY_CODE[shape]) tb.shape = SHAPE_BY_CODE[shape];
     return tb;
   });
 
   const guestIds = cGuests.map(() => makeId('g'));
-  const guests: Guest[] = cGuests.map(([name, surname, tableIdx, rsvp, notes, linkedIdx], i) => {
-    const g: Guest = {
-      id: guestIds[i],
-      name,
-      tableId: tableIdx != null && tableIdx >= 0 ? tableIds[tableIdx] ?? null : null,
-    };
-    if (surname) g.surname = surname;
-    if (notes) g.notes = notes;
-    if (rsvp && RSVP_BY_CODE[rsvp]) g.rsvp = RSVP_BY_CODE[rsvp];
-    const links = (linkedIdx ?? []).map((li) => guestIds[li]).filter((id): id is string => !!id);
-    if (links.length) g.linkedGuestIds = links;
-    return g;
-  });
+  const resolve = (idx: number[] | undefined, pool: string[]) =>
+    (idx ?? []).map((i) => pool[i]).filter((id): id is string => !!id);
+  const guests: Guest[] = cGuests.map(
+    ([name, surname, tableIdx, rsvp, notes, linkedIdx, tagIdx, meal, arrived, apartIdx], i) => {
+      const g: Guest = {
+        id: guestIds[i],
+        name,
+        tableId: tableIdx != null && tableIdx >= 0 ? (tableIds[tableIdx] ?? null) : null,
+      };
+      if (surname) g.surname = surname;
+      if (notes) g.notes = notes;
+      if (rsvp && RSVP_BY_CODE[rsvp]) g.rsvp = RSVP_BY_CODE[rsvp];
+      const links = resolve(linkedIdx, guestIds);
+      if (links.length) g.linkedGuestIds = links;
+      const apart = resolve(apartIdx, guestIds);
+      if (apart.length) g.apartGuestIds = apart;
+      const guestTagIds = resolve(tagIdx, tagIds);
+      if (guestTagIds.length) g.tagIds = guestTagIds;
+      if (typeof meal === 'string' && meal) g.meal = meal;
+      if (arrived) g.arrived = true;
+      return g;
+    }
+  );
 
   return { eventName, guests, tables, tags, details: details ?? undefined, updatedAt };
 }
 
-const hasCompression =
-  typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+const hasCompression = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
 
 function fromBase64Url(value: string): Uint8Array<ArrayBuffer> {
   const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -203,8 +284,13 @@ async function gunzip(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   return new Response(stream).text();
 }
 
-/** Build a shareable URL for the current page that encodes the given state in its hash. */
-export async function encodeStateToLink(state: EventState): Promise<string> {
+/**
+ * Build a shareable URL for the current page that encodes the given state in its hash.
+ *
+ * `forGuests` marks the link as a guest link (see {@link FIND_KEY}) — the same payload, opened into
+ * the seat lookup rather than an import prompt.
+ */
+export async function encodeStateToLink(state: EventState, forGuests = false): Promise<string> {
   // Compact + gzip when the browser supports it — the only form small enough to fit a big
   // list into a QR code. Fall back to plain full JSON only when CompressionStream is missing.
   // Either way the bytes are base42-encoded so the QR can use its alphanumeric mode.
@@ -212,7 +298,7 @@ export async function encodeStateToLink(state: EventState): Promise<string> {
     ? MARK_COMPACT_GZIP_B42 + toBase42(await gzip(JSON.stringify(toCompact(state))))
     : MARK_FULL_PLAIN_B42 + toBase42(new TextEncoder().encode(JSON.stringify(state)));
   const url = new URL(window.location.href);
-  url.hash = `${HASH_KEY}=${payload}`;
+  url.hash = `${HASH_KEY}=${payload}${forGuests ? `&${FIND_KEY}=1` : ''}`;
   return url.toString();
 }
 
@@ -229,9 +315,11 @@ export async function decodeSharedState(payload: string): Promise<EventState | n
     const json = compressed ? await gunzip(bytes) : new TextDecoder().decode(bytes);
     const parsed = JSON.parse(json);
     if (marker === MARK_COMPACT_GZIP_B42 || marker === MARK_COMPACT_GZIP) return fromCompact(parsed as CompactState);
-    // Full-JSON payloads ('B' / legacy 'c' / 'u').
+    // Full-JSON payloads ('B' / legacy 'c' / 'u'). A link's hash is the easiest part of the app for
+    // anyone to hand-edit, so the payload goes through the same field-by-field validation as an
+    // imported file rather than being cast into state on trust.
     if (!parsed || !Array.isArray(parsed.guests) || !Array.isArray(parsed.tables)) return null;
-    return parsed as EventState;
+    return makeEventState(parseImportedJson(parsed));
   } catch {
     return null;
   }
@@ -242,6 +330,13 @@ export function readShareParam(): string | null {
   const hash = window.location.hash.replace(/^#/, '');
   if (!hash) return null;
   return new URLSearchParams(hash).get(HASH_KEY);
+}
+
+/** True when the URL's share payload is a guest link, i.e. it should open the seat lookup. */
+export function readFindSeatFlag(): boolean {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return false;
+  return new URLSearchParams(hash).get(FIND_KEY) === '1';
 }
 
 /** Strip the share payload from the URL so a refresh doesn't re-trigger the import prompt. */

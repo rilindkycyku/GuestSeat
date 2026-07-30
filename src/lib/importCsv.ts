@@ -1,6 +1,7 @@
-import type { Guest, RsvpStatus, Table, TableSide } from '../types';
+import type { Guest, ImportResult, RsvpStatus, Table, TableSide, TableTag } from '../types';
 import { translations } from './i18n';
 import { ImportError, makeId } from './importGuests';
+import { TAG_COLOR_ORDER } from './tagColors';
 
 /** Parses RFC4180-ish CSV text (quoted fields, doubled-quote escaping) into rows of cells. */
 function parseCsvRows(text: string): string[][] {
@@ -72,7 +73,7 @@ for (const dict of Object.values(translations)) {
   RSVP_VALUES[dict.rsvp.declined] = 'declined';
 }
 
-type ColumnField = 'name' | 'surname' | 'table' | 'capacity' | 'side' | 'rsvp' | 'linked' | 'notes';
+type ColumnField = 'name' | 'surname' | 'table' | 'capacity' | 'side' | 'rsvp' | 'meal' | 'tags' | 'linked' | 'notes';
 
 // Map every localized export-column header back to a field key, so import is order-independent
 // and tolerates older exports that lack newer columns (e.g. RSVP).
@@ -86,6 +87,8 @@ for (const dict of Object.values(translations)) {
     [f.capacity, 'capacity'],
     [f.side, 'side'],
     [f.rsvp, 'rsvp'],
+    [f.meal, 'meal'],
+    [f.tags, 'tags'],
     [f.linkedWith, 'linked'],
     [f.notes, 'notes'],
   ];
@@ -101,6 +104,8 @@ function resolveColumns(header: string[]): Record<ColumnField, number> {
     capacity: -1,
     side: -1,
     rsvp: -1,
+    meal: -1,
+    tags: -1,
     linked: -1,
     notes: -1,
   };
@@ -113,8 +118,8 @@ function resolveColumns(header: string[]): Record<ColumnField, number> {
     }
   });
   if (matched < 2) {
-    // Unrecognized header — assume the legacy fixed layout (no RSVP column).
-    return { name: 0, surname: 1, table: 2, capacity: 3, side: 4, rsvp: -1, linked: 5, notes: 6 };
+    // Unrecognized header — assume the legacy fixed layout (no RSVP, meal or tag columns).
+    return { name: 0, surname: 1, table: 2, capacity: 3, side: 4, rsvp: -1, meal: -1, tags: -1, linked: 5, notes: 6 };
   }
   return cols;
 }
@@ -126,6 +131,8 @@ interface ParsedRow {
   capacity?: number;
   side?: TableSide;
   rsvp?: RsvpStatus;
+  meal: string;
+  tagLabels: string[];
   linkedNames: string[];
   notes: string;
 }
@@ -137,7 +144,7 @@ interface ParsedRow {
  * the Table/Table capacity/Side columns, attendance from the Attendance column, and mutual links
  * are resolved by matching full names across rows.
  */
-export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table[]; eventName?: string } {
+export function parseImportedCsv(text: string): ImportResult {
   const rows = parseCsvRows(text);
   const col = resolveColumns(rows[0] ?? []);
   const dataRows = rows.slice(1);
@@ -168,6 +175,12 @@ export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table
       surname: cell(cols, col.surname),
       tableName,
       rsvp: RSVP_VALUES[cell(cols, col.rsvp)],
+      meal: cell(cols, col.meal),
+      // Tag labels are exported joined by ", "; accept ";" too, since spreadsheets get edited by hand.
+      tagLabels: cell(cols, col.tags)
+        .split(/[,;]/)
+        .map((s) => s.trim())
+        .filter(Boolean),
       linkedNames: cell(cols, col.linked)
         .split(';')
         .map((s) => s.trim())
@@ -196,14 +209,37 @@ export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table
   });
   const tableIdByName = new Map(tables.map((tb) => [tb.name, tb.id]));
 
-  const guests: Guest[] = parsedRows.map((r) => ({
-    id: makeId('g'),
-    name: r.name,
-    surname: r.surname || undefined,
-    notes: r.notes || undefined,
-    tableId: r.tableName ? (tableIdByName.get(r.tableName) ?? null) : null,
-    rsvp: r.rsvp,
-  }));
+  // Rebuild the tag palette from the labels seen in the Tags column, in first-seen order, cycling
+  // the preset colors — a CSV carries labels only, so the colors can't be the exported ones.
+  const tagIdByLabel = new Map<string, string>();
+  const tags: TableTag[] = [];
+  for (const r of parsedRows) {
+    for (const label of r.tagLabels) {
+      if (tagIdByLabel.has(label)) continue;
+      const tag: TableTag = {
+        id: makeId('tag'),
+        label,
+        color: TAG_COLOR_ORDER[tags.length % TAG_COLOR_ORDER.length],
+      };
+      tagIdByLabel.set(label, tag.id);
+      tags.push(tag);
+    }
+  }
+
+  const guests: Guest[] = parsedRows.map((r) => {
+    const guest: Guest = {
+      id: makeId('g'),
+      name: r.name,
+      surname: r.surname || undefined,
+      notes: r.notes || undefined,
+      tableId: r.tableName ? (tableIdByName.get(r.tableName) ?? null) : null,
+      rsvp: r.rsvp,
+    };
+    if (r.meal) guest.meal = r.meal;
+    const tagIds = r.tagLabels.map((label) => tagIdByLabel.get(label)).filter((id): id is string => !!id);
+    if (tagIds.length) guest.tagIds = tagIds;
+    return guest;
+  });
 
   // Resolve "Linked with" names to guest ids, skipping ambiguous (duplicate full-name) matches.
   const idsByFullName = new Map<string, string[]>();
@@ -224,5 +260,5 @@ export function parseImportedCsv(text: string): { guests: Guest[]; tables: Table
     if (linked.length) g.linkedGuestIds = linked;
   });
 
-  return { guests, tables };
+  return { guests, tables, ...(tags.length ? { tags } : {}) };
 }

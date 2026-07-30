@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Guest } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 
 interface AddGuestModalProps {
   onAdd: (guest: Partial<Guest> & { name: string }) => void;
@@ -20,17 +21,14 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('addGuest.title')}
+      panelClassName="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
     >
-      <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="🧑" title={t('addGuest.title')} onClose={onClose} />
+      <ModalHeader icon="🧑" title={t('addGuest.title')} onClose={onClose} />
 
-        <div className="p-6">
+      <div className="p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -67,8 +65,7 @@ export function AddGuestModal({ onAdd, onClose }: AddGuestModalProps) {
             {t('common.add')}
           </button>
         </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

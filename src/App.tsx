@@ -1,7 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, type DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
+import { useBoardDnd } from './hooks/useBoardDnd';
+import { useTableTags, type TableFilter } from './hooks/useTableTags';
+import { useGuestBadges } from './hooks/useGuestBadges';
+import { useToast } from './hooks/useToast';
+import { Toast } from './components/Toast';
+import {
+  countSeated,
+  groupGuestsByTable,
+  matchGuests,
+  tablesToRender as narrowToMatches,
+  tablesWithMatches,
+  unseatedFor,
+} from './lib/boardSearch';
 import { useLanguage } from './hooks/useLanguage';
 import { Onboarding } from './components/Onboarding';
 import { EventPicker } from './components/EventPicker';
@@ -15,11 +28,13 @@ import { SettingsModal } from './components/SettingsModal';
 import { Credits } from './components/Credits';
 import { StatsModal } from './components/StatsModal';
 import { CheckInScreen } from './components/CheckInScreen';
+import { FindSeatScreen } from './components/FindSeatScreen';
 import { InvitationModal } from './components/InvitationModal';
 import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
+import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
 import {
@@ -36,15 +51,12 @@ import {
 } from './lib/storage';
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
-import { autoSeat } from './lib/autoSeat';
-import { clearShareParam, decodeSharedState, readShareParam } from './lib/shareLink';
+import { autoSeat, type AutoSeatResult } from './lib/autoSeat';
+import { clearShareParam, decodeSharedState, readFindSeatFlag, readShareParam } from './lib/shareLink';
 import { tableDisplayName } from './lib/tableDisplay';
 import { tagColorClasses } from './lib/tagColors';
-import type { EventState, Guest, Table, TableSide, TableTag } from './types';
+import type { EventState, Guest } from './types';
 import type { EventSummary } from './lib/db';
-
-/** A table-list filter: everything, or one tag (Groom/Bride are system tags too). */
-type TableFilter = { kind: 'all' } | { kind: 'tag'; tagId: string };
 
 export default function App() {
   const {
@@ -77,6 +89,8 @@ export default function App() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    keepApart,
+    allowTogether,
     setAllRsvp,
     unseatAll,
     addTag,
@@ -86,6 +100,7 @@ export default function App() {
     toggleGuestTag,
   } = useEventState();
   const { t } = useLanguage();
+  const { toast, showToast, dismissToast } = useToast();
 
   const [query, setQuery] = useState('');
   // When true, show onboarding to create another event even though saved events already exist
@@ -93,7 +108,6 @@ export default function App() {
   const [creatingNew, setCreatingNew] = useState(false);
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; action?: { label: string; onClick: () => void } } | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [collapsedTableIds, setCollapsedTableIds] = useState<Set<string>>(() => loadCollapsedTableIds());
@@ -104,12 +118,16 @@ export default function App() {
   const [seedTraditions, setSeedTraditions] = useState<boolean>(() => loadSeedTraditions());
   const [capacityTableId, setCapacityTableId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
+  const [autoSeatReport, setAutoSeatReport] = useState<Pick<AutoSeatResult, 'seated' | 'unplaced'> | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  // A plan received through a *guest* link: held in memory only, never saved, and shown as the
+  // read-only seat lookup until someone says they're actually here to plan.
+  const [findSeatState, setFindSeatState] = useState<EventState | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,8 +136,7 @@ export default function App() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      const typing =
-        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
       const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
       if (cmdK || (e.key === '/' && !typing)) {
         e.preventDefault();
@@ -147,18 +164,7 @@ export default function App() {
     saveSeedTraditions(seedTraditions);
   }, [seedTraditions]);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
-  );
-
-  const toastTimer = useRef<number | undefined>(undefined);
-  const showToast = (msg: string, action?: { label: string; onClick: () => void }) => {
-    window.clearTimeout(toastTimer.current);
-    setToast({ msg, action });
-    // Give people longer to reach for an Undo than for a plain confirmation.
-    toastTimer.current = window.setTimeout(() => setToast(null), action ? 6000 : 3000);
-  };
+  const { sensors, accessibility: dndAccessibility } = useBoardDnd(state, t);
 
   // A destructive action + an "Undo" that rewinds to the snapshot captured just before it.
   const runWithUndo = (snapshot: EventState | null, act: () => void, msg: string) => {
@@ -174,154 +180,39 @@ export default function App() {
 
   const capacityTable = capacityTableId ? (tableById.get(capacityTableId) ?? null) : null;
 
-  const linkBadges = useMemo(() => {
-    const map = new Map<string, { status: 'together' | 'apart'; title: string }>();
-    if (!state) return map;
-    for (const g of state.guests) {
-      if (!g.linkedGuestIds?.length) continue;
-      const partners = g.linkedGuestIds.map((id) => guestById.get(id)).filter((p): p is Guest => !!p);
-      if (partners.length === 0) continue;
-      const together = g.tableId != null && partners.every((p) => p.tableId === g.tableId);
-      const names = partners.map((p) => (p.surname ? `${p.name} ${p.surname}` : p.name)).join(', ');
-      map.set(g.id, {
-        status: together ? 'together' : 'apart',
-        title: `${t('guestEditor.linkedGuests')}: ${names}`,
-      });
-    }
-    return map;
-  }, [state, guestById, t]);
+  const { linkBadges, feudBadges } = useGuestBadges(state, t);
 
-  const customTags = useMemo(() => state?.tags ?? [], [state]);
+  const {
+    customTags,
+    systemTags,
+    allTags,
+    assignedIdsFor,
+    filteredTables,
+    visibleTableIds,
+    tagCounts,
+    toggleTag,
+    createTagForTable,
+    createTagForGuest,
+  } = useTableTags(state, tableFilter, t, { updateTable, toggleTableTag, toggleGuestTag, addTag });
 
-  // Groom & Bride are always-present, non-removable "system" tags backed by the table's
-  // single `side` field; custom tags live in state.tags. Both show up in the same lists.
-  const systemTags: TableTag[] = useMemo(
-    () => [
-      { id: 'groom', label: t('tables.side.groom'), color: 'sky' },
-      { id: 'bride', label: t('tables.side.bride'), color: 'rose' },
-    ],
-    [t]
+  const seatedCount = useMemo(() => countSeated(state?.guests ?? []), [state]);
+
+  const matchedIds = useMemo(
+    () => (state ? matchGuests(state, query, visibleTableIds, t) : null),
+    [state, query, visibleTableIds, t]
   );
 
-  const allTags = useMemo(() => [...systemTags, ...customTags], [systemTags, customTags]);
-
-  // The tag ids applied to a table, merging the wedding side with its custom tags.
-  const assignedIdsFor = useCallback((tb: Table) => [...(tb.side ? [tb.side] : []), ...(tb.tagIds ?? [])], []);
-
-  // The set of guest-level tag ids present at each table, so a tag applied only to guests
-  // (e.g. "Bride's family" on a shared long table) still counts and filters that table in.
-  const guestTagIdsByTable = useMemo(() => {
-    const m = new Map<string, Set<string>>();
-    for (const g of state?.guests ?? []) {
-      if (!g.tableId || !g.tagIds?.length) continue;
-      const set = m.get(g.tableId) ?? new Set<string>();
-      for (const id of g.tagIds) set.add(id);
-      m.set(g.tableId, set);
-    }
-    return m;
-  }, [state]);
-
-  const tableHasTag = useCallback(
-    (tb: Table, id: string) => tb.side === id || tb.tagIds?.includes(id) || guestTagIdsByTable.get(tb.id)?.has(id),
-    [guestTagIdsByTable]
+  const matchedTableIds = useMemo(
+    () => (state ? tablesWithMatches(state.guests, matchedIds) : null),
+    [matchedIds, state]
   );
-
-  const filteredTables = useMemo(() => {
-    if (!state) return [];
-    if (tableFilter.kind === 'all') return state.tables;
-    const id = tableFilter.tagId;
-    return state.tables.filter((tb) => tableHasTag(tb, id));
-  }, [state, tableFilter, tableHasTag]);
-
-  const visibleTableIds = useMemo(() => new Set(filteredTables.map((tb) => tb.id)), [filteredTables]);
-
-  const tagCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const tb of state?.tables ?? []) {
-      if (tb.side) counts.set(tb.side, (counts.get(tb.side) ?? 0) + 1);
-      // Union of table-level tags and any guest tags at the table, so each tag counts a table once.
-      const ids = new Set([...(tb.tagIds ?? []), ...(guestTagIdsByTable.get(tb.id) ?? [])]);
-      for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-    return counts;
-  }, [state, guestTagIdsByTable]);
-
-  // Toggle a tag on a table. Groom/Bride map to the mutually-exclusive `side`; custom tags stack.
-  const toggleTag = useCallback(
-    (tableId: string, tagId: string) => {
-      if (tagId === 'groom' || tagId === 'bride') {
-        const current = state?.tables.find((tb) => tb.id === tableId)?.side;
-        updateTable(tableId, { side: current === tagId ? undefined : (tagId as TableSide) });
-      } else {
-        toggleTableTag(tableId, tagId);
-      }
-    },
-    [state, updateTable, toggleTableTag]
-  );
-
-  // Create a custom tag and immediately apply it to the table the user is tagging.
-  const createTagForTable = useCallback(
-    (tableId: string, label: string) => {
-      const id = addTag(label);
-      toggleTableTag(tableId, id);
-    },
-    [addTag, toggleTableTag]
-  );
-
-  // Create a custom tag and immediately apply it to the guest being edited.
-  const createTagForGuest = useCallback(
-    (guestId: string, label: string) => {
-      const id = addTag(label);
-      toggleGuestTag(guestId, id);
-    },
-    [addTag, toggleGuestTag]
-  );
-
-  const seatedCount = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const g of state?.guests ?? []) {
-      if (g.tableId) m.set(g.tableId, (m.get(g.tableId) ?? 0) + 1);
-    }
-    return m;
-  }, [state]);
-
-  const matchedIds = useMemo(() => {
-    if (!state) return null;
-    const q = query.trim().toLowerCase();
-    if (!q) return null;
-    const isVisible = (g: Guest) => !g.tableId || visibleTableIds.has(g.tableId);
-    const set = new Set<string>();
-    for (const g of state.guests) {
-      if (!isVisible(g)) continue;
-      const table = g.tableId ? tableById.get(g.tableId) : undefined;
-      const haystack = `${g.name} ${g.surname ?? ''} ${table ? tableDisplayName(table, t) : ''}`.toLowerCase();
-      if (haystack.includes(q)) set.add(g.id);
-    }
-    // Also surface linked partners of any direct match, so connected guests always show together.
-    for (const id of [...set]) {
-      for (const linkedId of guestById.get(id)?.linkedGuestIds ?? []) {
-        const linked = guestById.get(linkedId);
-        if (linked && isVisible(linked)) set.add(linkedId);
-      }
-    }
-    return set;
-  }, [state, query, tableById, visibleTableIds, t, guestById]);
-
-  const matchedTableIds = useMemo(() => {
-    if (!matchedIds || !state) return null;
-    const set = new Set<string>();
-    for (const g of state.guests) {
-      if (g.tableId && matchedIds.has(g.id)) set.add(g.tableId);
-    }
-    return set;
-  }, [matchedIds, state]);
 
   const isSearching = query.trim().length > 0;
 
-  const tablesToRender = useMemo(() => {
-    if (!isSearching || !matchedTableIds) return filteredTables;
-    return filteredTables.filter((tb) => matchedTableIds.has(tb.id));
-  }, [filteredTables, isSearching, matchedTableIds]);
+  const tablesToRender = useMemo(
+    () => narrowToMatches(filteredTables, matchedTableIds, isSearching),
+    [filteredTables, isSearching, matchedTableIds]
+  );
 
   useEffect(() => {
     if (!matchedTableIds || matchedTableIds.size === 0) return;
@@ -331,38 +222,22 @@ export default function App() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [matchedTableIds, state?.tables]);
 
-  const guestsByTable = useMemo(() => {
-    const m = new Map<string, Guest[]>();
-    for (const g of state?.guests ?? []) {
-      if (!g.tableId) continue;
-      const list = m.get(g.tableId) ?? [];
-      list.push(g);
-      m.set(g.tableId, list);
-    }
-    for (const list of m.values()) {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    }
-    return m;
-  }, [state]);
+  const guestsByTable = useMemo(() => groupGuestsByTable(state?.guests ?? []), [state]);
 
-  const unseatedGuests = useMemo(() => {
-    const list = (state?.guests ?? []).filter((g) => !g.tableId);
-    const filtered = matchedIds ? list.filter((g) => matchedIds.has(g.id)) : list;
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-  }, [state, matchedIds]);
+  const unseatedGuests = useMemo(() => unseatedFor(state?.guests ?? [], matchedIds), [state, matchedIds]);
 
   const handleImportFile = async (file: File, mode: 'replace' | 'merge') => {
     try {
       const text = await file.text();
-      const { guests, tables, eventName } = file.name.toLowerCase().endsWith('.csv')
+      const result = file.name.toLowerCase().endsWith('.csv')
         ? parseImportedCsv(text)
         : parseImportedJson(JSON.parse(text), t('tables.namePrefix'));
       if (mode === 'replace') {
-        loadFromImport(guests, tables, eventName ?? t('header.defaultEventName'));
-        showToast(t('import.loaded', { count: guests.length }));
+        loadFromImport(result, t('header.defaultEventName'));
+        showToast(t('import.loaded', { count: result.guests.length }));
       } else {
-        mergeFromImport(guests, tables);
-        showToast(t('import.importedMore', { count: guests.length }));
+        mergeFromImport(result);
+        showToast(t('import.importedMore', { count: result.guests.length }));
       }
     } catch (err) {
       if (err instanceof ImportError) showToast(t(`import.errors.${err.code}`));
@@ -384,6 +259,20 @@ export default function App() {
       }
     }
     seatGuest(guestId, targetTableId);
+    if (!targetTableId || !state) return;
+    // Allowed, but say so — otherwise a keep-apart quietly stops meaning anything.
+    const guest = guestById.get(guestId);
+    const clashes = (guest?.apartGuestIds ?? [])
+      .map((id) => guestById.get(id))
+      .filter((other): other is Guest => !!other && other.tableId === targetTableId);
+    if (guest && clashes.length) {
+      showToast(
+        t('autoSeat.feudWarning', {
+          name: guest.surname ? `${guest.name} ${guest.surname}` : guest.name,
+          other: clashes.map((c) => (c.surname ? `${c.name} ${c.surname}` : c.name)).join(', '),
+        })
+      );
+    }
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -417,11 +306,16 @@ export default function App() {
     if (!param) return;
     sharedHandledRef.current = true;
     let cancelled = false;
+    const forGuests = readFindSeatFlag();
     void decodeSharedState(param).then((shared) => {
       if (cancelled) return;
       clearShareParam();
       if (!shared) {
         showToast(t('share.invalid'));
+        return;
+      }
+      if (forGuests) {
+        setFindSeatState(shared);
         return;
       }
       askConfirm({
@@ -500,15 +394,21 @@ export default function App() {
       return;
     }
     const snapshot = state;
-    const { assignments, seated, leftUnseated } = autoSeat(state);
+    const { assignments, seated, leftUnseated, unplaced } = autoSeat(state);
     if (seated === 0) {
-      showToast(t('autoSeat.noRoom'));
+      // Nothing moved, so there is nothing to undo — just say why, in as much detail as we have.
+      if (unplaced.length) setAutoSeatReport({ seated, unplaced });
+      else showToast(t('autoSeat.noRoom'));
       return;
     }
     assignSeats(assignments);
     const msg =
-      leftUnseated > 0 ? t('autoSeat.someLeft', { count: seated, left: leftUnseated }) : t('autoSeat.seated', { count: seated });
+      leftUnseated > 0
+        ? t('autoSeat.someLeft', { count: seated, left: leftUnseated })
+        : t('autoSeat.seated', { count: seated });
     showToast(msg, { label: t('common.undo'), onClick: () => restoreSnapshot(snapshot) });
+    // Who was left behind, and why, is the part someone can act on — so it gets a dialog, not a line.
+    if (unplaced.length) setAutoSeatReport({ seated, unplaced });
   };
 
   const handleResetArrivals = () => {
@@ -546,22 +446,7 @@ export default function App() {
 
   // A single toast that optionally carries an Undo button; reused by both the onboarding and
   // main screens so an undo after "Reset" (which drops back to onboarding) is still reachable.
-  const toastNode = toast && (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium pl-4 pr-2 py-2 rounded-xl shadow-lg z-50 max-w-[calc(100vw-2rem)]">
-      <span className="truncate">{toast.msg}</span>
-      {toast.action && (
-        <button
-          onClick={() => {
-            toast.action?.onClick();
-            setToast(null);
-          }}
-          className="shrink-0 rounded-lg bg-white/15 dark:bg-slate-900/10 hover:bg-white/25 dark:hover:bg-slate-900/20 px-2.5 py-1 text-indigo-300 dark:text-indigo-600 font-semibold"
-        >
-          {toast.action.label}
-        </button>
-      )}
-    </div>
-  );
+  const toastNode = <Toast toast={toast} onAction={dismissToast} />;
 
   // Create a new event from the onboarding flow, then leave the "creating" state.
   const startEvent = (init: Partial<EventState>) => {
@@ -593,8 +478,13 @@ export default function App() {
   const onboardingScreen = (onBack?: () => void) => (
     <Onboarding
       onBack={onBack}
-      onImported={(guests, tables, name, eventType) =>
-        startEvent({ guests, tables, eventName: name, ...(eventType !== 'wedding' ? { details: { eventType } } : {}) })
+      onImported={(result, fallbackName, eventType) =>
+        startEvent({
+          ...result,
+          eventName: result.eventName ?? fallbackName,
+          // A chosen event type applies only when the file didn't already carry invitation details.
+          ...(eventType !== 'wedding' && !result.details ? { details: { eventType } } : {}),
+        })
       }
       onLoadDemo={() => startEvent(getDemoEventState())}
       onStartBlank={(eventType) => {
@@ -609,6 +499,28 @@ export default function App() {
     />
   );
 
+  // A guest link short-circuits the whole planner: no saved events are involved, so this renders
+  // before the IndexedDB gate below.
+  if (findSeatState) {
+    return (
+      <FindSeatScreen
+        state={findSeatState}
+        onOpenFullPlan={() => {
+          const shared = findSeatState;
+          setFindSeatState(null);
+          askConfirm({
+            message: t('share.receivedConfirm', { name: shared.eventName, count: shared.guests.length }),
+            confirmLabel: t('share.load'),
+            onConfirm: () => {
+              loadSharedState(shared);
+              showToast(t('share.loaded', { count: shared.guests.length }));
+            },
+          });
+        }}
+      />
+    );
+  }
+
   // Hold the first paint until IndexedDB has been read, so existing events never flash onboarding.
   if (!ready) {
     return (
@@ -616,7 +528,7 @@ export default function App() {
         <span
           className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"
           role="status"
-          aria-label={t('common.close')}
+          aria-label={t('common.loading')}
         />
       </div>
     );
@@ -641,6 +553,7 @@ export default function App() {
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
+        {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
       </>
     );
@@ -652,9 +565,12 @@ export default function App() {
   const declinedCount = state.guests.filter((g) => g.rsvp === 'declined').length;
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd} accessibility={dndAccessibility}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3">
+        <header
+          data-print="hide"
+          className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-3 py-2.5 sm:px-4 sm:py-3"
+        >
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-xl shrink-0">🪑</span>
             <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
@@ -884,6 +800,7 @@ export default function App() {
               guests={unseatedGuests}
               matchedIds={matchedIds}
               linkBadges={linkBadges}
+              feudBadges={feudBadges}
               tags={customTags}
               onGuestClick={(g) => setEditingGuestId(g.id)}
               onAutoSeat={handleAutoSeat}
@@ -892,7 +809,7 @@ export default function App() {
 
           <div className="min-w-0 w-full">
             {state.tables.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div data-print="hide" className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <button
                     onClick={() => setTableFilter({ kind: 'all' })}
@@ -1002,6 +919,7 @@ export default function App() {
                     assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
+                    feudBadges={feudBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     onEditCapacity={() => setCapacityTableId(table.id)}
                     onDuplicateTable={() => handleDuplicateTable(table.id)}
@@ -1019,6 +937,7 @@ export default function App() {
                     assignedTagIds={assignedIdsFor(table)}
                     matchedIds={matchedIds}
                     linkBadges={linkBadges}
+                    feudBadges={feudBadges}
                     highlighted={matchedTableIds ? matchedTableIds.has(table.id) : false}
                     collapsed={isSearching ? !matchedTableIds?.has(table.id) : collapsedTableIds.has(table.id)}
                     onToggleCollapse={() => {
@@ -1054,7 +973,7 @@ export default function App() {
       {quickAddOpen && (
         <div className="sm:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
       )}
-      <div className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+      <div data-print="hide" className="sm:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
         {quickAddOpen && (
           <>
             <button
@@ -1128,9 +1047,7 @@ export default function App() {
               danger: true,
               onConfirm: () => {
                 const snapshot = state;
-                const name = editingGuest.surname
-                  ? `${editingGuest.name} ${editingGuest.surname}`
-                  : editingGuest.name;
+                const name = editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name;
                 setEditingGuestId(null);
                 runWithUndo(snapshot, () => removeGuest(editingGuest.id), t('guestEditor.deleted', { name }));
               },
@@ -1138,6 +1055,8 @@ export default function App() {
           }
           onClose={() => setEditingGuestId(null)}
           onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
+          onKeepApart={(otherId) => keepApart(editingGuest.id, otherId)}
+          onAllowTogether={(otherId) => allowTogether(editingGuest.id, otherId)}
           onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
           onSeatGuest={trySeatGuest}
           onToggleTag={(tagId) => toggleGuestTag(editingGuest.id, tagId)}
@@ -1156,6 +1075,7 @@ export default function App() {
       )}
 
       {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
+      {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
 
       {invitationOpen && (
         <InvitationModal

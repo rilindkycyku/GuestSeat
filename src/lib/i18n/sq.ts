@@ -2,6 +2,7 @@ import type { TranslationDict } from './en';
 
 export const sq = {
   common: {
+    loading: 'Po hapet…',
     cancel: 'Anulo',
     save: 'Ruaj',
     delete: 'Fshi',
@@ -36,6 +37,7 @@ export const sq = {
     declinedShort: 'nuk vjen',
   },
   settings: {
+    version: 'Versioni {{version}}',
     title: 'Cilësimet',
     content: 'Eventi & ftesa',
     seedTraditions: 'Parambush traditat shqiptare',
@@ -75,6 +77,12 @@ export const sq = {
     developedBy: 'Zhvilluar nga',
   },
   autoSeat: {
+    unplacedTitle: 'Nuk gjetën vend të gjithë',
+    unplacedNoRoom: 'Asnjë tavolinë nuk kishte {{count}} vende të lira bashkë.',
+    unplacedKeepApart: 'Tavolinat e vetme me vend mbajnë dikë me të cilin nuk duhet të ulen.',
+    unplacedHint: 'Shtoni një tavolinë, rritni kapacitetin, ose hiqni një kufizim, pastaj riprovoni.',
+    seatedAnyway: '{{count}} u ulën.',
+    feudWarning: '{{name}} nuk duhet të ulet me {{other}} — u ul gjithsesi.',
     action: 'Ul automatikisht',
     confirm: 'Të ulen automatikisht {{count}} të ftuar pa vend në tavolinat e lira?',
     seated: 'U ulën {{count}} të ftuar.',
@@ -213,7 +221,35 @@ export const sq = {
     allSeated: 'Të gjithë janë ulur 🎉',
     dragHint: "Tërhiqni të ftuarit këtu për t'i zhvendosur.",
   },
+  dnd: {
+    instructions:
+      'Shtypni Space për të marrë një të ftuar, pastaj shtypni shigjetat për të kaluar nga një tavolinë në tjetrën dhe Space përsëri për ta ulur. Enter mbi një të ftuar hap ndryshimin, Escape e anulon zhvendosjen.',
+    pickedUp: 'U marr {{guest}}. Shtypni shigjetat për të zgjedhur tavolinën, pastaj Space për ta ulur.',
+    overTable: '{{guest}} është mbi {{table}}.',
+    overUnseated: '{{guest}} është mbi listën e të ftuarve pa vend.',
+    seated: '{{guest}} u ul te {{table}}.',
+    unseatedGuest: '{{guest}} u kthye te lista e të ftuarve pa vend.',
+    droppedNowhere: '{{guest}} mbeti ku ishte.',
+    cancelled: 'Zhvendosja u anulua. {{guest}} mbeti ku ishte.',
+  },
+  findSeat: {
+    title: 'Gjeni vendin tuaj',
+    yourName: 'Emri juaj',
+    placeholder: 'Shkruani emrin tuaj…',
+    hint: 'Shkruani së paku dy shkronja të emrit.',
+    noMatch: 'Nuk u gjet ky emër. Provoni mbiemrin, ose pyetni te hyrja.',
+    noTableYet: 'Nuk ka tavolinë të caktuar.',
+    openFullPlan: 'Po ndihmoj në organizim — hapi listën e plotë',
+  },
   guestEditor: {
+    apartGuests: 'Mbaji ndaras',
+    apartGuestsHint:
+      'Të ftuar që nuk duhet të ulen në një tavolinë. Ulja automatike i mban ndaras; me dorë mund t’i ulni bashkë, dhe tabela e shënon.',
+    apartClash: '{{name}} është te {{table}} — po ajo tavolinë me këtë të ftuar.',
+    apartWarning: 'Nuk duhet të ulet me {{names}}, që janë te kjo tavolinë.',
+    allowTogether: 'Hiqe',
+    searchToKeepApart: 'Kërko një të ftuar për të mbajtur ndaras…',
+    cantKeepLinkedApart: 'Të ftuarit e lidhur nuk mbahen ndaras — shkëputni lidhjen së pari.',
     title: 'Ndrysho të ftuarin',
     name: 'Emri',
     surname: 'Mbiemri',
@@ -361,6 +397,8 @@ export const sq = {
     pdfDesc: 'Skema e printueshme e vendeve',
     tableCards: 'Kartat e tavolinave',
     tableCardsDesc: 'Karta për t’i prerë, 4 për faqe',
+    placeCards: 'Karta emrash',
+    placeCardsDesc: 'Një kartë e palosur për të ftuar, 4 për faqe',
     excel: 'Excel',
     excelDesc: 'Tabelë e stilizuar (.xlsx)',
     eventDetails: 'Detajet e eventit…',
@@ -409,6 +447,10 @@ export const sq = {
     },
   },
   share: {
+    qrModePlan: 'Plani i plotë',
+    qrModePlanDesc: 'Hap tërë listën — për bashkë-organizatorin',
+    qrModeGuest: 'Për të ftuarit',
+    qrModeGuestDesc: 'Hap „gjeni vendin tuaj" — nuk mund të ndryshohet asgjë',
     share: 'Ndaj me aplikacione…',
     shareDesc: 'Dërgo me WhatsApp, email…',
     shareText: 'Kjo është lista e vendeve për {{name}}',

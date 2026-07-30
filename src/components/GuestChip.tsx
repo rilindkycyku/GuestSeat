@@ -9,21 +9,23 @@ interface GuestChipProps {
   onClick?: () => void;
   compact?: boolean;
   linkBadge?: { status: 'together' | 'apart'; title: string };
+  /** Shown when this guest shares a table with someone they're meant to be kept apart from. */
+  feudBadge?: { title: string };
   /** All event tags, used to render this guest's group tags. Omit to hide tags. */
   tags?: TableTag[];
 }
 
-export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, tags }: GuestChipProps) {
+export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feudBadge, tags }: GuestChipProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: guest.id,
     data: { guestId: guest.id },
   });
 
-  const guestTags = tags ? (guest.tagIds ?? []).map((id) => tags.find((tg) => tg.id === id)).filter((x): x is TableTag => !!x) : [];
+  const guestTags = tags
+    ? (guest.tagIds ?? []).map((id) => tags.find((tg) => tg.id === id)).filter((x): x is TableTag => !!x)
+    : [];
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform), zIndex: 50 }
-    : undefined;
+  const style = transform ? { transform: CSS.Translate.toString(transform), zIndex: 50 } : undefined;
 
   return (
     <button
@@ -31,7 +33,14 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, tag
       style={style}
       {...listeners}
       {...attributes}
-      onClick={onClick}
+      // dnd-kit's mouse sensor calls preventDefault on mousedown (so a drag doesn't select text),
+      // which also stops the browser from focusing the button. Focusing it here keeps the chip the
+      // element a dialog can hand focus back to when it closes — and leaves it ready for Space to
+      // pick the guest up straight after a click.
+      onClick={(e) => {
+        e.currentTarget.focus();
+        onClick?.();
+      }}
       title={guest.notes}
       data-testid="guest-chip"
       data-guest-id={guest.id}
@@ -72,15 +81,24 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, tag
           {tag.label}
         </span>
       ))}
+      {feudBadge && (
+        <span title={feudBadge.title} className={`${linkBadge ? '' : 'ml-auto'} text-xs shrink-0`}>
+          🚫
+        </span>
+      )}
       {linkBadge && (
         <span
           title={linkBadge.title}
-          className={`ml-auto text-xs shrink-0 ${linkBadge.status === 'together' ? 'opacity-90' : 'opacity-70'}`}
+          className={`${feudBadge ? '' : 'ml-auto'} text-xs shrink-0 ${
+            linkBadge.status === 'together' ? 'opacity-90' : 'opacity-70'
+          }`}
         >
           {linkBadge.status === 'together' ? '🔗' : '🔗⚠️'}
         </span>
       )}
-      {guest.notes && <span className={`${linkBadge ? '' : 'ml-auto'} text-xs text-slate-400 shrink-0`}>📝</span>}
+      {guest.notes && (
+        <span className={`${linkBadge || feudBadge ? '' : 'ml-auto'} text-xs text-slate-400 shrink-0`}>📝</span>
+      )}
     </button>
   );
 }

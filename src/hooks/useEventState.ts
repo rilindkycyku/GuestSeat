@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EventDetails, EventState, Guest, RsvpStatus, Table, TableTag, TagColor } from '../types';
-import { makeEventState, makeId } from '../lib/importGuests';
+import type { EventDetails, EventState, Guest, ImportResult, RsvpStatus, Table, TableTag, TagColor } from '../types';
+import { makeEventState, makeId, mergeTags } from '../lib/importGuests';
 import { TAG_COLOR_ORDER } from '../lib/tagColors';
 import {
   type EventSummary,
@@ -15,17 +15,7 @@ import {
   summarize,
 } from '../lib/db';
 
-/** Assemble a fresh {@link EventState} from a partial, preserving tags & details (which makeEventState drops). */
-function buildState(initial: Partial<EventState>): EventState {
-  return {
-    eventName: initial.eventName ?? 'Guest List',
-    guests: initial.guests ?? [],
-    tables: initial.tables ?? [],
-    ...(initial.tags ? { tags: initial.tags } : {}),
-    ...(initial.details ? { details: initial.details } : {}),
-    updatedAt: new Date().toISOString(),
-  };
-}
+const buildState = makeEventState;
 
 /** True when two summary rows are display-identical, so the picker list can skip a needless re-render. */
 function sameSummary(a: EventSummary, b: EventSummary): boolean {
@@ -149,17 +139,27 @@ export function useEventState() {
     })();
   }, []);
 
-  const loadFromImport = useCallback((guests: Guest[], tables: Table[], eventName?: string) => {
-    setState(makeEventState({ guests, tables, eventName }));
+  // Replace the open event with an imported one. The whole parse result is carried over — tags and
+  // invitation details included — so re-importing a GuestSeat export gives back what was exported.
+  const loadFromImport = useCallback((result: ImportResult, fallbackName?: string) => {
+    setState(makeEventState({ ...result, eventName: result.eventName ?? fallbackName }));
   }, []);
 
-  const mergeFromImport = useCallback((guests: Guest[], tables: Table[] = []) => {
+  // "Add to this event": append imported guests and tables, folding the imported tag palette into
+  // the existing one (see {@link mergeTags}) so tag references survive an id collision between
+  // two separately-created events.
+  const mergeFromImport = useCallback((result: ImportResult) => {
     setState((prev) => {
       const base = prev ?? makeEventState();
+      const merged = mergeTags(base.tags ?? [], result.tags ?? [], result.guests, result.tables);
       return {
         ...base,
-        guests: [...base.guests, ...guests],
-        tables: [...base.tables, ...tables],
+        guests: [...base.guests, ...merged.guests],
+        tables: [...base.tables, ...merged.tables],
+        ...(merged.tags.length ? { tags: merged.tags } : {}),
+        // An import only fills in details the open event is missing — it never overwrites the
+        // invitation someone has already written.
+        ...(result.details ? { details: { ...result.details, ...base.details } } : {}),
         updatedAt: new Date().toISOString(),
       };
     });
@@ -378,27 +378,55 @@ export function useEventState() {
     });
   }, []);
 
-  const linkGuests = useCallback((guestIdA: string, guestIdB: string) => {
-    if (guestIdA === guestIdB) return;
-    setState((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        guests: prev.guests.map((g) => {
-          if (g.id === guestIdA) {
-            const links = g.linkedGuestIds ?? [];
-            return links.includes(guestIdB) ? g : { ...g, linkedGuestIds: [...links, guestIdB] };
-          }
-          if (g.id === guestIdB) {
-            const links = g.linkedGuestIds ?? [];
-            return links.includes(guestIdA) ? g : { ...g, linkedGuestIds: [...links, guestIdA] };
-          }
-          return g;
-        }),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  }, []);
+  // Linked ("must sit together") and kept-apart ("must not share a table") are the same shape of
+  // data: a mutual list of guest ids on both guests. One helper keeps them mutual — a one-sided
+  // reference would make a couple look linked from one chip and loose from the other, and would let
+  // auto-seating honour a feud in one direction only.
+  const setMutual = useCallback(
+    (field: 'linkedGuestIds' | 'apartGuestIds', guestIdA: string, guestIdB: string, linked: boolean) => {
+      if (guestIdA === guestIdB) return;
+      setState((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          guests: prev.guests.map((g) => {
+            if (g.id !== guestIdA && g.id !== guestIdB) return g;
+            const otherId = g.id === guestIdA ? guestIdB : guestIdA;
+            const current = g[field] ?? [];
+            if (linked === current.includes(otherId)) return g;
+            const next = linked ? [...current, otherId] : current.filter((id) => id !== otherId);
+            if (next.length) return { ...g, [field]: next };
+            const { [field]: _dropped, ...rest } = g;
+            return rest;
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+    []
+  );
+
+  const linkGuests = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('linkedGuestIds', guestIdA, guestIdB, true),
+    [setMutual]
+  );
+
+  const unlinkGuests = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('linkedGuestIds', guestIdA, guestIdB, false),
+    [setMutual]
+  );
+
+  // "These two must not share a table" — the feuding relatives every guest list has. Auto-seating
+  // honours it; seating them together by hand stays possible, and the board flags it instead.
+  const keepApart = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('apartGuestIds', guestIdA, guestIdB, true),
+    [setMutual]
+  );
+
+  const allowTogether = useCallback(
+    (guestIdA: string, guestIdB: string) => setMutual('apartGuestIds', guestIdA, guestIdB, false),
+    [setMutual]
+  );
 
   const setAllRsvp = useCallback((rsvp: RsvpStatus | undefined) => {
     setState((prev) => {
@@ -497,24 +525,6 @@ export function useEventState() {
     });
   }, []);
 
-  const unlinkGuests = useCallback((guestIdA: string, guestIdB: string) => {
-    setState((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        guests: prev.guests.map((g) => {
-          if (g.id === guestIdA || g.id === guestIdB) {
-            const otherId = g.id === guestIdA ? guestIdB : guestIdA;
-            if (!g.linkedGuestIds?.includes(otherId)) return g;
-            return { ...g, linkedGuestIds: g.linkedGuestIds.filter((id) => id !== otherId) };
-          }
-          return g;
-        }),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  }, []);
-
   return {
     state,
     ready,
@@ -545,6 +555,8 @@ export function useEventState() {
     removeGuest,
     linkGuests,
     unlinkGuests,
+    keepApart,
+    allowTogether,
     setAllRsvp,
     unseatAll,
     addTag,

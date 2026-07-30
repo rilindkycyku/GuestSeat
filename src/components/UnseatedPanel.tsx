@@ -7,12 +7,22 @@ interface UnseatedPanelProps {
   guests: Guest[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
+  /** Guests sharing a table with someone they're kept apart from, by guest id. */
+  feudBadges: Map<string, { title: string }>;
   tags: TableTag[];
   onGuestClick: (guest: Guest) => void;
   onAutoSeat: () => void;
 }
 
-export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestClick, onAutoSeat }: UnseatedPanelProps) {
+export function UnseatedPanel({
+  guests,
+  matchedIds,
+  linkBadges,
+  feudBadges,
+  tags,
+  onGuestClick,
+  onAutoSeat,
+}: UnseatedPanelProps) {
   const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: 'unseated' });
   const isEmpty = guests.length === 0;
@@ -42,7 +52,9 @@ export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestCli
         </button>
       )}
       {/* When empty, collapse to a slim bar on mobile (still a valid drop target); full panel on desktop. */}
-      <div className={`${isEmpty ? 'hidden lg:block' : ''} flex-1 overflow-y-auto space-y-1.5 pr-1 mt-2 ${isEmpty ? '' : 'min-h-[80px]'}`}>
+      <div
+        className={`${isEmpty ? 'hidden lg:block' : ''} flex-1 overflow-y-auto space-y-1.5 pr-1 mt-2 ${isEmpty ? '' : 'min-h-[80px]'}`}
+      >
         {isEmpty && (
           <p className="text-xs text-slate-400 text-center py-6">
             {t('unseated.allSeated')}
@@ -56,6 +68,7 @@ export function UnseatedPanel({ guests, matchedIds, linkBadges, tags, onGuestCli
             guest={g}
             highlighted={matchedIds ? matchedIds.has(g.id) : false}
             linkBadge={linkBadges.get(g.id)}
+            feudBadge={feudBadges.get(g.id)}
             tags={tags}
             onClick={() => onGuestClick(g)}
           />

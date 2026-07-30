@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { EventState } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
+import { useDialog } from '../hooks/useDialog';
 import { tableDisplayName } from '../lib/tableDisplay';
 import { tagColorClasses } from '../lib/tagColors';
 
@@ -22,6 +23,9 @@ export function CheckInScreen({
 }) {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
+  // A full-screen takeover rather than a panel on a backdrop, so it lays itself out — but it is
+  // still a dialog: it traps focus, closes on Escape and hands focus back when it does.
+  const panelRef = useDialog(onClose);
 
   const tableById = useMemo(() => new Map(state.tables.map((tb) => [tb.id, tb])), [state.tables]);
   const guestById = useMemo(() => new Map(state.guests.map((g) => [g.id, g])), [state.guests]);
@@ -45,7 +49,14 @@ export function CheckInScreen({
   const pct = attendees.length ? Math.round((arrivedCount / attendees.length) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-950">
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('checkin.title')}
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-950 outline-none"
+    >
       <header className="shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-lg shrink-0">

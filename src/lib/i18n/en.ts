@@ -1,5 +1,6 @@
 export const en = {
   common: {
+    loading: 'Loading…',
     cancel: 'Cancel',
     save: 'Save',
     delete: 'Delete',
@@ -34,6 +35,7 @@ export const en = {
     declinedShort: 'not coming',
   },
   settings: {
+    version: 'Version {{version}}',
     title: 'Settings',
     content: 'Event & invitation',
     seedTraditions: 'Pre-fill Albanian traditions',
@@ -73,6 +75,12 @@ export const en = {
     developedBy: 'Developed by',
   },
   autoSeat: {
+    unplacedTitle: 'Not everyone found a seat',
+    unplacedNoRoom: 'No table had {{count}} free seats together.',
+    unplacedKeepApart: 'The only tables with room hold someone they must not sit with.',
+    unplacedHint: 'Add a table, raise a capacity, or relax a keep-apart, then auto-seat again.',
+    seatedAnyway: '{{count}} seated.',
+    feudWarning: '{{name}} must not sit with {{other}} — seated anyway.',
     action: 'Auto-seat',
     confirm: 'Auto-seat {{count}} unseated guests into the available tables?',
     seated: 'Seated {{count}} guests.',
@@ -211,7 +219,35 @@ export const en = {
     allSeated: 'Everyone is seated 🎉',
     dragHint: 'Drag guests here to unseat them.',
   },
+  dnd: {
+    instructions:
+      'Press Space to pick up a guest, then use the arrow keys to move between tables and Space again to seat them. Press Enter on a guest to edit them, or Escape to cancel a move.',
+    pickedUp: 'Picked up {{guest}}. Use the arrow keys to choose a table, then press Space to seat them.',
+    overTable: '{{guest}} is over {{table}}.',
+    overUnseated: '{{guest}} is over the unseated list.',
+    seated: '{{guest}} was seated at {{table}}.',
+    unseatedGuest: '{{guest}} was moved back to the unseated list.',
+    droppedNowhere: '{{guest}} was left where they were.',
+    cancelled: 'Move cancelled. {{guest}} stayed where they were.',
+  },
+  findSeat: {
+    title: 'Find your seat',
+    yourName: 'Your name',
+    placeholder: 'Start typing your name…',
+    hint: 'Type at least two letters of your name.',
+    noMatch: 'No guest by that name. Try your surname, or ask at the door.',
+    noTableYet: 'No table assigned yet.',
+    openFullPlan: 'I’m helping to plan — open the full list',
+  },
   guestEditor: {
+    apartGuests: 'Keep apart',
+    apartGuestsHint:
+      'Guests who must not share a table. Auto-seating keeps them apart; seating them together by hand is still allowed, and the board flags it.',
+    apartClash: '{{name}} is at {{table}} — the same table as this guest.',
+    apartWarning: 'Must not sit with {{names}}, who are at this table.',
+    allowTogether: 'Remove',
+    searchToKeepApart: 'Search a guest to keep apart…',
+    cantKeepLinkedApart: 'Linked guests can’t also be kept apart — unlink them first.',
     title: 'Edit guest',
     name: 'Name',
     surname: 'Surname',
@@ -359,6 +395,8 @@ export const en = {
     pdfDesc: 'Printable seating chart',
     tableCards: 'Table cards',
     tableCardsDesc: 'Cut-out cards, 4 per page',
+    placeCards: 'Place cards',
+    placeCardsDesc: 'One folded card per guest, 4 per page',
     excel: 'Excel',
     excelDesc: 'Styled spreadsheet (.xlsx)',
     eventDetails: 'Event details…',
@@ -407,6 +445,10 @@ export const en = {
     },
   },
   share: {
+    qrModePlan: 'Full plan',
+    qrModePlanDesc: 'Opens the whole list — for a co-planner or helper',
+    qrModeGuest: 'For guests',
+    qrModeGuestDesc: 'Opens "find your seat" — nothing can be edited',
     share: 'Share via apps…',
     shareDesc: 'Send via WhatsApp, email…',
     shareText: 'Here is the seating list for {{name}}',

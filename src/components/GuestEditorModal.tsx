@@ -5,6 +5,7 @@ import { tableDisplayName } from '../lib/tableDisplay';
 import { tagColorClasses } from '../lib/tagColors';
 import { TableSelect } from './TableSelect';
 import { ModalHeader } from './ModalHeader';
+import { ModalShell } from './ModalShell';
 
 interface GuestEditorModalProps {
   guest: Guest;
@@ -17,6 +18,10 @@ interface GuestEditorModalProps {
   onClose: () => void;
   onLink: (otherGuestId: string) => void;
   onUnlink: (otherGuestId: string) => void;
+  /** Mark this guest and another as "must not share a table". */
+  onKeepApart: (otherGuestId: string) => void;
+  /** Drop a keep-apart between this guest and another. */
+  onAllowTogether: (otherGuestId: string) => void;
   onSeatGuest: (guestId: string, tableId: string | null) => void;
   /** Toggle a custom tag (group) on this guest. */
   onToggleTag: (tagId: string) => void;
@@ -39,6 +44,8 @@ export function GuestEditorModal({
   onClose,
   onLink,
   onUnlink,
+  onKeepApart,
+  onAllowTogether,
   onSeatGuest,
   onToggleTag,
   onCreateTag,
@@ -51,6 +58,7 @@ export function GuestEditorModal({
   const [tableId, setTableId] = useState<string>(guest.tableId ?? '');
   const [rsvp, setRsvp] = useState<RsvpStatus | undefined>(guest.rsvp);
   const [linkSearch, setLinkSearch] = useState('');
+  const [apartSearch, setApartSearch] = useState('');
   const [tagDraft, setTagDraft] = useState('');
 
   const guestTagIds = guest.tagIds ?? [];
@@ -85,13 +93,33 @@ export function GuestEditorModal({
     const q = linkSearch.trim().toLowerCase();
     if (!q) return { linkResults: [] as Guest[], hasExcludedByTable: false };
     const linkedIds = new Set(guest.linkedGuestIds ?? []);
+    const apartIds = new Set(guest.apartGuestIds ?? []);
     const canLinkWith = (g: Guest) => guest.tableId == null || g.tableId == null || g.tableId === guest.tableId;
     const nameMatches = allGuests
-      .filter((g) => g.id !== guest.id && !linkedIds.has(g.id))
+      // Someone kept apart can't also be linked — the two constraints would contradict each other,
+      // so the pair is never offered here (remove the keep-apart first).
+      .filter((g) => g.id !== guest.id && !linkedIds.has(g.id) && !apartIds.has(g.id))
       .filter((g) => `${g.name} ${g.surname ?? ''}`.toLowerCase().includes(q));
     const eligible = nameMatches.filter(canLinkWith).slice(0, 6);
     return { linkResults: eligible, hasExcludedByTable: eligible.length === 0 && nameMatches.length > 0 };
-  }, [linkSearch, allGuests, guest.id, guest.linkedGuestIds, guest.tableId]);
+  }, [linkSearch, allGuests, guest.id, guest.linkedGuestIds, guest.apartGuestIds, guest.tableId]);
+
+  const apartGuests = (guest.apartGuestIds ?? [])
+    .map((id) => guestById.get(id))
+    .filter((g): g is Guest => g !== undefined)
+    .sort((a, b) => fullName(a).localeCompare(fullName(b)));
+
+  const { apartResults, hasExcludedByLink } = useMemo(() => {
+    const q = apartSearch.trim().toLowerCase();
+    if (!q) return { apartResults: [] as Guest[], hasExcludedByLink: false };
+    const apartIds = new Set(guest.apartGuestIds ?? []);
+    const linkedIds = new Set(guest.linkedGuestIds ?? []);
+    const nameMatches = allGuests
+      .filter((g) => g.id !== guest.id && !apartIds.has(g.id))
+      .filter((g) => `${g.name} ${g.surname ?? ''}`.toLowerCase().includes(q));
+    const eligible = nameMatches.filter((g) => !linkedIds.has(g.id)).slice(0, 6);
+    return { apartResults: eligible, hasExcludedByLink: eligible.length === 0 && nameMatches.length > 0 };
+  }, [apartSearch, allGuests, guest.id, guest.apartGuestIds, guest.linkedGuestIds]);
 
   const save = () => {
     if (!name.trim()) return;
@@ -107,17 +135,14 @@ export function GuestEditorModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:px-4"
-      onClick={onClose}
+    <ModalShell
+      onClose={onClose}
+      label={t('guestEditor.title')}
+      panelClassName="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
     >
-      <div
-        className="w-full sm:max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
+      <ModalHeader icon="🧑" title={t('guestEditor.title')} onClose={onClose} />
 
-        <div className="overflow-y-auto p-6">
+      <div className="overflow-y-auto p-6">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           {t('guestEditor.name')} <span className="text-red-500">*</span>
         </label>
@@ -141,7 +166,11 @@ export function GuestEditorModal({
         <div className="grid grid-cols-3 gap-1.5 mb-3">
           {(
             [
-              { value: undefined, label: t('rsvp.pending'), active: 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white' },
+              {
+                value: undefined,
+                label: t('rsvp.pending'),
+                active: 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white',
+              },
               { value: 'confirmed', label: t('rsvp.confirmed'), active: 'bg-emerald-500 text-white' },
               { value: 'declined', label: t('rsvp.declined'), active: 'bg-red-500 text-white' },
             ] as const
@@ -161,7 +190,9 @@ export function GuestEditorModal({
           ))}
         </div>
 
-        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('guestEditor.table')}</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+          {t('guestEditor.table')}
+        </label>
         <div className="mb-3">
           <TableSelect tables={tables} tags={tags} seatedCount={seatedCount} value={tableId} onChange={setTableId} />
         </div>
@@ -321,6 +352,87 @@ export function GuestEditorModal({
           </div>
         </div>
 
+        <div className="mb-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+          <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+            🚫 {t('guestEditor.apartGuests')}
+          </label>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{t('guestEditor.apartGuestsHint')}</p>
+
+          {apartGuests.length > 0 && (
+            <ul className="space-y-1.5 mb-2">
+              {apartGuests.map((ag) => {
+                const agTable = ag.tableId ? tableById.get(ag.tableId) : undefined;
+                // The one case worth calling out: they're already sharing a table with this guest.
+                const clashing = agTable != null && ag.tableId === (tableId || guest.tableId);
+                return (
+                  <li
+                    key={ag.id}
+                    className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 ${
+                      clashing
+                        ? 'bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-300 dark:ring-amber-800'
+                        : 'bg-slate-50 dark:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-xs text-slate-700 dark:text-slate-200 truncate">
+                      {clashing
+                        ? t('guestEditor.apartClash', {
+                            name: fullName(ag),
+                            table: tableDisplayName(agTable, t),
+                          })
+                        : agTable
+                          ? t('guestEditor.linkedSeatedAt', {
+                              name: fullName(ag),
+                              table: tableDisplayName(agTable, t),
+                            })
+                          : t('guestEditor.linkedUnseated', { name: fullName(ag) })}
+                    </span>
+                    <button
+                      onClick={() => onAllowTogether(ag.id)}
+                      className="shrink-0 text-[11px] font-medium px-2 py-1 rounded-md text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-950/40"
+                    >
+                      {t('guestEditor.allowTogether')}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="relative">
+            <input
+              value={apartSearch}
+              onChange={(e) => setApartSearch(e.target.value)}
+              placeholder={t('guestEditor.searchToKeepApart')}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+            />
+            {apartSearch.trim() && (
+              <div
+                data-testid="apart-search-results"
+                className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-40 overflow-y-auto"
+              >
+                {apartResults.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-slate-400">
+                    {hasExcludedByLink ? t('guestEditor.cantKeepLinkedApart') : t('guestEditor.noMatches')}
+                  </p>
+                )}
+                {apartResults.map((g) => (
+                  <button
+                    key={g.id}
+                    data-testid="apart-result"
+                    onClick={() => {
+                      onKeepApart(g.id);
+                      setApartSearch('');
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    {fullName(g)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={onDelete}
@@ -344,8 +456,7 @@ export function GuestEditorModal({
             </button>
           </div>
         </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

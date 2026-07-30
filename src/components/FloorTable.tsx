@@ -15,6 +15,8 @@ interface FloorTableProps {
   assignedTagIds: string[];
   matchedIds: Set<string> | null;
   linkBadges: Map<string, { status: 'together' | 'apart'; title: string }>;
+  /** Guests sharing a table with someone they're kept apart from, by guest id. */
+  feudBadges: Map<string, { title: string }>;
   highlighted: boolean;
   onEditCapacity: () => void;
   onDuplicateTable: () => void;
@@ -122,6 +124,7 @@ export function FloorTable({
   assignedTagIds,
   matchedIds,
   linkBadges,
+  feudBadges,
   highlighted,
   onEditCapacity,
   onDuplicateTable,
@@ -141,7 +144,8 @@ export function FloorTable({
 
   // Resolve each guest's group tags (color-coded) from the event's tag list.
   const tagById = useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]);
-  const guestTags = (g: Guest): TableTag[] => (g.tagIds ?? []).map((id) => tagById.get(id)).filter((x): x is TableTag => !!x);
+  const guestTags = (g: Guest): TableTag[] =>
+    (g.tagIds ?? []).map((id) => tagById.get(id)).filter((x): x is TableTag => !!x);
   const seatTitle = (g: Guest) => {
     const groups = guestTags(g).map((tag) => tag.label);
     return `${fullName(g)}${groups.length ? ` — ${groups.join(', ')}` : ''}${rsvpTitle(g)}`;
@@ -204,12 +208,7 @@ export function FloorTable({
               {tag.label}
             </span>
           ))}
-          <TableTagPicker
-            tags={tags}
-            tableTagIds={assignedTagIds}
-            onToggle={onToggleTag}
-            onCreateTag={onCreateTag}
-          />
+          <TableTagPicker tags={tags} tableTagIds={assignedTagIds} onToggle={onToggleTag} onCreateTag={onCreateTag} />
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
@@ -229,18 +228,16 @@ export function FloorTable({
         </div>
       </div>
 
-      <div
-        className={`relative w-full my-2 ${
-          isLong ? 'h-32 sm:h-36' : 'aspect-square max-w-[220px] mx-auto'
-        }`}
-      >
+      <div className={`relative w-full my-2 ${isLong ? 'h-32 sm:h-36' : 'aspect-square max-w-[220px] mx-auto'}`}>
         {/* The table itself */}
         <div
           title={displayName}
           className={`absolute flex flex-col items-center justify-center text-center px-1.5 border-4 ${
             isLong ? 'inset-x-[2%] top-[32%] h-[36%] rounded-2xl' : 'inset-[27%] rounded-full'
           } ${
-            table.side ? SIDE_RING[table.side] : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
+            table.side
+              ? SIDE_RING[table.side]
+              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
           }`}
         >
           <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight max-w-full truncate">
@@ -294,6 +291,7 @@ export function FloorTable({
           {orderedGuests.map((g) => {
             const isMatch = matchedIds ? matchedIds.has(g.id) : false;
             const badge = linkBadges.get(g.id);
+            const feud = feudBadges.get(g.id);
             return (
               <button
                 key={g.id}
@@ -308,7 +306,11 @@ export function FloorTable({
               >
                 <span
                   className={`shrink-0 w-1.5 h-1.5 rounded-full ${
-                    g.rsvp === 'confirmed' ? 'bg-emerald-500' : g.rsvp === 'declined' ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-600'
+                    g.rsvp === 'confirmed'
+                      ? 'bg-emerald-500'
+                      : g.rsvp === 'declined'
+                        ? 'bg-red-500'
+                        : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 />
                 <span
@@ -329,8 +331,13 @@ export function FloorTable({
                     {tag.label}
                   </span>
                 ))}
+                {feud && (
+                  <span title={feud.title} className={`${badge ? '' : 'ml-auto'} shrink-0 text-[9px]`}>
+                    🚫
+                  </span>
+                )}
                 {badge && (
-                  <span title={badge.title} className="ml-auto shrink-0 text-[9px] opacity-70">
+                  <span title={badge.title} className={`${feud ? '' : 'ml-auto'} shrink-0 text-[9px] opacity-70`}>
                     {badge.status === 'together' ? '🔗' : '🔗⚠️'}
                   </span>
                 )}
