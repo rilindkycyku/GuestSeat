@@ -338,6 +338,7 @@ export default function App() {
     askConfirm({
       message: t('settings.markAllComingConfirm', { count: guestCount }),
       confirmLabel: t('settings.markAllComing'),
+      confirmAgain: { message: t('settings.markAllComingConfirmFinal', { count: guestCount }) },
       onConfirm: () => {
         const snapshot = state;
         runWithUndo(snapshot, () => setAllRsvp('confirmed'), t('settings.markedAllComing'));
@@ -349,6 +350,7 @@ export default function App() {
     askConfirm({
       message: t('settings.markAllPendingConfirm', { count: guestCount }),
       confirmLabel: t('settings.markAllPending'),
+      confirmAgain: { message: t('settings.markAllPendingConfirmFinal', { count: guestCount }) },
       onConfirm: () => {
         const snapshot = state;
         runWithUndo(snapshot, () => setAllRsvp(undefined), t('settings.markedAllPending'));
@@ -357,10 +359,12 @@ export default function App() {
   };
 
   const handleUnseatAll = () => {
+    const seatedGuests = state?.guests.filter((g) => g.tableId).length ?? 0;
     askConfirm({
       message: t('settings.unseatAllConfirm'),
       confirmLabel: t('settings.unseatAll'),
       danger: true,
+      confirmAgain: { message: t('settings.unseatAllConfirmFinal', { count: seatedGuests }) },
       onConfirm: () => {
         const snapshot = state;
         runWithUndo(snapshot, () => unseatAll(), t('settings.unseatedAll'));
@@ -374,6 +378,12 @@ export default function App() {
       message: t('header.resetConfirm'),
       confirmLabel: t('settings.resetData'),
       danger: true,
+      confirmAgain: {
+        message: t('header.resetConfirmFinal', {
+          guests: snapshot?.guests.length ?? 0,
+          tables: snapshot?.tables.length ?? 0,
+        }),
+      },
       onConfirm: () => {
         resetAll();
         setSettingsOpen(false);
@@ -412,10 +422,12 @@ export default function App() {
   };
 
   const handleResetArrivals = () => {
+    const arrived = state?.guests.filter((g) => g.arrived).length ?? 0;
     askConfirm({
       message: t('checkin.resetConfirm'),
       confirmLabel: t('checkin.reset'),
       danger: true,
+      confirmAgain: { message: t('checkin.resetConfirmFinal', { count: arrived }) },
       onConfirm: () => resetArrivals(),
     });
   };
@@ -460,6 +472,9 @@ export default function App() {
       message: t('events.deleteConfirm', { name }),
       confirmLabel: t('events.delete'),
       danger: true,
+      confirmAgain: {
+        message: t('events.deleteConfirmFinal', { name, guests: ev.guestCount, tables: ev.tableCount }),
+      },
       onConfirm: () => {
         deleteEvent(ev.id);
         showToast(t('events.deleted', { name }));

@@ -9,6 +9,26 @@ folded into the release they belong to.
 
 ---
 
+## 1.14.0
+
+The two screens where a mistake costs the most: the guest's own lookup, and the buttons that
+rewrite the whole list.
+
+- **A guest can tell which row is theirs.** Two cousins called Butrinti used to produce two
+  identical cards. Each result now carries what the planner already recorded about who a guest
+  belongs to — their group tags, the people they're linked to, the table's side, their meal — and
+  cards that still share a name say how many namesakes there are, including the common case where
+  they all sit at one table and the choice doesn't matter. Notes stay off the screen: they hold
+  dietary needs written for the host, not for a phone held up at the door.
+- **The lookup survives a phone keyboard.** "Kycyku" finds "Kyçyku", name and surname can be typed
+  in either order, and a fully typed name outranks someone who merely contains it. Too many matches
+  now asks for a surname instead of quietly cutting the list.
+- **Whole-list actions ask twice.** Unseating everyone, resetting every RSVP, wiping the arrivals
+  and deleting an event now take a second, deliberate confirmation that states the damage in
+  numbers — how many guests, how many tables — and puts the keyboard on Cancel, so a held Enter
+  can't carry anyone through both steps.
+- Tests: 15 more, covering the guest lookup's matching, ranking and same-name handling.
+
 ## 1.13.0
 
 Data fidelity, accessibility, and the parts of the plan that face guests.
