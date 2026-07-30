@@ -15,14 +15,12 @@ export function Credits({ compact = false }: { compact?: boolean }) {
   return (
     <footer className={`text-center ${compact ? 'pt-4 pb-1' : 'py-8'}`}>
       <div className="mx-auto mb-4 h-px w-16 bg-slate-200 dark:bg-slate-800" />
-      <p className="text-sm font-bold uppercase tracking-[0.25em] text-slate-700 dark:text-slate-200">
-        GuestSeat
-        <span
-          title={t('settings.version', { version: __APP_VERSION__ })}
-          className="ml-1.5 align-middle text-[10px] font-semibold normal-case tracking-normal tabular-nums text-slate-400 dark:text-slate-500"
-        >
-          v{__APP_VERSION__}
-        </span>
+      <p className="text-sm font-bold uppercase tracking-[0.25em] text-slate-700 dark:text-slate-200">GuestSeat</p>
+      <p
+        title={t('settings.version', { version: __APP_VERSION__ })}
+        className="mt-1 text-[10px] font-semibold tracking-wider tabular-nums text-slate-400 dark:text-slate-500"
+      >
+        v{__APP_VERSION__}
       </p>
       <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
         {t('settings.developedBy')}
