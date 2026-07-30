@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { useDialog } from '../hooks/useDialog';
+import { useExportActions } from '../hooks/useExportActions';
 import { ExportMenu } from './ExportMenu';
 import type { EventState } from '../types';
 
@@ -77,7 +78,7 @@ function NavDrawer({ label, onClose, children }: { label: string; onClose: () =>
   }, []);
 
   return (
-    <div className="md:hidden fixed inset-0 z-50" data-print="hide">
+    <div className="lg:hidden fixed inset-0 z-50" data-print="hide">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
@@ -95,7 +96,7 @@ function NavDrawer({ label, onClose, children }: { label: string; onClose: () =>
 
 /**
  * The app's header: the event's name and seating progress, the search field, and every action that
- * isn't tied to a single table. From `md` up the actions sit in the bar itself; below that they move
+ * isn't tied to a single table. From `lg` up the actions sit in the bar itself; below that they move
  * into a drawer, so a phone keeps the header down to a title, a search box and the progress line.
  */
 export function NavBar({
@@ -121,6 +122,7 @@ export function NavBar({
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const exportActions = useExportActions({ state, onToast, onShowInvitation, onShowQr });
 
   const totalGuests = state.guests.length;
   const totalSeated = state.guests.filter((g) => g.tableId).length;
@@ -191,7 +193,7 @@ export function NavBar({
             )}
           </div>
 
-          <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <button
               onClick={onAddGuest}
               className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 shadow-sm shadow-indigo-600/20"
@@ -210,12 +212,8 @@ export function NavBar({
             >
               {t('header.import')}
             </button>
-            <ExportMenu
-              state={state}
-              onToast={onToast}
-              onShowInvitation={onShowInvitation}
-              onShowQr={onShowQr}
-            />
+            <ExportMenu state={state} kind="share" onToast={onToast} onShowQr={onShowQr} />
+            <ExportMenu state={state} kind="export" onToast={onToast} onShowInvitation={onShowInvitation} />
             <button onClick={toggleTheme} className={iconButtonClass} title={themeLabel} aria-label={t('settings.theme')}>
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
@@ -237,7 +235,7 @@ export function NavBar({
             </button>
           </div>
 
-          <div className="md:hidden flex items-center gap-1.5 shrink-0">
+          <div className="lg:hidden flex items-center gap-1.5 shrink-0">
             <button onClick={onOpenSettings} className={iconButtonClass} aria-label={t('settings.title')}>
               ⚙️
             </button>
@@ -343,15 +341,23 @@ export function NavBar({
             <DrawerRow icon="🧑" label={t('nav.guest')} onClick={pick(onAddGuest)} />
             <DrawerRow icon="🪑" label={t('nav.table')} onClick={pick(onAddTable)} />
 
-            <GroupLabel>{t('nav.data')}</GroupLabel>
-            <DrawerRow icon="📥" label={t('header.import')} onClick={pick(() => importInputRef.current?.click())} />
-            <ExportMenu
-              state={state}
-              inline
-              onToast={onToast}
-              onShowInvitation={pick(onShowInvitation)}
-              onShowQr={pick(onShowQr)}
-            />
+            {/* Flat, not nested: every share and export is one tap from the drawer, under the same
+                headings the desktop dropdowns use. An accordion here only pushed the groups below
+                it off the screen. */}
+            {/* Fragments, not wrapper elements: the group labels draw their own dividers off
+                `:first-child`, which only works while they're all siblings in this list. */}
+            {[...exportActions.share, ...exportActions.output].map((group) => (
+              <Fragment key={group.key}>
+                <GroupLabel>{group.label}</GroupLabel>
+                {/* Importing is the one file action that isn't an export, so it leads that group. */}
+                {group.key === 'files' && (
+                  <DrawerRow icon="📥" label={t('header.import')} onClick={pick(() => importInputRef.current?.click())} />
+                )}
+                {group.actions.map((action) => (
+                  <DrawerRow key={action.key} icon={action.icon} label={action.label} onClick={pick(action.onClick)} />
+                ))}
+              </Fragment>
+            ))}
 
             <GroupLabel>{t('nav.event')}</GroupLabel>
             <DrawerRow icon="🎉" label={t('checkin.title')} onClick={pick(onOpenCheckIn)} />

@@ -413,6 +413,7 @@ export const sq = {
   },
   export: {
     label: 'Eksporto',
+    shareLabel: 'Ndaj',
     groups: {
       share: 'Ndaj lidhjen',
       print: 'Printo (PDF)',

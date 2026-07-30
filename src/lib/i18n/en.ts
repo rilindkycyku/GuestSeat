@@ -411,6 +411,7 @@ export const en = {
   },
   export: {
     label: 'Export',
+    shareLabel: 'Share',
     groups: {
       share: 'Share the link',
       print: 'Print (PDF)',

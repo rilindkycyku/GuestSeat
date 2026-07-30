@@ -760,7 +760,7 @@ export default function App() {
           </div>
         </main>
         {/* Extra bottom room on phones so the fixed quick-add button doesn't float over the credit. */}
-        <div className="pb-20 md:pb-0">
+        <div className="pb-20 lg:pb-0">
           <Credits />
         </div>
       </div>
@@ -769,9 +769,9 @@ export default function App() {
           day-of check-in and share QR — so they aren't buried behind the nav drawer on phones (where
           this app mostly lives). Shown at exactly the widths where the nav bar collapses. */}
       {quickAddOpen && (
-        <div className="md:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
+        <div className="lg:hidden fixed inset-0 z-30" onClick={() => setQuickAddOpen(false)} aria-hidden />
       )}
-      <div data-print="hide" className="md:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+      <div data-print="hide" className="lg:hidden fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
         {quickAddOpen && (
           <>
             <button
