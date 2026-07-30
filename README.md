@@ -61,6 +61,18 @@ npm install
 npm run dev
 ```
 
+## 🔢 Versioning
+
+The version shown in the app's footer lives only in `package.json` and is injected at build time
+(`__APP_VERSION__`), so it can't drift from the number a release is tagged with.
+
+`1.0` was the first working release; every merged pull request since bumps the **minor**, which makes
+the number checkable against the history at any time:
+
+```bash
+git log --merges --oneline main | grep -c 'pull request'   # merged PRs = the minor
+```
+
 ## ✅ Tests & checks
 
 ```bash

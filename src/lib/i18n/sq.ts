@@ -37,6 +37,7 @@ export const sq = {
     declinedShort: 'nuk vjen',
   },
   settings: {
+    version: 'Versioni {{version}}',
     title: 'Cilësimet',
     content: 'Eventi & ftesa',
     seedTraditions: 'Parambush traditat shqiptare',

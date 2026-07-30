@@ -35,6 +35,7 @@ export const en = {
     declinedShort: 'not coming',
   },
   settings: {
+    version: 'Version {{version}}',
     title: 'Settings',
     content: 'Event & invitation',
     seedTraditions: 'Pre-fill Albanian traditions',
