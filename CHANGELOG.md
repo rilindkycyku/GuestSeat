@@ -13,15 +13,24 @@ folded into the release they belong to.
 
 A guide, so the app explains itself.
 
-- **"How it works", inside the app.** Thirteen sections — starting out, importing a list, seating by
-  hand and by keyboard, what a guest can carry, tables, auto-seating, the invitation, sharing,
-  check-in, printing, backups, sync, and where the data actually lives — in both languages, closed
-  until asked for, because a guide that unfolds all at once is a manual and manuals do not get read.
-  Reachable from Settings, from the drawer, and from the very first screen, before anyone has any
-  data of their own to risk.
-- **It opens where you got stuck.** The sync panel's own "how this works" lands *on* the sync
-  section, scrolled to it, rather than at the top of a wall of text.
-- The same walkthrough is now in the README for anyone reading on GitHub.
+- **Udhëzuesi, inside the app** — one entry per screen, sixteen of them, grouped the way the app is:
+  planning the seating, the event itself, your data. Each opens with what the screen is for, then
+  numbered steps that name the button to press, then what is worth knowing before you touch it.
+  Albanian and English, and reachable from Settings, from the drawer, and from the very first screen
+  — before anyone has data of their own to risk.
+- **Searchable, including the steps.** Somebody typing "QR", "Excel" or "kopje" does not know which
+  screen answers — that is why they are typing. Search reads every word of an entry, ignores accents
+  and case, and opens the list by itself, because results hidden behind a toggle are a box that does
+  not answer.
+- **It opens where you got stuck**, and offers to open what it describes. The sync panel's own "how
+  this works" lands on the sync entry; the entry then has a button that puts that screen on the
+  screen, since "show me" beats "go and find it".
+- **It reads straight through.** The foot of each entry leads to the next, and "see also" points at
+  the two or three that answer the question this one raises — so nobody has to go back to the list to
+  carry on.
+- Tests: 12 more, checking that every entry exists in both languages with real copy in every step,
+  that "see also" never points at nothing, and that the search finds the entry a reader would expect
+  from a word they know.
 
 ## 1.15.0
 

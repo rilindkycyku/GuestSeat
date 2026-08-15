@@ -5,7 +5,6 @@ import { ModalShell } from './ModalShell';
 import type { ConfirmOptions } from './ConfirmModal';
 import type { SyncState } from '../hooks/useSync';
 import { SyncPanel } from './sync/SyncPanel';
-import type { GuideSection } from './GuideModal';
 import { BackupError, exportBackup, importBackup, readBackupFile } from '../lib/backup';
 import type { EventSummary } from '../lib/db';
 
@@ -36,7 +35,7 @@ export function DataModal({
   /** Re-read what is on disk — an import rewrites events behind the app's back. */
   onImported: () => void | Promise<void>;
   /** Open the guide, at the section that explains this screen. */
-  onOpenGuide: (section?: GuideSection) => void;
+  onOpenGuide: (entry?: string) => void;
   onClose: () => void;
 }) {
   const { t } = useLanguage();

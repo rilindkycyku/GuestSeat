@@ -1,170 +1,313 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
-import { ModalHeader } from './ModalHeader';
-import { ModalShell } from './ModalShell';
+import { useDialog } from '../hooks/useDialog';
+import {
+  GUIDE_GROUPS,
+  GUIDE_START,
+  guideById,
+  guideNeighbours,
+  searchGuide,
+  type GuideEntry,
+  type GuideScreen,
+} from '../lib/guide';
 
 /**
- * The whole app explained, in the app.
+ * The guide: one entry per screen of the app, on a screen of its own.
  *
- * A README is where a developer looks; a wedding planner opening this on a phone the week before the
- * event never sees one. So the guide lives here, in both languages, reachable from Settings, from
- * the drawer, and from the very first screen — and it opens *at* the part you asked about: the sync
- * panel's own "how do I set this up?" lands on the sync section rather than at the top of a wall of
- * text.
+ * A README is where a developer looks; a planner opening this on a phone the week before the wedding
+ * never sees one. So the whole thing lives in the app, in both languages — searchable, because
+ * somebody typing "QR" or "kopje" does not know which screen answers, which is exactly why they are
+ * typing.
  *
- * Everything is closed except the section you came for. A guide that unfolds all at once is a manual,
- * and manuals do not get read.
+ * Three things make it a guide rather than a wall of text. It opens **where you got stuck** (the sync
+ * panel's own help lands on the sync entry). It offers to **open the screen** it is describing, since
+ * "show me" beats "go and find it". And it reads **straight through** — the foot of each entry leads
+ * to the next, so nobody has to return to the list to carry on.
  */
+export function GuideModal({
+  initialEntry,
+  screenActions = {},
+  onClose,
+}: {
+  initialEntry?: string;
+  /** What the app can open from here. An entry whose screen is missing simply shows no button. */
+  screenActions?: Partial<Record<GuideScreen, () => void>>;
+  onClose: () => void;
+}) {
+  const { t, tList, tSteps } = useLanguage();
+  const panelRef = useDialog<HTMLDivElement>(onClose);
+  const [activeId, setActiveId] = useState(() => (guideById(initialEntry) ? initialEntry! : GUIDE_START));
+  const [query, setQuery] = useState('');
+  // On a phone the list of entries would push the text off the screen, so it stays folded until
+  // asked for. From `lg` up it is always open and this button is not rendered at all.
+  const [listOpen, setListOpen] = useState(false);
+  const articleRef = useRef<HTMLElement>(null);
+  const firstRender = useRef(true);
 
-/** The order they appear in, with the icon each one is known by elsewhere in the app. */
-const SECTIONS = [
-  { id: 'start', icon: '🚀' },
-  { id: 'importing', icon: '📥' },
-  { id: 'board', icon: '🪑' },
-  { id: 'guests', icon: '🧑' },
-  { id: 'tables', icon: '⭕' },
-  { id: 'autoSeat', icon: '✨' },
-  { id: 'invitation', icon: '💌' },
-  { id: 'sharing', icon: '📱' },
-  { id: 'checkin', icon: '🎉' },
-  { id: 'exports', icon: '🖨️' },
-  { id: 'backup', icon: '💾' },
-  { id: 'sync', icon: '☁️' },
-  { id: 'privacy', icon: '🔒' },
-] as const;
+  const active = guideById(activeId) ?? guideById(GUIDE_START)!;
+  const { previous, next } = guideNeighbours(active.id);
 
-export type GuideSection = (typeof SECTIONS)[number]['id'];
-
-/**
- * Bold the way the copy writes it — `**like this**` — because a step that says *which* button to
- * press should let the button stand out. Deliberately nothing else: this is one guide's copy, not a
- * Markdown renderer, and a half-built one would be a bug waiting for the first stray asterisk.
- */
-function Rich({ text }: { text: string }) {
-  const parts = text.split(/\*\*(.+?)\*\*/g);
-  return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-slate-800 dark:text-slate-100">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-    </>
+  // Everything an entry says, for the search to read — the steps and the tips too, not just titles.
+  const textOf = useMemo(
+    () => (entry: GuideEntry) =>
+      [
+        t(`guide.entries.${entry.id}.title`),
+        t(`guide.entries.${entry.id}.label`),
+        t(`guide.entries.${entry.id}.summary`),
+        ...tSteps(`guide.entries.${entry.id}.steps`).flatMap((step) => [step.title, step.text]),
+        ...tList(`guide.entries.${entry.id}.tips`),
+      ].join(' '),
+    [t, tList, tSteps]
   );
-}
 
-export function GuideModal({ initialSection, onClose }: { initialSection?: GuideSection; onClose: () => void }) {
-  const { t, tList } = useLanguage();
-  const [open, setOpen] = useState<GuideSection | null>(initialSection ?? 'start');
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const openRef = useRef<HTMLDivElement>(null);
+  const results = useMemo(() => searchGuide(query, textOf), [query, textOf]);
+  // Searching opens the list by itself: results hidden behind a toggle are a box that does not answer.
+  const listVisible = listOpen || query.trim().length > 0;
 
-  // Arriving from "how do I set this up?" should land on that section, not leave the reader to find
-  // it. Only on the way in — scrolling afterwards is the reader's business.
+  // Changing entry on a phone happens up at the list, and the text starts below it — without this a
+  // tap looks like it did nothing. The first paint stays where it is.
   useEffect(() => {
-    if (!initialSection || !openRef.current || !bodyRef.current) return;
-    bodyRef.current.scrollTop = openRef.current.offsetTop - 8;
-  }, [initialSection]);
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setListOpen(false);
+    articleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [active.id]);
+
+  const steps = tSteps(`guide.entries.${active.id}.steps`);
+  const tips = tList(`guide.entries.${active.id}.tips`);
+  const openScreen = active.screen ? screenActions[active.screen] : undefined;
+
+  const tabClass = (on: boolean) =>
+    `w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-left transition-colors ${
+      on
+        ? 'bg-indigo-600 text-white font-medium'
+        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+    }`;
 
   return (
-    <ModalShell
-      onClose={onClose}
-      label={t('guide.title')}
-      zClassName="z-[55]"
-      panelClassName="w-full sm:max-w-2xl bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('guide.title')}
+      tabIndex={-1}
+      data-print="hide"
+      className="fixed inset-0 z-[55] flex flex-col bg-slate-50 dark:bg-slate-950 outline-none"
     >
-      <ModalHeader icon="📖" title={t('guide.title')} onClose={onClose} />
+      <header className="shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
+        <div className="flex items-center gap-3 max-w-5xl mx-auto w-full">
+          <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-lg shrink-0">
+            📖
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">{t('guide.title')}</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{t('guide.subtitle')}</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t('common.close')}
+            className="shrink-0 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+          >
+            ✕
+          </button>
+        </div>
+      </header>
 
-      <div ref={bodyRef} className="overflow-y-auto p-4 sm:p-5 space-y-2">
-        <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{t('guide.intro')}</p>
-
-        {SECTIONS.map(({ id, icon }) => {
-          const isOpen = open === id;
-          const body = tList(`guide.sections.${id}.body`);
-          const steps = tList(`guide.sections.${id}.steps`);
-          const tips = tList(`guide.sections.${id}.tips`);
-
-          return (
-            <div
-              key={id}
-              ref={isOpen && id === initialSection ? openRef : undefined}
-              className={`rounded-2xl border transition-colors ${
-                isOpen
-                  ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20'
-                  : 'border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30'
-              }`}
-            >
-              <button
-                onClick={() => setOpen(isOpen ? null : id)}
-                aria-expanded={isOpen}
-                className="w-full flex items-center gap-3 p-3 text-left"
-              >
-                <span className="shrink-0 w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base">
-                  {icon}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {t(`guide.sections.${id}.title`)}
-                  </span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {t(`guide.sections.${id}.summary`)}
-                  </span>
-                </span>
-                <span
-                  className={`shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-                  aria-hidden
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto w-full p-4 grid gap-4 lg:grid-cols-[260px_1fr] items-start">
+          <aside className="lg:sticky lg:top-4 space-y-2">
+            <div className="relative">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('guide.searchPlaceholder')}
+                aria-label={t('guide.searchPlaceholder')}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 ps-8 pe-8 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+              />
+              <span className="absolute start-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" aria-hidden>
+                🔍
+              </span>
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  aria-label={t('guide.searchClear')}
+                  className="absolute end-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
                 >
-                  ›
-                </span>
-              </button>
-
-              {isOpen && (
-                <div className="px-3 pb-4 pt-0 ps-[3.75rem] space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  {body.map((paragraph, i) => (
-                    <p key={i}>
-                      <Rich text={paragraph} />
-                    </p>
-                  ))}
-
-                  {steps.length > 0 && (
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                        {t('guide.stepsTitle')}
-                      </p>
-                      <ol className="list-decimal ps-5 space-y-1.5 marker:text-indigo-400 marker:font-semibold">
-                        {steps.map((step, i) => (
-                          <li key={i}>
-                            <Rich text={step} />
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {tips.length > 0 && (
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                        {t('guide.tipsTitle')}
-                      </p>
-                      <ul className="list-disc ps-5 space-y-1.5 marker:text-slate-300 dark:marker:text-slate-600">
-                        {tips.map((tip, i) => (
-                          <li key={i}>
-                            <Rich text={tip} />
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                  ✕
+                </button>
               )}
             </div>
-          );
-        })}
+
+            {/* On a phone: which entry is open, and the way to see the others. */}
+            <button
+              onClick={() => setListOpen((open) => !open)}
+              aria-expanded={listVisible}
+              className="lg:hidden w-full flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              <span aria-hidden>{active.icon}</span>
+              <span className="flex-1 text-start truncate">{t(`guide.entries.${active.id}.label`)}</span>
+              <span className={`text-slate-400 transition-transform ${listVisible ? 'rotate-90' : ''}`} aria-hidden>
+                ›
+              </span>
+            </button>
+
+            <nav className={`${listVisible ? 'block' : 'hidden'} lg:block space-y-3`} aria-label={t('guide.title')}>
+              {results.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400 px-1">{t('guide.searchEmpty')}</p>
+              ) : (
+                GUIDE_GROUPS.map((group) => {
+                  const inGroup = results.filter((entry) => entry.group === group);
+                  if (inGroup.length === 0) return null;
+                  return (
+                    <div key={group ?? 'lead'} className="space-y-1">
+                      {group && (
+                        <div className="px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          {t(`guide.groups.${group}`)}
+                        </div>
+                      )}
+                      {inGroup.map((entry) => (
+                        <button
+                          key={entry.id}
+                          onClick={() => setActiveId(entry.id)}
+                          aria-current={entry.id === active.id ? 'page' : undefined}
+                          className={tabClass(entry.id === active.id)}
+                        >
+                          <span aria-hidden>{entry.icon}</span>
+                          <span className="truncate">{t(`guide.entries.${entry.id}.label`)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })
+              )}
+            </nav>
+          </aside>
+
+          <article
+            ref={articleRef}
+            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 scroll-mt-4"
+          >
+            <header className="flex items-start gap-3 mb-3">
+              <span className="shrink-0 w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-xl">
+                {active.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                {active.group && (
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {t(`guide.groups.${active.group}`)}
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {t(`guide.entries.${active.id}.title`)}
+                </h2>
+              </div>
+              {openScreen && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    openScreen();
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+                >
+                  {t('guide.openScreen')} ↗
+                </button>
+              )}
+            </header>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t(`guide.entries.${active.id}.summary`)}</p>
+
+            {steps.length > 0 && (
+              <>
+                <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-5 mb-2">
+                  ✅ {t('guide.stepsTitle')}
+                </h3>
+                <ol className="space-y-3">
+                  {steps.map((step, index) => (
+                    <li key={step.title} className="flex gap-3">
+                      <span
+                        className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center justify-center"
+                        aria-hidden
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{step.title}</div>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5">{step.text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+
+            {tips.length > 0 && (
+              <>
+                <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-5 mb-2">
+                  💡 {t('guide.tipsTitle')}
+                </h3>
+                <ul className="list-disc ps-5 space-y-1.5 text-sm text-slate-600 dark:text-slate-300 marker:text-indigo-300 dark:marker:text-indigo-700">
+                  {tips.map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {active.seeAlso && active.seeAlso.length > 0 && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('guide.seeAlso')}</span>
+                {active.seeAlso.map((id) => {
+                  const other = guideById(id);
+                  if (!other) return null;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setActiveId(other.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700"
+                    >
+                      <span aria-hidden>{other.icon}</span>
+                      {t(`guide.entries.${other.id}.label`)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* The guide is also read straight through, not only searched — so the foot of one entry
+                leads to the next instead of asking for a trip back to the list. */}
+            <nav className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              {previous ? (
+                <button
+                  onClick={() => setActiveId(previous.id)}
+                  className="flex items-center gap-2 text-start text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                  <span aria-hidden>‹</span>
+                  <span>
+                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{t('guide.previous')}</span>
+                    {t(`guide.entries.${previous.id}.label`)}
+                  </span>
+                </button>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <button
+                  onClick={() => setActiveId(next.id)}
+                  className="flex items-center gap-2 text-end text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                  <span>
+                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{t('guide.next')}</span>
+                    {t(`guide.entries.${next.id}.label`)}
+                  </span>
+                  <span aria-hidden>›</span>
+                </button>
+              )}
+            </nav>
+          </article>
+        </div>
       </div>
-    </ModalShell>
+    </div>
   );
 }

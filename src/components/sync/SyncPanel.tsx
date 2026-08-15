@@ -106,7 +106,7 @@ export function SyncPanel({
   sync: SyncState;
   askConfirm: (opts: ConfirmOptions) => void;
   onToast: (msg: string) => void;
-  onOpenGuide: (section?: 'sync') => void;
+  onOpenGuide: (entry?: string) => void;
 }) {
   const { t, lang } = useLanguage();
   const { config, connected, busy, error, syncNow, clearError } = sync;

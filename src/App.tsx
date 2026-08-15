@@ -36,7 +36,8 @@ import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
 import { DataModal, type DataTab } from './components/DataModal';
-import { GuideModal, type GuideSection } from './components/GuideModal';
+import { GuideModal } from './components/GuideModal';
+import type { GuideScreen } from './lib/guide';
 import { SyncBadge } from './components/sync/SyncBadge';
 import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
@@ -133,12 +134,12 @@ export default function App() {
   // clears itself the moment that tab closes — see `onDbBlocked` in lib/db.ts.
   const [dbBlocked, setDbBlocked] = useState(false);
   useEffect(() => onDbBlocked(setDbBlocked), []);
-  // Which section of the guide is open, or null when it is closed. Opening it *at* a section is the
-  // point: "how do I set sync up?" should land on sync.
-  const [guideAt, setGuideAt] = useState<GuideSection | null>(null);
+  // Which entry of the guide is open, or null when the guide is closed. Opening it *at* an entry is
+  // the point: "how do I set sync up?" should land on sync.
+  const [guideAt, setGuideAt] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
-  const openGuide = (section?: GuideSection) => {
-    setGuideAt(section ?? null);
+  const openGuide = (entry?: string) => {
+    setGuideAt(entry ?? null);
     setGuideOpen(true);
   };
   const [statsOpen, setStatsOpen] = useState(false);
@@ -553,8 +554,33 @@ export default function App() {
     </>
   );
 
+  /**
+   * What the guide can open for you. "Show me" beats "go and find it" — but only for the screens the
+   * app can actually put on screen from here: an entry whose screen is missing from this map simply
+   * shows no button, rather than one that does nothing.
+   *
+   * Rebuilt per render on purpose: which of these exist depends on whether an event is open at all.
+   */
+  const guideScreens: Partial<Record<GuideScreen, () => void>> = state
+    ? {
+        autoSeat: handleAutoSeat,
+        tags: () => setSettingsOpen(true),
+        details: () => setEventDetailsOpen(true),
+        invitation: () => setInvitationOpen(true),
+        share: () => setQrOpen(true),
+        checkin: () => setCheckInOpen(true),
+        stats: () => setStatsOpen(true),
+        backup: () => setDataTab('backup'),
+        sync: () => setDataTab('sync'),
+      }
+    : { backup: () => setDataTab('backup'), sync: () => setDataTab('sync') };
+
   const guideModal = guideOpen && (
-    <GuideModal initialSection={guideAt ?? undefined} onClose={() => setGuideOpen(false)} />
+    <GuideModal
+      initialEntry={guideAt ?? undefined}
+      screenActions={guideScreens}
+      onClose={() => setGuideOpen(false)}
+    />
   );
 
   const dataModal = dataTab && (

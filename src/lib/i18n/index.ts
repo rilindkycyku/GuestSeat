@@ -41,6 +41,18 @@ export function createListTranslator(lang: Language) {
   };
 }
 
+/** The same, for copy whose items are objects — the guide's steps, which are a title and a body. */
+export function createStepTranslator(lang: Language) {
+  return function tSteps(key: string): { title: string; text: string }[] {
+    const value = resolvePath(translations[lang], key) ?? resolvePath(translations.en, key);
+    if (!Array.isArray(value)) return [];
+    return value.filter(
+      (item): item is { title: string; text: string } =>
+        Boolean(item) && typeof item === 'object' && typeof (item as { title?: unknown }).title === 'string'
+    );
+  };
+}
+
 export function detectInitialLanguage(): Language {
   // A saved choice always wins, so anyone who switches to English stays in English.
   const stored = localStorage.getItem('guestseat.language');

@@ -32,8 +32,10 @@
 
 ## 📖 Using GuestSeat
 
-The same guide is **inside the app** — Settings → How it works, or the 📖 button on the first
-screen — so a planner on a phone the week before the wedding never has to come here for it.
+The same guide is **inside the app**, and better there: Settings → Guide (or the 📖 button on the
+first screen) opens a searchable page with one entry per screen, grouped, each with numbered steps
+and a button that opens the screen it describes. A planner on a phone the week before the wedding
+never has to come here for it.
 
 ### 1. Your first event
 
