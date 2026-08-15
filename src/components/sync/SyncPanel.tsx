@@ -27,6 +27,7 @@ import {
   repairNow,
   resetWatermarks,
   type ChangeRow,
+  type ConnectSummary,
   type DeviceRow,
   type SyncMode,
 } from '../../lib/sync/sync';
@@ -247,7 +248,7 @@ export function SyncPanel({
    * Merge loses nothing, so it runs on the press. The other two destroy one side or the other, and
    * both ask for a word to be typed — a stray tap can dismiss a dialog, it cannot type "TAKE".
    */
-  const chooseMode = (mode: SyncMode) => {
+  const chooseMode = (mode: SyncMode, summary?: ConnectSummary) => {
     const go = () =>
       run(mode, async () => {
         const result = await syncNow({ mode });
@@ -255,7 +256,13 @@ export function SyncPanel({
         return result ? t('sync.result', { pulled: result.pulled, pushed: result.pushed }) : t('sync.failed');
       });
 
-    if (mode === MODES.TAKE) {
+    // What each direction would actually destroy, counted rather than assumed. `summary` comes from
+    // the join dialog, which has just read both sides; the panel's own buttons fall back to the
+    // counts it keeps, and an unknown count is treated as "something", never as "nothing".
+    const losesLocal = summary ? summary.onlyLocal : (localRows ?? 1);
+    const overwritesCloud = summary ? summary.cloud : (cloudRows ?? 1);
+
+    if (mode === MODES.TAKE && losesLocal > 0) {
       askConfirm({
         title: t('sync.modes.takeTitle'),
         message: t('sync.modes.takeConfirm'),
@@ -266,10 +273,10 @@ export function SyncPanel({
       });
       return;
     }
-    if (mode === MODES.PUSH && cloudRows !== 0) {
+    if (mode === MODES.PUSH && overwritesCloud > 0) {
       askConfirm({
         title: t('sync.modes.pushTitle'),
-        message: t('sync.modes.pushConfirm', { rows: cloudRows ?? '…' }),
+        message: t('sync.modes.pushConfirm', { rows: overwritesCloud }),
         confirmLabel: t('sync.modes.pushConfirmLabel'),
         danger: true,
         requireText: t('sync.modes.pushWord'),
@@ -277,6 +284,8 @@ export function SyncPanel({
       });
       return;
     }
+    // Nothing to lose on either side — the commonest case by far, a second device joining a copy —
+    // so it is one tap. A word typed to protect nothing only teaches people to type it.
     go();
   };
 

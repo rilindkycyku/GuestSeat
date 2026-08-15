@@ -551,6 +551,7 @@ export const sq = {
   },
   sync: {
     tab: 'Sinkronizimi',
+    openPanel: 'Hap',
     working: 'Duke punuar…',
     failed: 'Sinkronizimi dështoi.',
     result: 'U morën {{pulled}} ndryshime dhe u dërguan {{pushed}}.',
@@ -710,6 +711,7 @@ export const sq = {
       waiting: 'Ka ndryshime që presin të dërgohen',
       offline: 'Pa internet — ndryshimet presin',
       ok: 'Sinkronizimi është aktiv',
+      failedShort: 'Sinkronizimi dështoi — asgjë nuk po del nga kjo pajisje.',
     },
     danger: {
       title: 'Kopja në cloud',

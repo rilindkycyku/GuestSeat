@@ -154,6 +154,27 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /**
+   * A sync that failed on its own — at startup, on the timer, after a save — has nobody watching a
+   * return value. Sync is meant to be forgotten about, which is what makes a broken one dangerous:
+   * a session that expired on the phone leaves everything typed into it sitting on that phone, and
+   * nothing would say so until someone happened to open the panel about a thing they believe is
+   * working. So it is said out loud, once per distinct failure — the same broken wifi retrying every
+   * ten minutes is one piece of news, not five — and never while the panel that explains it is
+   * already open.
+   */
+  const announcedError = useRef<string | null>(null);
+  useEffect(() => {
+    if (!sync.error) {
+      announcedError.current = null;
+      return;
+    }
+    const key = `${sync.error.code}:${sync.error.message}`;
+    if (announcedError.current === key || dataTab) return;
+    announcedError.current = key;
+    showToast(t('sync.badge.failedShort'), { label: t('sync.openPanel'), onClick: () => setDataTab('sync') });
+  }, [sync.error, dataTab, showToast, t]);
+
   useEffect(() => {
     saveCollapsedTableIds(collapsedTableIds);
   }, [collapsedTableIds]);

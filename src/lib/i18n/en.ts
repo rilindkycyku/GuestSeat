@@ -549,6 +549,7 @@ export const en = {
   },
   sync: {
     tab: 'Sync',
+    openPanel: 'Open',
     working: 'Working…',
     failed: 'Sync failed.',
     result: 'Pulled {{pulled}} changes, sent {{pushed}}.',
@@ -708,6 +709,7 @@ export const en = {
       waiting: 'There are changes waiting to be sent',
       offline: 'Offline — changes are waiting',
       ok: 'Sync is on',
+      failedShort: 'Sync failed — nothing is leaving this device.',
     },
     danger: {
       title: 'The cloud copy',

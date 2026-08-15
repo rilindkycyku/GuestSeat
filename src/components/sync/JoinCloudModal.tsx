@@ -23,7 +23,7 @@ export function JoinCloudModal({
   onClose,
 }: {
   busy: boolean;
-  onChoose: (mode: SyncMode) => void;
+  onChoose: (mode: SyncMode, summary: ConnectSummary) => void;
   onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -172,8 +172,8 @@ export function JoinCloudModal({
           {t('sync.join.later')}
         </button>
         <button
-          onClick={() => mode && onChoose(mode)}
-          disabled={!mode || busy || Boolean(error)}
+          onClick={() => mode && summary && onChoose(mode, summary)}
+          disabled={!mode || !summary || busy || Boolean(error)}
           className="px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50"
         >
           {busy ? t('sync.working') : t('sync.join.continue')}
