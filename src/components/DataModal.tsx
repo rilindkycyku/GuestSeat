@@ -5,6 +5,7 @@ import { ModalShell } from './ModalShell';
 import type { ConfirmOptions } from './ConfirmModal';
 import type { SyncState } from '../hooks/useSync';
 import { SyncPanel } from './sync/SyncPanel';
+import type { GuideSection } from './GuideModal';
 import { BackupError, exportBackup, importBackup, readBackupFile } from '../lib/backup';
 import type { EventSummary } from '../lib/db';
 
@@ -24,6 +25,7 @@ export function DataModal({
   askConfirm,
   onToast,
   onImported,
+  onOpenGuide,
   onClose,
 }: {
   events: EventSummary[];
@@ -33,6 +35,8 @@ export function DataModal({
   onToast: (msg: string) => void;
   /** Re-read what is on disk — an import rewrites events behind the app's back. */
   onImported: () => void | Promise<void>;
+  /** Open the guide, at the section that explains this screen. */
+  onOpenGuide: (section?: GuideSection) => void;
   onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -193,6 +197,12 @@ export function DataModal({
                 />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('backup.modesHint')}</p>
+              <button
+                onClick={() => onOpenGuide('backup')}
+                className="mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                {t('guide.readMore')}
+              </button>
             </section>
 
             <section className={card}>
@@ -228,7 +238,7 @@ export function DataModal({
             </section>
           </>
         ) : (
-          <SyncPanel sync={sync} askConfirm={askConfirm} onToast={onToast} />
+          <SyncPanel sync={sync} askConfirm={askConfirm} onToast={onToast} onOpenGuide={onOpenGuide} />
         )}
       </div>
     </ModalShell>

@@ -27,6 +27,20 @@ export function createTranslator(lang: Language) {
   };
 }
 
+/**
+ * The same lookup for copy that is a *list* — the guide's steps and bullets, which read as prose in
+ * the dictionary and would be unmaintainable split across `guide.s3.b1`, `b2`, `b3`.
+ *
+ * Falls back to English per key, like {@link createTranslator}, so a list added to `en` but not yet
+ * translated shows in English rather than vanishing.
+ */
+export function createListTranslator(lang: Language) {
+  return function tList(key: string): string[] {
+    const value = resolvePath(translations[lang], key) ?? resolvePath(translations.en, key);
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  };
+}
+
 export function detectInitialLanguage(): Language {
   // A saved choice always wins, so anyone who switches to English stays in English.
   const stored = localStorage.getItem('guestseat.language');

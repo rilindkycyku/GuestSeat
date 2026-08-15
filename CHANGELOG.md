@@ -9,6 +9,20 @@ folded into the release they belong to.
 
 ---
 
+## 1.16.0
+
+A guide, so the app explains itself.
+
+- **"How it works", inside the app.** Thirteen sections — starting out, importing a list, seating by
+  hand and by keyboard, what a guest can carry, tables, auto-seating, the invitation, sharing,
+  check-in, printing, backups, sync, and where the data actually lives — in both languages, closed
+  until asked for, because a guide that unfolds all at once is a manual and manuals do not get read.
+  Reachable from Settings, from the drawer, and from the very first screen, before anyone has any
+  data of their own to risk.
+- **It opens where you got stuck.** The sync panel's own "how this works" lands *on* the sync
+  section, scrolled to it, rather than at the top of a wall of text.
+- The same walkthrough is now in the README for anyone reading on GitHub.
+
 ## 1.15.0
 
 The two answers to "where does this list exist besides this browser?" — a file you keep, and a cloud

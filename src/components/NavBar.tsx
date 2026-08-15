@@ -25,6 +25,7 @@ interface NavBarProps {
   onOpenSettings: () => void;
   /** Open the data & sync dialog, on the tab named. */
   onOpenData: (tab: 'backup' | 'sync') => void;
+  onOpenGuide: () => void;
   sync: SyncState;
   onShowInvitation: () => void;
   onShowQr: () => void;
@@ -119,6 +120,7 @@ export function NavBar({
   onOpenEvents,
   onOpenSettings,
   onOpenData,
+  onOpenGuide,
   sync,
   onShowInvitation,
   onShowQr,
@@ -373,6 +375,7 @@ export function NavBar({
             <DrawerRow icon="📊" label={t('settings.overview')} onClick={pick(onOpenOverview)} />
             <DrawerRow icon="📁" label={t('events.myEvents')} onClick={pick(onOpenEvents)} />
             <DrawerRow icon="🗄️" label={t('backup.title')} onClick={pick(() => onOpenData('backup'))} />
+            <DrawerRow icon="📖" label={t('guide.open')} onClick={pick(onOpenGuide)} />
             <DrawerRow icon="⚙️" label={t('settings.title')} onClick={pick(onOpenSettings)} />
 
             <GroupLabel>{t('settings.appearance')}</GroupLabel>

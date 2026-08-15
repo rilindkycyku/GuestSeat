@@ -77,6 +77,7 @@ export const en = {
     overview: 'Overview',
     overviewDesc: 'Counts, RSVP, side balance & meals',
     data: 'Data',
+    help: 'Help',
     unseatAll: 'Unseat all guests',
     unseatAllConfirm: 'Remove all guests from their tables?',
     unseatAllConfirmFinal: 'Last check: {{count}} guests lose their table and the seating you arranged is gone.',
@@ -500,6 +501,190 @@ export const en = {
     load: 'Load shared list',
     loaded: 'Loaded shared list with {{count}} guests.',
     invalid: 'That share link could not be read.',
+  },
+  guide: {
+    title: 'How GuestSeat works',
+    open: 'How it works',
+    openDesc: 'A short guide to every part of the app',
+    intro:
+      'Everything below is optional reading — the app works without it. It’s here for the parts that aren’t obvious: what a keep-apart does to auto-seating, which QR to hand a guest, and how to get the same list on your phone and your laptop.',
+    tocTitle: 'In this guide',
+    readMore: 'How this works',
+    stepsTitle: 'Step by step',
+    tipsTitle: 'Worth knowing',
+    sections: {
+      start: {
+        title: 'Getting started',
+        summary: 'Your first event, in about a minute.',
+        body: [
+          'GuestSeat opens on three ways to begin. Whichever you pick becomes a saved event you can close and reopen at any time — the app keeps as many events as you like, side by side.',
+          'Nothing is uploaded. Everything you do lives in this browser until you export a file or turn on sync yourself.',
+        ],
+        steps: [
+          'Import a guest list — a JSON or CSV file you already have (see the next section for the shapes it accepts).',
+          'Start blank and type the names in as you go, choosing the kind of event first (wedding, engagement, birthday…).',
+          'Load the demo list to look around with real-looking data before touching your own.',
+          'Name the event by tapping its title in the header, whenever you like.',
+        ],
+        tips: [
+          'Switch between saved events from the 📁 button, or Settings → Switch event.',
+          'Add GuestSeat to your home screen and it opens like an app, works offline, and keeps its data more safely.',
+        ],
+      },
+      importing: {
+        title: 'Bringing a guest list in',
+        summary: 'JSON in three shapes, CSV, or by hand.',
+        body: [
+          'A guest needs only a first name — everything else is optional and can be filled in later.',
+          'Import accepts a list grouped by letters or families ({ "A": ["Ana", "Besnik"] }, which becomes one table per key), a plain array of names, and any file GuestSeat itself exported — that last one round-trips completely, tags and invitation included.',
+          'A CSV works too: a header row with name/surname/table columns is read the same way.',
+        ],
+        steps: [
+          'Onboarding → Choose file, or the Import button in the header of an open event.',
+          'Importing into an open event asks whether to replace the list or add to it.',
+          'Adding merges the tag palettes, so two lists made separately don’t fight over the same tag.',
+        ],
+      },
+      board: {
+        title: 'Seating people',
+        summary: 'Drag, or use the keyboard.',
+        body: [
+          'The board shows your tables; the panel on the left holds everyone not seated yet. Drag a guest onto a table, or back to the panel to unseat them.',
+          'A table refuses guests once it is full, and says so — the capacity is yours to change at any time.',
+        ],
+        steps: [
+          'Press Space on a guest to pick them up, arrow keys to move between tables, Space again to seat them, Esc to cancel.',
+          'Press / or ⌘K (Ctrl-K) from anywhere to jump to the search box.',
+          'Search matches a name, a surname or a table, and the board scrolls to the first match.',
+          'The bar under the header shows how far along the seating is.',
+        ],
+        tips: ['Two view modes: a list of tables, or a floor plan of round and long tables. Both seat the same way.'],
+      },
+      guests: {
+        title: 'Guests: what you can record',
+        summary: 'Attendance, meals, tags, couples and feuds.',
+        body: [
+          'Tap a guest to open their card: name, surname, a note, their table, whether they are coming, and what they eat.',
+          'Two guests can be **linked** (they must sit together) or **kept apart** (they must not share a table). Auto-seating honours both; seating a kept-apart pair together by hand is allowed but flagged, because sometimes you know better.',
+        ],
+        tips: [
+          'Attendance is Coming / Not coming / Pending. Guests who declined are skipped by auto-seating and by place cards.',
+          'Tags are yours to invent — family, side, children, vegetarian — and every filter and export understands them.',
+          'Linking someone unseated to someone already seated seats them at the same table straight away.',
+        ],
+      },
+      tables: {
+        title: 'Tables',
+        summary: 'Capacity, shape, side, and the floor plan.',
+        body: [
+          'Add tables as you need them; each new one inherits the size and shape of the last, so a room of ten-seat rounds is a few taps.',
+          'A table can belong to the groom’s or the bride’s side, carry your own tags, and be duplicated with everything but its guests.',
+        ],
+        tips: [
+          'The filter row above the board narrows it to one tag at a time.',
+          'Removing a table only asks first when someone is still sitting at it; its guests go back to the unseated panel.',
+        ],
+      },
+      autoSeat: {
+        title: 'Auto-seating',
+        summary: 'One tap, one undo, and it explains itself.',
+        body: [
+          'Auto-seat fills the tables from the unseated pool in a single step you can undo. It keeps linked parties together, keeps feuding guests apart, and clusters people who share a tag.',
+          'When it can’t place someone it says who, grouped by family, and whether the problem was space or a keep-apart — so you can add a table or make a call, rather than hunt for the gap.',
+        ],
+        tips: ['It never moves anyone already seated, so run it as often as you like while the list grows.'],
+      },
+      invitation: {
+        title: 'Invitation & event details',
+        summary: 'A printable invitation in three designs.',
+        body: [
+          'Fill in the couple, the venue, the date and time, a schedule and a message, and GuestSeat lays out a print-ready invitation PDF — Classic, Modern or Romantic.',
+          'The same details appear on the seating chart, the table cards and the place cards, so they only get typed once.',
+        ],
+        tips: ['The invitation carries no QR code on purpose: it shouldn’t hand the whole guest list to whoever receives it.'],
+      },
+      sharing: {
+        title: 'Sharing the plan',
+        summary: 'Two QR codes that do different jobs.',
+        body: [
+          'A share link carries the whole list inside the link itself — there is no server holding it. Anyone who opens it gets a copy; edits they make afterwards are theirs, not yours.',
+          'The QR comes in two flavours, and the difference matters: the full plan is for a co-planner or a helper, while the guest link opens a read-only "type your name, see your table" lookup that lists nobody until somebody types.',
+        ],
+        tips: [
+          'Very large lists don’t fit in a QR; send the link instead — WhatsApp, the share sheet, or copy it anywhere.',
+          'A shared list arrives as a *new* event, so it never replaces what the recipient was working on.',
+        ],
+      },
+      checkin: {
+        title: 'On the day',
+        summary: 'Check people in at the door.',
+        body: [
+          'Check-in is a full-screen list built for one thumb at a door: search a name, tap to mark them arrived, tap again to undo.',
+          'It shows what you already recorded about a guest — their table, tags, who they came with — so two cousins with the same name can be told apart.',
+        ],
+        tips: ['Resetting arrivals is behind a confirmation that says how many are about to be cleared.'],
+      },
+      exports: {
+        title: 'Printing & exports',
+        summary: 'Five files, each for a different moment.',
+        body: [
+          'Everything is generated in your browser: nothing is uploaded to produce a file.',
+        ],
+        tips: [
+          'Seating chart (PDF) — a framed cream sheet, split into the groom’s tables, the bride’s tables and the unseated, so each part can be printed on its own.',
+          'Table cards (PDF) — one card per table, four to a page, to cut apart and put on the tables.',
+          'Place cards (PDF) — one folded tent card per seated guest, with the name printed twice so it reads from both sides.',
+          'Excel (.xlsx) — a Guests sheet and a Tables sheet, for anyone who wants to sort and total it themselves.',
+          'JSON — the full event, re-importable here, every field intact.',
+        ],
+      },
+      backup: {
+        title: 'Keeping a copy',
+        summary: 'One file with every event in it.',
+        body: [
+          'The JSON export writes the event that happens to be open. The backup file writes them all, with their ids — that is the copy that survives a cleared browser, a lost phone or a new laptop.',
+          'Restoring puts this browser back to exactly what the file holds. "Add from file" only brings in events you don’t already have, so an old backup opened by mistake can’t undo newer work.',
+        ],
+        steps: [
+          'Settings → Data & sync → Backup → Download backup.',
+          'Keep it somewhere that isn’t this device: email it to yourself, or drop it in a cloud folder.',
+          'On the same screen, ask for persistent storage — it stops the browser throwing your data away when space runs low.',
+        ],
+      },
+      sync: {
+        title: 'The same list on two devices',
+        summary: 'Optional, and through a database you own.',
+        body: [
+          'GuestSeat has no server, and this is the honest version of "the same plan on my phone and my laptop": you bring a free Supabase project of your own, and the events travel through *your* database. Nothing belonging to GuestSeat is anywhere in the path.',
+          'Once it is on, it looks after itself — when the app opens, a few seconds after any change, when you come back to the tab, and when the device comes back online.',
+        ],
+        steps: [
+          'Create a free project at supabase.com.',
+          'In the project: Authentication → URL Configuration → set Site URL to this app’s address (the Sync screen shows it with a copy button), so the confirmation email brings you back here.',
+          'In the project: Project Settings → copy the Project URL and the publishable key (sb_publishable_…). Never copy a secret / service_role key — the app refuses it anyway.',
+          'In GuestSeat: Settings → Data & sync → Sync → Set up the project. It opens your own SQL editor with the script already in it; press Run, come back, and press Check the project.',
+          'Fill in the email and password and press Create account — then Sign in with the same two on every other device.',
+        ],
+        tips: [
+          'A new device only *reads* until you choose what should happen: keep both, take the project’s copy, or send this device up. That is what stops a freshly installed phone overwriting an evening’s work.',
+          'It merges per guest and per table, so you can add a guest on the laptop while someone checks people in on a phone at the door and both survive. Only the same guest edited on two devices at once can collide, and then the later sync wins.',
+          'The cloud icon in the header is the whole status: quiet when all is well, marked when something needs you.',
+          'Your devices are listed by name, with what each one last did — the only way to answer "which of my devices did that?" when one email is signed in everywhere.',
+        ],
+      },
+      privacy: {
+        title: 'Where your data actually is',
+        summary: 'This browser, and nowhere else by default.',
+        body: [
+          'Guest lists are stored in this browser (IndexedDB). No account, no server, no analytics on your names. Clearing site data deletes them — which is why the backup file matters.',
+          'Share links carry the list inside the link, so it reaches whoever you send it to and nobody else. Sync, if you turn it on, sends rows to the Supabase project you created.',
+        ],
+        tips: [
+          'The public key stored on this device is not a password: it is public by design, and the security rule in the setup script is what makes it useless without your email and password.',
+          'On a shared computer, use "Disconnect this device" when you’re done.',
+        ],
+      },
+    },
   },
   backup: {
     title: 'Data & sync',

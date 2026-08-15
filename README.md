@@ -30,6 +30,110 @@
 
 ---
 
+## 📖 Using GuestSeat
+
+The same guide is **inside the app** — Settings → How it works, or the 📖 button on the first
+screen — so a planner on a phone the week before the wedding never has to come here for it.
+
+### 1. Your first event
+
+The app opens on three ways to begin, and whichever you pick becomes a saved event you can close
+and reopen later. It keeps as many events as you like, side by side (📁 in the header, or
+Settings → Switch event).
+
+1. **Import a guest list** you already have — see below for the shapes it reads.
+2. **Start blank** and type names as you go, choosing the kind of event first (wedding, engagement,
+   birthday…), which sets the wording and the invitation defaults.
+3. **Load the demo list** to look around with realistic data before touching your own.
+
+Rename the event any time by tapping its title in the header.
+
+### 2. Bringing a guest list in
+
+A guest needs only a first name; everything else is optional and can be filled in later. Import
+accepts:
+
+| Shape | Looks like | Becomes |
+| :--- | :--- | :--- |
+| Grouped | `{ "A": ["Ana", "Besnik"], "B": [...] }` | one table per key, guests seated at it |
+| Flat | `["Ana Hoxha", { "name": "Besnik", "table": "t1" }]` | an unseated list |
+| A GuestSeat export | the file this app writes | everything back, tags and invitation included |
+| CSV | a header row with name/surname/table | the same as a flat list |
+
+Importing into an event already open asks whether to **replace** the list or **add** to it. Adding
+merges the two tag palettes, so lists made separately don't fight over the same tag id.
+
+### 3. Seating people
+
+Drag a guest from the unseated panel onto a table, or back out to unseat them. A full table refuses
+new guests and says so — capacity is yours to change.
+
+It is fully keyboard-operable, which is faster for a long list:
+
+- <kbd>Space</kbd> picks a guest up, arrow keys move between tables, <kbd>Space</kbd> seats them,
+  <kbd>Esc</kbd> cancels.
+- <kbd>/</kbd> or <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> jumps to search from anywhere; the board scrolls
+  to the first match.
+
+Two views seat the same way: a list of tables, or a floor plan of round and long tables.
+
+### 4. What you can record about a guest
+
+Tap a guest for their card: name, surname, note, table, attendance (coming / not coming / pending)
+and meal. Two more relationships drive the auto-seating:
+
+- **Linked** — they must sit together. Linking someone unseated to someone seated seats them at once.
+- **Kept apart** — they must not share a table. Seating them together by hand is allowed but flagged,
+  because sometimes you know better than the rule.
+
+Tags are yours to invent (family, side, children, vegetarian) and every filter and export understands
+them. Guests who declined are skipped by auto-seating and get no place card.
+
+### 5. Auto-seating
+
+One tap fills the tables from the unseated pool, in a single undoable step. It keeps linked parties
+together, feuding guests apart, and clusters people who share a tag. It never moves anyone already
+seated, so it is safe to run again as the list grows.
+
+When it can't place someone it says **who**, grouped by family, and whether the obstacle was space or
+a keep-apart — so the answer is "add a table" or "make a call", not "hunt for the gap".
+
+### 6. Invitation, sharing and the day itself
+
+- **Invitation** — couple, venue, date, schedule and message become a print-ready PDF in three
+  designs (Classic, Modern, Romantic). No QR on it, on purpose: an invitation shouldn't hand the
+  whole guest list to whoever receives it.
+- **Share** — the link carries the list inside itself; there is no server holding it. The QR comes in
+  two flavours, and the difference matters: the **full plan** for a co-planner, or the **guest link**,
+  a read-only "type your name, see your table" lookup that lists nobody until somebody types.
+- **Check-in** — a full-screen list built for one thumb at a door, showing enough about each guest
+  (table, tags, who they came with) to tell two cousins with the same name apart.
+
+### 7. Printing
+
+| File | For |
+| :--- | :--- |
+| Seating chart (PDF) | The planner's copy — groom's tables, bride's tables and unseated, each part on its own pages |
+| Table cards (PDF) | One card per table, four to a sheet, to cut apart and stand on the tables |
+| Place cards (PDF) | One folded tent card per seated guest, name printed twice so it reads from both sides |
+| Excel (.xlsx) | A *Guests* sheet and a *Tables* sheet, for anyone who wants to sort and total it |
+| JSON | The full event, re-importable here, every field intact |
+
+Everything is generated in your browser — producing a file uploads nothing.
+
+### 8. Keeping a copy
+
+The JSON export writes the event that happens to be open. The **backup file** writes them all, with
+their ids: Settings → Data & sync → Backup. That is the copy that survives a cleared browser, a lost
+phone or a new laptop, so keep it somewhere that isn't this device.
+
+Restoring puts the browser back to exactly what the file holds; **Add from file** only brings in
+events you don't already have, so an old backup opened by mistake can't undo newer work. The same
+screen can ask the browser for **persistent storage**, which stops it throwing your data away when
+space runs low.
+
+---
+
 ## ☁️ Sync across devices
 
 GuestSeat has no server, and this is the honest version of "the same plan on my phone and my laptop":

@@ -36,6 +36,7 @@ import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
 import { DataModal, type DataTab } from './components/DataModal';
+import { GuideModal, type GuideSection } from './components/GuideModal';
 import { SyncBadge } from './components/sync/SyncBadge';
 import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
@@ -132,6 +133,14 @@ export default function App() {
   // clears itself the moment that tab closes — see `onDbBlocked` in lib/db.ts.
   const [dbBlocked, setDbBlocked] = useState(false);
   useEffect(() => onDbBlocked(setDbBlocked), []);
+  // Which section of the guide is open, or null when it is closed. Opening it *at* a section is the
+  // point: "how do I set sync up?" should land on sync.
+  const [guideAt, setGuideAt] = useState<GuideSection | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const openGuide = (section?: GuideSection) => {
+    setGuideAt(section ?? null);
+    setGuideOpen(true);
+  };
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
@@ -524,6 +533,14 @@ export default function App() {
   // own — a device that has just taken the cloud copy may have no events at all to open.
   const cornerControls = (
     <>
+      <button
+        onClick={() => openGuide()}
+        title={t('guide.title')}
+        aria-label={t('guide.title')}
+        className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+      >
+        📖
+      </button>
       <SyncBadge sync={sync} onOpen={() => setDataTab('sync')} />
       <button
         onClick={() => setDataTab('backup')}
@@ -536,6 +553,10 @@ export default function App() {
     </>
   );
 
+  const guideModal = guideOpen && (
+    <GuideModal initialSection={guideAt ?? undefined} onClose={() => setGuideOpen(false)} />
+  );
+
   const dataModal = dataTab && (
     <DataModal
       events={events}
@@ -544,6 +565,7 @@ export default function App() {
       askConfirm={askConfirm}
       onToast={showToast}
       onImported={reload}
+      onOpenGuide={openGuide}
       onClose={() => setDataTab(null)}
     />
   );
@@ -552,6 +574,7 @@ export default function App() {
   const onboardingScreen = (onBack?: () => void) => (
     <Onboarding
       controls={cornerControls}
+      onOpenGuide={() => openGuide()}
       onBack={onBack}
       onImported={(result, fallbackName, eventType) =>
         startEvent({
@@ -639,6 +662,7 @@ export default function App() {
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
         {dataModal}
+        {guideModal}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
@@ -664,6 +688,7 @@ export default function App() {
           onOpenEvents={handleCloseToPicker}
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenData={(tab) => setDataTab(tab)}
+          onOpenGuide={() => openGuide()}
           sync={sync}
           onShowInvitation={() => setInvitationOpen(true)}
           onShowQr={() => setQrOpen(true)}
@@ -1013,6 +1038,10 @@ export default function App() {
             setSettingsOpen(false);
             setDataTab('backup');
           }}
+          onOpenGuide={() => {
+            setSettingsOpen(false);
+            openGuide();
+          }}
           syncConfigured={sync.configured}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
@@ -1030,6 +1059,7 @@ export default function App() {
       )}
 
       {dataModal}
+      {guideModal}
 
       {toastNode}
       <Analytics />

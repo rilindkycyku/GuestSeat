@@ -101,10 +101,12 @@ export function SyncPanel({
   sync,
   askConfirm,
   onToast,
+  onOpenGuide,
 }: {
   sync: SyncState;
   askConfirm: (opts: ConfirmOptions) => void;
   onToast: (msg: string) => void;
+  onOpenGuide: (section?: 'sync') => void;
 }) {
   const { t, lang } = useLanguage();
   const { config, connected, busy, error, syncNow, clearError } = sync;
@@ -420,6 +422,9 @@ export function SyncPanel({
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => setSetupOpen(true)} className={primaryBtn}>
                 {t('sync.setup.open')}
+              </button>
+              <button onClick={() => onOpenGuide('sync')} className={plainBtn}>
+                📖 {t('guide.readMore')}
               </button>
               <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className={plainBtn}>
                 {t('sync.connect.openDashboard')} ↗
