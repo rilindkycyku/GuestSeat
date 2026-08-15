@@ -15,6 +15,9 @@ export const sq = {
     confirmStep: 'Hapi {{step}} nga {{total}}',
     typeToConfirm: 'Shkruani {{word}} për të vazhduar',
     copy: 'Kopjo',
+    blockedTitle: 'GuestSeat është i hapur në një skedë tjetër',
+    blockedBody:
+      'Kjo skedë po e pret: një përditësim i duhen të dhënat e ruajtura vetëm për vete për një çast. Mbyllni skedën ose dritaren tjetër — kjo vazhdon vetë, pa pasur nevojë të shtypni asgjë.',
   },
   events: {
     title: 'Ngjarjet e tua',

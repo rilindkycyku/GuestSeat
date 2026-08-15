@@ -121,6 +121,41 @@ function announceChange(): void {
   changeListeners.forEach((fn) => fn());
 }
 
+/**
+ * "Another tab is holding the database at an older version."
+ *
+ * A version upgrade cannot start while another tab, window or the installed app still has the
+ * database open at the version before it. The browser reports that with `blocked` and then simply
+ * keeps the request waiting — so the app sits on its loading spinner with nothing to explain it,
+ * which is precisely what happened to the first tab opened after this release: an endless spinner,
+ * no message, and reloading does not help because the *other* tab is the problem.
+ *
+ * The request is deliberately left waiting, because that is what eventually succeeds: the moment the
+ * other side closes, `success` fires on this very request and the app carries on by itself.
+ * Abandoning it and opening a fresh one is worse than useless — the abandoned request stays pending
+ * and every later open queues behind it, which is a hang with extra steps.
+ *
+ * So instead of failing, the wait is announced to whoever is listening, and un-announced when it
+ * clears.
+ */
+const blockedListeners = new Set<(blocked: boolean) => void>();
+
+export function onDbBlocked(fn: (blocked: boolean) => void): () => void {
+  blockedListeners.add(fn);
+  return () => {
+    blockedListeners.delete(fn);
+  };
+}
+
+function announceBlocked(blocked: boolean): void {
+  blockedListeners.forEach((fn) => fn(blocked));
+}
+
+/** A phone can freeze the other tab so thoroughly that the browser never gets round to firing
+ * `blocked`. Waiting this long with no answer means the same thing to the user, so it is reported
+ * the same way. Opening the database is otherwise instant. */
+const BLOCKED_AFTER = 4000;
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function openDb(): Promise<IDBDatabase> {
@@ -131,6 +166,13 @@ function openDb(): Promise<IDBDatabase> {
       return;
     }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const slow = setTimeout(() => announceBlocked(true), BLOCKED_AFTER);
+    const settled = (ok: boolean) => {
+      clearTimeout(slow);
+      announceBlocked(false);
+      return ok;
+    };
+    req.onblocked = () => announceBlocked(true);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(EVENTS_STORE)) db.createObjectStore(EVENTS_STORE, { keyPath: 'id' });
@@ -140,8 +182,14 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(DELETIONS_STORE)) db.createObjectStore(DELETIONS_STORE, { keyPath: 'key' });
       if (!db.objectStoreNames.contains(RECORDS_STORE)) db.createObjectStore(RECORDS_STORE, { keyPath: 'key' });
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      settled(true);
+      resolve(req.result);
+    };
+    req.onerror = () => {
+      settled(false);
+      reject(req.error);
+    };
   });
   return dbPromise;
 }

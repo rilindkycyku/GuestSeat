@@ -52,6 +52,7 @@ import {
   type ViewMode,
   type TableColumns,
 } from './lib/storage';
+import { onDbBlocked } from './lib/db';
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat, type AutoSeatResult } from './lib/autoSeat';
@@ -127,6 +128,10 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Which tab of the data dialog is open, or null when it is closed.
   const [dataTab, setDataTab] = useState<DataTab | null>(null);
+  // Another tab is holding the database at an older version, so this one cannot open it yet. It
+  // clears itself the moment that tab closes — see `onDbBlocked` in lib/db.ts.
+  const [dbBlocked, setDbBlocked] = useState(false);
+  useEffect(() => onDbBlocked(setDbBlocked), []);
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
@@ -594,12 +599,22 @@ export default function App() {
   // Hold the first paint until IndexedDB has been read, so existing events never flash onboarding.
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-slate-50 dark:bg-slate-950">
         <span
           className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"
           role="status"
           aria-label={t('common.loading')}
         />
+        {/* An update needs the database to itself. Without this the app waits on a spinner with
+            nothing to explain it, and reloading — the one thing anybody tries — cannot help, because
+            it is the *other* tab that is in the way. It carries on by itself the moment that tab
+            closes, so there is nothing to press here. */}
+        {dbBlocked && (
+          <div className="max-w-sm">
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t('common.blockedTitle')}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('common.blockedBody')}</p>
+          </div>
+        )}
       </div>
     );
   }

@@ -13,6 +13,9 @@ export const en = {
     confirmStep: 'Step {{step}} of {{total}}',
     typeToConfirm: 'Type {{word}} to confirm',
     copy: 'Copy',
+    blockedTitle: 'GuestSeat is open in another tab',
+    blockedBody:
+      'This tab is waiting for it: an update needs the saved data to itself for a moment. Close the other tab or window — this one carries on by itself, with nothing to press.',
   },
   events: {
     title: 'Your events',
