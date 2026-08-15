@@ -4,6 +4,7 @@ import { ModalHeader } from '../ModalHeader';
 import { ModalShell } from '../ModalShell';
 import { MODES, connectSummary, type ConnectSummary, type SyncMode } from '../../lib/sync/sync';
 import { syncErrorText } from '../../lib/sync/messages';
+import { SideBySide } from './SideBySide';
 
 /**
  * The question a device is asked the first time it meets a cloud copy, before it is allowed to push
@@ -112,20 +113,10 @@ export function JoinCloudModal({
           <>
             <p className="text-sm text-slate-600 dark:text-slate-300">{t('sync.join.readOnly')}</p>
 
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3">
-                <div className="text-xl font-bold text-slate-800 dark:text-white">{summary.cloud}</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">{t('sync.join.inProject')}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3">
-                <div className="text-xl font-bold text-slate-800 dark:text-white">{summary.both}</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">{t('sync.join.onBoth')}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3">
-                <div className="text-xl font-bold text-slate-800 dark:text-white">{summary.local}</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">{t('sync.join.onDevice')}</div>
-              </div>
-            </div>
+            {/* Kind by kind rather than one total each. The decision below applies to everything at
+                once, so the honest thing is to show what "everything" is: 34 against 0 says nothing
+                about *which* side holds the guests. */}
+            <SideBySide cloud={summary.cloudByKind} local={summary.localByKind} totals={[summary.cloud, summary.local]} />
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {t('sync.join.split', { onlyLocal: summary.onlyLocal, onlyCloud: summary.onlyCloud })}

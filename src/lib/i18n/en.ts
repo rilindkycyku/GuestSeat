@@ -586,6 +586,19 @@ export const en = {
     saveKey: 'Save key',
     newKey: 'New public key',
     keyChanged: 'The key was updated — this device is using the new one.',
+    kinds: {
+      event: 'Events',
+      guest: 'Guests',
+      table: 'Tables',
+      total: 'Total',
+    },
+    stored: {
+      title: 'What’s stored on each side',
+      counting: 'Counting both sides…',
+      here: 'On this device',
+      nothing: 'Nothing on either side yet.',
+      split: '{{both}} records are on both sides, {{onlyLocal}} only here and {{onlyCloud}} only in the project. Deletions are counted too, so a number here can be larger than what the board shows.',
+    },
     connect: {
       step1: 'Step 1 — create the project and the table',
       step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
@@ -639,8 +652,6 @@ export const en = {
       readOnly:
         'Until you choose, this device only reads from the project — nothing goes up. That way a device that has just been set up can’t overwrite the real plan.',
       inProject: 'In the project',
-      onBoth: 'On both sides',
-      onDevice: 'On this device',
       split: '{{onlyLocal}} records are only here, {{onlyCloud}} only in the project.',
       deviceEmpty: 'This device looks freshly started: it holds nothing of its own.',
       cloudEmpty: 'The project is empty — this is the first time anything is sent there.',

@@ -588,6 +588,19 @@ export const sq = {
     saveKey: 'Ruaj çelësin',
     newKey: 'Çelësi publik i ri',
     keyChanged: 'Çelësi u përditësua — kjo pajisje po e përdor atë të riun.',
+    kinds: {
+      event: 'Evente',
+      guest: 'Mysafirë',
+      table: 'Tavolina',
+      total: 'Gjithsej',
+    },
+    stored: {
+      title: 'Çka ruhet në secilën anë',
+      counting: 'Po numërohen të dyja anët…',
+      here: 'Në këtë pajisje',
+      nothing: 'Ende asgjë në asnjërën anë.',
+      split: '{{both}} rekorde ndodhen në të dyja anët, {{onlyLocal}} vetëm këtu dhe {{onlyCloud}} vetëm te projekti. Numërohen edhe shënimet e fshirjeve, prandaj një shifër këtu mund të jetë më e madhe se ajo që shfaq tabela.',
+    },
     connect: {
       step1: 'Hapi 1 — krijoni projektin dhe tabelën',
       step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
@@ -641,8 +654,6 @@ export const sq = {
       readOnly:
         'Derisa të zgjidhni, kjo pajisje vetëm lexon nga projekti — asgjë nuk shkon lart. Kështu një pajisje e sapo nisur nuk i mbishkruan dot të dhënat e vërteta.',
       inProject: 'Te projekti',
-      onBoth: 'Në të dyja anët',
-      onDevice: 'Në këtë pajisje',
       split: '{{onlyLocal}} rekorde ndodhen vetëm këtu, {{onlyCloud}} vetëm te projekti.',
       deviceEmpty: 'Kjo pajisje duket e sapo nisur: nuk mban asgjë të sajën.',
       cloudEmpty: 'Projekti është bosh — kjo është hera e parë që dërgohet diçka atje.',

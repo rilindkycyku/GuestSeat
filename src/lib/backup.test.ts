@@ -10,7 +10,7 @@ const state = (name: string): EventState => ({
   updatedAt: '2026-08-15T10:00:00.000Z',
 });
 
-const record = (id: string, name = id): StoredEvent => ({ id, state: state(name), updatedAt: 500, pending: true });
+const record = (id: string, name = id): StoredEvent => ({ id, state: state(name) });
 
 describe('buildBackup', () => {
   it('writes every saved event, id and all', () => {
@@ -20,10 +20,10 @@ describe('buildBackup', () => {
     expect(backup.events[0].state.eventName).toBe('Wedding');
   });
 
-  it('leaves this device\'s sync bookkeeping out of the file', () => {
-    const backup = buildBackup([record('ev1')]);
-    // `updatedAt`/`pending` describe this browser's relationship with its own cloud copy; carried
-    // into another device they would claim events had been sent that never were.
+  it('writes nothing but the id and the event itself', () => {
+    // What a device knows about its own cloud copy lives in the record rows, not here; carried into
+    // another browser it would claim rows had been sent that never were.
+    const backup = buildBackup([{ ...record('ev1'), updatedAt: 500, pending: true } as StoredEvent]);
     expect(Object.keys(backup.events[0]).sort()).toEqual(['id', 'state']);
   });
 

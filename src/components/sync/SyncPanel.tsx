@@ -18,8 +18,7 @@ import {
 } from '../../lib/sync/supabase';
 import {
   MODES,
-  countCloud,
-  countLocal,
+  connectSummary,
   deleteCloud,
   forgetDevice,
   readDevices,
@@ -31,6 +30,7 @@ import {
   type DeviceRow,
   type SyncMode,
 } from '../../lib/sync/sync';
+import { SideBySide } from './SideBySide';
 import { renameDevice, thisDevice } from '../../lib/sync/device';
 import { keyErrorText, syncErrorText } from '../../lib/sync/messages';
 
@@ -116,8 +116,7 @@ export function SyncPanel({
     password: '',
   }));
   const [working, setWorking] = useState<string | null>(null);
-  const [cloudRows, setCloudRows] = useState<number | null>(null);
-  const [localRows, setLocalRows] = useState<number | null>(null);
+  const [sides, setSides] = useState<ConnectSummary | null>(null);
   const [schema, setSchema] = useState<SchemaState | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -133,26 +132,25 @@ export function SyncPanel({
 
   const setField = (name: keyof typeof form, value: string) => setForm((prev) => ({ ...prev, [name]: value }));
 
-  // How much is up there, and how much is here — the two numbers that answer "did it really go?".
-  // Refreshed after every sync, since a sync is the only thing that changes either of them.
+  // What each side holds, kind by kind — the reading that answers "did it really go?" and, when it
+  // did not, *which* part is short. Refreshed after every sync, since a sync is the only thing that
+  // changes either side.
   useEffect(() => {
     if (!connected) {
-      setCloudRows(null);
-      setLocalRows(null);
+      setSides(null);
       return undefined;
     }
     let cancelled = false;
-    Promise.all([countCloud(), countLocal()])
-      .then(([cloud, local]) => {
-        if (cancelled) return;
-        setCloudRows(cloud);
-        setLocalRows(local);
-      })
-      .catch(() => !cancelled && setCloudRows(null));
+    connectSummary()
+      .then((next) => !cancelled && setSides(next))
+      .catch(() => !cancelled && setSides(null));
     return () => {
       cancelled = true;
     };
   }, [connected, config.last]);
+
+  const cloudRows = sides?.cloud ?? null;
+  const localRows = sides?.local ?? null;
 
   // The devices this project has seen, the last rows written to it, and how far the project's own
   // schema has got. All three are read only on a connected device.
@@ -313,7 +311,7 @@ export function SyncPanel({
       onConfirm: () => {
         void run('wipe', async () => {
           await deleteCloud();
-          setCloudRows(0);
+          setSides((prev) => (prev ? { ...prev, cloud: 0, cloudByKind: {}, both: 0, onlyCloud: 0 } : prev));
           return t('sync.danger.done');
         });
       },
@@ -634,6 +632,23 @@ export function SyncPanel({
             )}
           </section>
 
+          {/* What is actually stored, on each side, kind by kind. "34 rows from 34 records" answers
+              whether sync is working and nothing else; when a kind *is* short, this is the only view
+              that says which one. */}
+          <section className={card}>
+            <h3 className={heading}>{t('sync.stored.title')}</h3>
+            {sides === null ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t('sync.stored.counting')}</p>
+            ) : (
+              <>
+                <SideBySide cloud={sides.cloudByKind} local={sides.localByKind} totals={[sides.cloud, sides.local]} />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  {t('sync.stored.split', { both: sides.both, onlyLocal: sides.onlyLocal, onlyCloud: sides.onlyCloud })}
+                </p>
+              </>
+            )}
+          </section>
+
           {/* Who wrote what. One account is signed in on every device, so without this the project
               cannot answer the only question that matters after a sync does something unexpected. */}
           <section className={card}>
@@ -735,7 +750,7 @@ export function SyncPanel({
                   <li>{t('sync.trail.none')}</li>
                 ) : (
                   changes.map((c) => (
-                    <li key={`${c.kind}:${c.id}:${c.at}`}>
+                    <li key={`${c.key}:${c.at}`}>
                       {agoText(c.at, lang, t)} ·{' '}
                       {c.deleted ? t('sync.trail.deleted') : t('sync.trail.written')} ·{' '}
                       {c.device ? (

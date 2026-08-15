@@ -23,10 +23,15 @@ copy that keeps itself.
 - **A new device can't overwrite an evening's work.** As soon as it connects it only *reads*, and
   shows how much each side holds; until you choose — keep both, take the project's copy, or send this
   device up — nothing goes up. The two destructive directions ask for a word to be typed.
-- **The last device to sync wins, per event**, and never before it has sent what it is holding: an
-  unsent change beats what comes down, so a phone with a wrong clock keeps its edits. Deletions
-  travel as tombstones rather than being downloaded straight back. Once a day the two sides are
-  counted, and a cloud copy that turns out to be short is repaired.
+- **It merges per guest, not per event.** A wedding travels as rows — one for the event, one for
+  each guest, one for each table — so adding a guest on the laptop while someone checks people in on
+  a phone at the door keeps both. Only two devices editing the same guest can collide, and then the
+  later sync wins. A save sends only what changed: seating one guest rewrites the whole event in the
+  app, and the diff turns that back into one row.
+- Nothing is discarded before it has been sent, so a phone with a wrong clock keeps its edits.
+  Deletions travel as tombstones rather than being downloaded straight back, and deleting an event
+  tombstones every row it was made of. Once a day the two sides are counted, and a cloud copy that
+  turns out to be short is repaired.
 - **Which device did that.** Every row carries the device that wrote it, and the panel lists your
   devices and the project's recent changes — with one email signed in everywhere, that is the only
   question the data itself cannot answer.
@@ -35,8 +40,10 @@ copy that keeps itself.
   says, and *Add from file* only brings in what isn't here — so an old backup can't undo newer work.
   Persistent storage can be requested from the same screen, which is what keeps Safari from clearing
   a site left unvisited for a week.
-- Tests: 42 more, covering the merge rules, the row shapes, key and project-address validation, and
-  the backup file in both directions.
+- Tests: 55 more, covering taking an event apart and putting it back together, the save diff, the
+  merge rules, the row shapes, key and project-address validation, and the backup file in both
+  directions. The whole loop was also driven end to end in two real browsers against a stand-in
+  Supabase: two devices editing the same wedding at the same time both keep their work.
 
 ## 1.14.0
 

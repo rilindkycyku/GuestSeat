@@ -21,17 +21,7 @@
  */
 
 import type { EventState } from '../types';
-import {
-  clearTombstones,
-  deleteEventRecord,
-  getActiveId,
-  getAllEvents,
-  putEvent,
-  setActiveId,
-  tombstoneKey,
-  EVENTS_KIND,
-  type StoredEvent,
-} from './db';
+import { deleteEventRecord, getActiveId, getAllEvents, putEvent, setActiveId, type StoredEvent } from './db';
 import { makeId } from './importGuests';
 import { downloadBlob } from './exportData';
 
@@ -98,9 +88,9 @@ export function buildBackup(records: StoredEvent[], now = new Date()): BackupFil
     app: BACKUP_APP,
     version: BACKUP_VERSION,
     exportedAt: now.toISOString(),
-    // Only the id and the state: `updatedAt`/`pending` describe this device's relationship with its
-    // own cloud copy, and carrying them into another browser would tell it that events it has never
-    // sent are already up there.
+    // Only the id and the state — what a *device* knows about its own cloud copy is its business,
+    // and carrying it into another browser would tell it that rows it has never sent are already up
+    // there.
     events: records.filter((rec) => rec?.id && looksLikeEvent(rec.state)).map((rec) => ({ id: rec.id, state: rec.state })),
   };
 }
@@ -221,9 +211,8 @@ export async function importBackup(
     summary.added++;
   }
 
-  // An event brought back may be one this device deleted before the file was taken; its tombstone
-  // has to be withdrawn now that the event exists again, or the next sync would delete it once more.
-  await clearTombstones(backup.events.map((event) => tombstoneKey(EVENTS_KIND, event.id)));
+  // A tombstone left over from before the file was taken is withdrawn by the write itself: `putEvent`
+  // clears the tombstone of every row it writes, or the next sync would delete the event once more.
 
   // The event that was open may not have survived a replace.
   const active = await getActiveId();

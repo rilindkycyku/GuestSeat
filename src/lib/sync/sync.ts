@@ -3,6 +3,11 @@
  *
  * The shape of the thing, before the details:
  *
+ * - What travels is not an event but the pieces it is made of — the event's own details, one row per
+ *   guest, one row per table (lib/sync/records.ts). Two devices editing different guests of the same
+ *   wedding therefore both keep their edits, which is the whole reason for the extra machinery: the
+ *   day-of check-in happens on a phone at the venue while somebody else is still moving guests
+ *   around on a laptop.
  * - Every local change is flagged `pending` — "not sent yet" — and stays flagged until the cloud has
  *   accepted it (db.ts sets it; this file clears it). A deletion leaves a tombstone carrying the
  *   same flag, so a delete travels like any other change.
@@ -10,12 +15,11 @@
  *   *server* gave it, read back from the push, so two devices are never compared through two
  *   different clocks.
  * - The cloud side is one table of `(kind, record_id, updated_at, deleted, data)` rows — one row per
- *   saved event, with the whole {@link EventState} in the `data` column. One table means a user who
- *   set this up in March does not have to run a migration in their own project because April's
- *   release added a field to a guest.
+ *   record, with the payload in a `jsonb` column. Still **one table**: kinds and ids are columns, so
+ *   a release that adds a field to a guest needs no migration in anybody's own database.
  * - A sync pulls what changed since the last pull, applies it unless this device is holding an
- *   unsent change to the same event, then pushes what it is holding. **The last device to sync
- *   wins, per event.**
+ *   unsent change to the same record, then pushes what it is holding. **The last device to sync
+ *   wins, per record** — per guest, per table, per event name.
  * - **Except on the very first sync of a newly connected device**, which pushes nothing at all until
  *   the user has been shown what is in the cloud and has said what should happen to it. See
  *   {@link connectSummary} and {@link MODES}: that rule is what stands between a phone someone has
@@ -24,63 +28,51 @@
  *   say — the same email is signed in everywhere — and "which of my devices did that?" is the first
  *   question anybody asks when a sync does something surprising.
  *
- * ---- what an event being one row costs ----
- *
- * The unit of conflict is the whole event, not the guest. Two devices editing *different* events
- * merge perfectly; two devices editing *the same* event without syncing in between end with the
- * version that reached the cloud last, and the other side's edits to that event are gone. That is
- * the honest trade for a planner used on a phone and a laptop by one or two people, and it is
- * stated plainly in the panel rather than hidden. Finer conflict resolution would mean storing every
- * guest as its own record, which is a different app; the seating board is edited as a whole.
- *
  * The pure half (what to send, what to apply) is separated from the half that touches the database
  * and the network, so the merge rules can be tested without either — see sync.test.ts.
  */
 
-import type { EventState } from '../../types';
 import {
-  EVENTS_KIND,
   TIME_BEFORE_SYNC,
-  type StoredEvent,
   type Tombstone,
   clearSyncedStores,
   clearTombstones,
-  deleteEventsRaw,
-  getAllEvents,
+  deleteRecordsRaw,
+  ensureRecords,
+  getAllRecords,
   getDeletions,
-  putEventsRaw,
+  putRecordsRaw,
   putTombstones,
+  rebuildEvents,
 } from '../db';
+import { RECORD_KINDS, parseRecordKey, validRecord, type RecordKind, type SyncRecord } from './records';
 import { DEVICE_PREFIX, META_KIND, TABLE } from './schema';
 import { SyncError, readConfig, rest, saveConfig, ensureSession, type SyncConfig, type SyncSummary } from './supabase';
 import { deviceStamp, thisDevice } from './device';
 
 /** Kinds a downloaded row is allowed to name. Anything else is ignored rather than written: the rows
  * come back from a database the user administers themselves, and a typo in a hand-run SQL statement
- * should not have the app writing into a store that does not exist. */
-const ALLOWED_KINDS = new Set<string>([EVENTS_KIND]);
+ * should not have the app writing something it cannot read back. */
+const ALLOWED_KINDS = new Set<string>(RECORD_KINDS);
 
-/** PostgREST caps a response at 1000 rows by default; asking for fewer keeps a first sync of a long
- * history to a handful of quick requests instead of one enormous one. */
+/** PostgREST caps a response at 1000 rows by default; asking for fewer keeps the first sync of a
+ * 300-guest wedding to a handful of quick requests instead of one enormous one. */
 const DOWNLOAD_LIMIT = 500;
-const UPLOAD_LIMIT = 100;
+const UPLOAD_LIMIT = 200;
 
-export function rowKey(kind: string, id: string): string {
-  return `${kind}:${id}`;
-}
-
-/** One record on its way to or from the cloud. */
+/** One record on its way to or from the cloud. `key` is `${eventId}|${kind}|${id}` — the same string
+ * the row is stored under here and under `record_id` there, so both sides mean the same thing. */
 export interface SyncRow {
-  kind: string;
-  id: string;
+  kind: RecordKind;
+  key: string;
   updatedAt: number;
   deleted: boolean;
-  data: EventState | null;
+  data: unknown;
 }
 
 /** Everything this device holds, as the merge sees it. */
 export interface LocalState {
-  records: StoredEvent[];
+  records: SyncRecord[];
   deletions: Tombstone[];
 }
 
@@ -108,38 +100,32 @@ export function localChanges({
 }: Partial<LocalState> & { all?: boolean; exclude?: Set<string> }): SyncRow[] {
   const rows: SyncRow[] = [];
 
-  for (const rec of records) {
-    if (!rec?.id) continue;
-    if (!all && !rec.pending) continue;
-    if (exclude.has(rowKey(EVENTS_KIND, rec.id))) continue;
+  for (const record of records) {
+    if (!record?.key) continue;
+    if (!all && !record.pending) continue;
+    if (exclude.has(record.key)) continue;
     rows.push({
-      kind: EVENTS_KIND,
-      id: rec.id,
-      updatedAt: Number(rec.updatedAt) || 0,
+      kind: record.kind,
+      key: record.key,
+      updatedAt: Number(record.updatedAt) || 0,
       deleted: false,
-      data: rec.state,
+      data: record.data,
     });
   }
 
   for (const stone of deletions) {
-    if (!stone?.kind || !stone?.id) continue;
+    if (!stone?.key) continue;
     if (!all && !stone.pending) continue;
-    if (exclude.has(rowKey(stone.kind, stone.id))) continue;
-    rows.push({
-      kind: stone.kind,
-      id: stone.id,
-      updatedAt: Number(stone.updatedAt) || 0,
-      deleted: true,
-      data: null,
-    });
+    if (exclude.has(stone.key)) continue;
+    rows.push({ kind: stone.kind, key: stone.key, updatedAt: Number(stone.updatedAt) || 0, deleted: true, data: null });
   }
 
   return rows;
 }
 
 /**
- * `${kind}:${id}` → what this device holds for it: the timestamp, and whether the change is still
- * waiting to be sent. Deletions included. The whole of the local side, as the merge sees it.
+ * Every key this device holds → its timestamp, plus the set still waiting to be sent. Deletions
+ * included. The whole of the local side, as the merge sees it.
  *
  * A record dated {@link TIME_BEFORE_SYNC} is the one exception to "unsent wins". It is flagged so
  * that it *reaches* a cloud that has never held it, but it predates sync and its date is a
@@ -152,18 +138,13 @@ export function localSnapshot({ records = [], deletions = [] }: Partial<LocalSta
   const times = new Map<string, number>();
   const pending = new Set<string>();
 
-  const add = (kind: string, id: string, at: number, isPending: boolean) => {
-    const key = rowKey(kind, id);
+  const add = (key: string, at: number, isPending: boolean) => {
     times.set(key, at);
     if (isPending && at !== TIME_BEFORE_SYNC) pending.add(key);
   };
 
-  for (const rec of records) {
-    if (rec?.id) add(EVENTS_KIND, rec.id, Number(rec.updatedAt) || 0, Boolean(rec.pending));
-  }
-  for (const stone of deletions) {
-    if (stone?.kind && stone?.id) add(stone.kind, stone.id, Number(stone.updatedAt) || 0, Boolean(stone.pending));
-  }
+  for (const record of records) if (record?.key) add(record.key, Number(record.updatedAt) || 0, Boolean(record.pending));
+  for (const stone of deletions) if (stone?.key) add(stone.key, Number(stone.updatedAt) || 0, Boolean(stone.pending));
   return { times, pending };
 }
 
@@ -172,18 +153,11 @@ export interface ApplyPlan {
   remove: SyncRow[];
   /** Every key this plan touches, so the push a moment later does not send them straight back. */
   keys: Set<string>;
+  /** The events whose rows changed, so only those are put back together afterwards. */
+  events: Set<string>;
   skipped: number;
   /** The newest `updated_at` seen, including skipped rows — the new pull watermark. */
   maxTs: number;
-}
-
-/** A downloaded payload only becomes an event if it actually looks like one. The database belongs to
- * the user and can be edited by hand; a row of nonsense must be ignored, not written over a real
- * event. */
-function looksLikeEvent(data: unknown): data is EventState {
-  if (!data || typeof data !== 'object') return false;
-  const state = data as Partial<EventState>;
-  return Array.isArray(state.guests) && Array.isArray(state.tables);
 }
 
 /**
@@ -195,7 +169,7 @@ function looksLikeEvent(data: unknown): data is EventState {
  * 1. **An unsent local change wins.** It is kept, skipped here, and pushed a few lines later. So the
  *    rule across devices is "the last one to sync wins" rather than "the one whose clock reads
  *    latest wins", and nothing typed on this device is ever discarded before it has been sent.
- * 2. **Otherwise the cloud row wins.** There is exactly one row per event, so it always holds the
+ * 2. **Otherwise the cloud row wins.** There is exactly one row per record, so it always holds the
  *    last state anybody pushed; and an incremental pull only returns rows changed since this
  *    device's watermark. A row that arrives while the local copy is settled is therefore news by
  *    construction — no date arithmetic required to know it.
@@ -204,7 +178,7 @@ function looksLikeEvent(data: unknown): data is EventState {
  * records the timestamp the row ended up with, so an echo matches to the millisecond and is skipped
  * instead of being re-applied on every sync.
  *
- * A deletion for an event this device has never had is skipped rather than recorded — there is
+ * A deletion for a record this device has never had is skipped rather than recorded — there is
  * nothing to delete, and a tombstone for a record that never existed here would be pure noise.
  *
  * `cloudWins` drops rule 1 for the length of one sync: what the cloud holds is applied even over an
@@ -219,47 +193,53 @@ export function applyPlan(
 ): ApplyPlan {
   const write: SyncRow[] = [];
   const remove: SyncRow[] = [];
+  const events = new Set<string>();
   let skipped = 0;
   let maxTs = 0;
 
   for (const row of rows) {
-    if (!row?.kind || !row?.id || !Number.isFinite(row.updatedAt)) {
+    const parsed = row?.key ? parseRecordKey(row.key) : null;
+    if (!parsed || !row.kind || !Number.isFinite(row.updatedAt)) {
       skipped++;
       continue;
     }
-    if (!ALLOWED_KINDS.has(row.kind)) {
+    // The kind is in the key *and* in its own column; a row where they disagree is not one of ours.
+    if (!ALLOWED_KINDS.has(row.kind) || parsed.kind !== row.kind) {
       skipped++;
       continue;
     }
     maxTs = Math.max(maxTs, row.updatedAt);
 
-    const key = rowKey(row.kind, row.id);
     // Not yet sent from here: this device's version is the one going out, so what came down is last
     // round's news whatever its timestamp says.
-    if (!cloudWins && pending.has(key)) {
+    if (!cloudWins && pending.has(row.key)) {
       skipped++;
       continue;
     }
 
-    const local = times.get(key);
+    const local = times.get(row.key);
     if (local !== undefined && local === row.updatedAt) {
       skipped++;
       continue;
     }
     if (row.deleted) {
       if (local === undefined) skipped++;
-      else remove.push(row);
+      else {
+        remove.push(row);
+        events.add(parsed.eventId);
+      }
       continue;
     }
-    if (!looksLikeEvent(row.data)) {
+    if (!validRecord(row.kind, row.data)) {
       skipped++;
       continue;
     }
     write.push(row);
+    events.add(parsed.eventId);
   }
 
-  const keys = new Set([...write, ...remove].map((row) => rowKey(row.kind, row.id)));
-  return { write, remove, keys, skipped, maxTs };
+  const keys = new Set([...write, ...remove].map((row) => row.key));
+  return { write, remove, keys, events, skipped, maxTs };
 }
 
 /** The table's columns. `user_id` is sent rather than left to the column default, because a bulk
@@ -269,7 +249,7 @@ export function rowForServer(row: SyncRow, userId: string, device: { id: string;
   return {
     user_id: userId,
     kind: row.kind,
-    record_id: row.id,
+    record_id: row.key,
     // Sent for a project whose setup script predates the timestamp trigger; where the trigger exists
     // it overrides this with the server's own clock, which is the entire point of it.
     updated_at: new Date(row.updatedAt).toISOString(),
@@ -289,11 +269,27 @@ export function rowFromServer(raw: {
   data?: unknown;
 }): SyncRow {
   return {
-    kind: raw?.kind ?? '',
-    id: raw?.record_id ?? '',
+    kind: (raw?.kind ?? '') as RecordKind,
+    key: raw?.record_id ?? '',
     updatedAt: Date.parse(raw?.updated_at ?? ''),
     deleted: Boolean(raw?.deleted),
-    data: (raw?.data ?? null) as EventState | null,
+    data: raw?.data ?? null,
+  };
+}
+
+/** A downloaded row, as it is stored here. */
+function toRecord(row: SyncRow): SyncRecord | null {
+  const parsed = parseRecordKey(row.key);
+  if (!parsed) return null;
+  return {
+    key: row.key,
+    eventId: parsed.eventId,
+    kind: row.kind,
+    id: parsed.id,
+    updatedAt: row.updatedAt,
+    // Arrived from the cloud, so by definition it is not waiting to go to the cloud.
+    pending: false,
+    data: row.data as SyncRecord['data'],
   };
 }
 
@@ -306,22 +302,19 @@ export function localCount({ records = [], deletions = [] }: Partial<LocalState>
  * makes when it first meets a cloud copy. */
 export function localKeys({ records = [], deletions = [] }: Partial<LocalState> = {}): Set<string> {
   const keys = new Set<string>();
-  for (const rec of records) if (rec?.id) keys.add(rowKey(EVENTS_KIND, rec.id));
-  for (const stone of deletions) if (stone?.kind && stone?.id) keys.add(rowKey(stone.kind, stone.id));
+  for (const record of records) if (record?.key) keys.add(record.key);
+  for (const stone of deletions) if (stone?.key) keys.add(stone.key);
   return keys;
 }
 
-/** `${kind}:${id}` keys → how many of each kind, for a summary a person can read. */
+/** `${eventId}|${kind}|${id}` keys → how many of each kind, for a summary a person can read
+ * ("3 events, 412 guests") rather than a bare row count. */
 export function countByKind(keys: Iterable<string>): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const key of keys) {
-    const text = String(key);
-    const at = text.indexOf(':');
-    // Anything without a kind in front of it is not one of these keys at all — and slicing blindly
-    // would invent a kind name out of the id.
-    if (at <= 0) continue;
-    const kind = text.slice(0, at);
-    counts[kind] = (counts[kind] ?? 0) + 1;
+    const parsed = parseRecordKey(String(key));
+    if (!parsed) continue;
+    counts[parsed.kind] = (counts[parsed.kind] ?? 0) + 1;
   }
   return counts;
 }
@@ -334,7 +327,7 @@ export function countByKind(keys: Iterable<string>): Record<string, number> {
  */
 export function deviceHasNothing({ records = [], deletions = [] }: Partial<LocalState> = {}): boolean {
   if (deletions.length > 0) return false;
-  return !records.some((rec) => (Number(rec?.updatedAt) || 0) > TIME_BEFORE_SYNC);
+  return !records.some((record) => (Number(record?.updatedAt) || 0) > TIME_BEFORE_SYNC);
 }
 
 /**
@@ -352,41 +345,16 @@ export function deviceHasNothing({ records = [], deletions = [] }: Partial<Local
 export function missingInCloud(
   { records = [], deletions = [] }: Partial<LocalState>,
   keys: Set<string> = new Set()
-): { records: StoredEvent[]; deletions: Tombstone[] } {
+): { records: SyncRecord[]; deletions: Tombstone[] } {
   return {
-    records: records.filter((rec) => rec?.id && !rec.pending && !keys.has(rowKey(EVENTS_KIND, rec.id))),
-    deletions: deletions.filter(
-      (stone) => stone?.kind && stone?.id && !stone.pending && !keys.has(rowKey(stone.kind, stone.id))
-    ),
+    records: records.filter((record) => record?.key && !record.pending && !keys.has(record.key)),
+    deletions: deletions.filter((stone) => stone?.key && !stone.pending && !keys.has(stone.key)),
   };
-}
-
-/**
- * Which records predate sync, and so are still owed to the cloud.
- *
- * Two kinds, and they are the same thing at different moments. A record with **no** timestamp was
- * written before this release. A record dated exactly {@link TIME_BEFORE_SYNC} is one of those on a
- * later pass: stamped by an earlier sync, and *still* never accepted by the cloud.
- *
- * Being flagged does not make them win anything — {@link localSnapshot} keeps them out of the
- * "unsent beats the cloud" rule — so an untouched event on a device joining a copy still loses to
- * the cloud's version of the same event. The mark only means "the cloud has not confirmed this",
- * and the first push that succeeds replaces the placeholder date with the server's own.
- */
-export function unstamped(records: StoredEvent[] = []): StoredEvent[] {
-  return records.filter((rec) => {
-    if (!rec?.id) return false;
-    const at = Number(rec.updatedAt) || 0;
-    // Been through the cloud, which is the only thing that gives a record a real date.
-    if (at !== 0 && at !== TIME_BEFORE_SYNC) return false;
-    // Already dated and already marked: nothing to write, it is on its way out as it is.
-    return !(at === TIME_BEFORE_SYNC && rec.pending);
-  });
 }
 
 /** The three answers to "this device and the cloud copy do not match — which one is right?". */
 export const MODES = {
-  /** Keep both: the cloud wins wherever the same event exists on both sides, and whatever only this
+  /** Keep both: the cloud wins wherever the same record exists on both sides, and whatever only this
    * device has is uploaded. The safe answer, and the one offered first. */
   MERGE: 'merge',
   /** Take the cloud copy and drop what is here. For the device that is new or was wiped. */
@@ -400,41 +368,27 @@ export type SyncMode = (typeof MODES)[keyof typeof MODES];
 // ---- the database side ----
 
 export async function readLocalState(): Promise<LocalState> {
-  const [records, deletions] = await Promise.all([getAllEvents(), getDeletions()]);
+  const [records, deletions] = await Promise.all([getAllRecords(), getDeletions()]);
   return { records, deletions };
 }
 
-/**
- * Marks the records that predate sync, in memory as well as on disk, so the push a few lines later
- * can see them. One write transaction for the lot rather than one per record.
- */
-export async function stampUnstamped(state: LocalState, at = TIME_BEFORE_SYNC): Promise<number> {
-  const jobs = unstamped(state.records);
-  if (jobs.length === 0) return 0;
-  for (const rec of jobs) {
-    rec.updatedAt = at;
-    rec.pending = true;
-  }
-  await putEventsRaw(jobs);
-  return jobs.length;
-}
-
 async function applyToDb(plan: ApplyPlan): Promise<void> {
-  // The id is taken from the row rather than from the payload: the row's key is what the whole merge
-  // was decided on, so a payload disagreeing with it must not create a second event.
-  await putEventsRaw(
-    plan.write.map((row) => ({
-      id: row.id,
-      state: row.data as EventState,
-      updatedAt: row.updatedAt,
-      // Arrived from the cloud, so by definition it is not waiting to go to the cloud.
-      pending: false,
-    }))
+  const written = plan.write.map(toRecord).filter((r): r is SyncRecord => r !== null);
+  await putRecordsRaw(written);
+  await deleteRecordsRaw(
+    plan.remove
+      .map((row) => {
+        const parsed = parseRecordKey(row.key);
+        return parsed ? { key: row.key, eventId: parsed.eventId, kind: row.kind, id: parsed.id, updatedAt: row.updatedAt } : null;
+      })
+      .filter((entry): entry is { key: string; eventId: string; kind: RecordKind; id: string; updatedAt: number } => entry !== null)
   );
-  await deleteEventsRaw(plan.remove.map((row) => ({ id: row.id, updatedAt: row.updatedAt })));
   // Anything written above exists again, so a tombstone this device is still holding for it would
   // otherwise travel back out and delete it everywhere.
-  await clearTombstones(plan.write.map((row) => rowKey(row.kind, row.id)));
+  await clearTombstones(written.map((record) => record.key));
+  // Only the events whose rows moved are put back together — a sync that brought down one guest does
+  // not rebuild the other four weddings.
+  await rebuildEvents(plan.events);
 }
 
 async function downloadRows(since: string): Promise<SyncRow[]> {
@@ -452,20 +406,20 @@ async function downloadRows(since: string): Promise<SyncRow[]> {
 }
 
 /**
- * Every key the cloud copy holds, `${kind}:${record_id}`, tombstones included.
+ * Every key the cloud copy holds, tombstones included.
  *
- * Only the two columns that make the key: even for a planner with dozens of events that is a list of
- * short strings, not the events themselves, which is what makes the check below affordable.
+ * Only the two columns that make the key: for a few weddings that is a list of short strings, not
+ * the guests themselves, which is what makes the check below affordable.
  */
 export async function cloudKeys(): Promise<Set<string>> {
   const keys = new Set<string>();
   for (let offset = 0; ; offset += DOWNLOAD_LIMIT) {
-    const part = await rest<{ kind?: string; record_id?: string }[]>(
-      `${TABLE}?kind=neq.${META_KIND}&select=kind,record_id&order=kind.asc,record_id.asc&limit=${DOWNLOAD_LIMIT}&offset=${offset}`
+    const part = await rest<{ record_id?: string }[]>(
+      `${TABLE}?kind=neq.${META_KIND}&select=record_id&order=record_id.asc&limit=${DOWNLOAD_LIMIT}&offset=${offset}`
     );
     const list = Array.isArray(part) ? part : [];
     list.forEach((row) => {
-      if (row?.kind && row?.record_id) keys.add(rowKey(row.kind, row.record_id));
+      if (row?.record_id) keys.add(row.record_id);
     });
     if (list.length < DOWNLOAD_LIMIT) return keys;
   }
@@ -487,7 +441,7 @@ export interface ConnectSummary {
  * The two sides counted against each other, without writing a single thing.
  *
  * This is what a newly connected device shows before it is allowed to push — see {@link runSync}. It
- * costs two short-string columns of the cloud table and one read of the local one, which is nothing
+ * costs one short-string column of the cloud table and one read of the local one, which is nothing
  * next to what it prevents: a device that has just installed the app pushing its emptiness over
  * everything the other one holds, with nobody ever shown the numbers.
  */
@@ -610,8 +564,8 @@ export async function forgetDevice(id: string): Promise<void> {
 }
 
 export interface ChangeRow {
-  kind: string;
-  id: string;
+  kind: RecordKind;
+  key: string;
   at: string | null;
   deleted: boolean;
   deviceId: string;
@@ -632,8 +586,7 @@ export async function recentChanges(limit = 12): Promise<ChangeRow[]> {
   const columns = withDevice
     ? 'kind,record_id,updated_at,deleted,device_id,device_name'
     : 'kind,record_id,updated_at,deleted';
-  const path = (cols: string) =>
-    `${TABLE}?kind=neq.${META_KIND}&select=${cols}&order=updated_at.desc&limit=${limit}`;
+  const path = (cols: string) => `${TABLE}?kind=neq.${META_KIND}&select=${cols}&order=updated_at.desc&limit=${limit}`;
 
   let rows: Record<string, unknown>[];
   try {
@@ -646,8 +599,8 @@ export async function recentChanges(limit = 12): Promise<ChangeRow[]> {
 
   const self = thisDevice().id;
   return (Array.isArray(rows) ? rows : []).map((row) => ({
-    kind: String(row?.kind ?? ''),
-    id: String(row?.record_id ?? ''),
+    kind: String(row?.kind ?? '') as RecordKind,
+    key: String(row?.record_id ?? ''),
     at: (row?.updated_at as string) ?? null,
     deleted: Boolean(row?.deleted),
     deviceId: String(row?.device_id ?? ''),
@@ -669,10 +622,8 @@ export async function repairCopy(state: LocalState): Promise<number> {
   const total = missing.records.length + missing.deletions.length;
   if (total === 0) return 0;
 
-  for (const rec of missing.records) rec.pending = true;
-  for (const stone of missing.deletions) stone.pending = true;
-  await putEventsRaw(missing.records);
-  await putTombstones(missing.deletions);
+  await putRecordsRaw(missing.records.map((record) => ({ ...record, pending: true })));
+  await putTombstones(missing.deletions.map((stone) => ({ ...stone, pending: true })));
   return total;
 }
 
@@ -692,8 +643,8 @@ export async function countLocal(): Promise<number> {
  * migration this release has not caught up with.
  *
  * Worth telling apart from every other failure, because the answer is not to stop: the device stamp
- * is a nice-to-have, the events are not, and a phone must go on syncing with a project the user has
- * not got round to updating. PostgREST reports it as PGRST204 and names the column.
+ * is a nice-to-have, the guest list is not, and a phone must go on syncing with a project the user
+ * has not got round to updating. PostgREST reports it as PGRST204 and names the column.
  */
 function missingColumn(err: unknown): boolean {
   if (err instanceof SyncError && err.pgCode === 'PGRST204') return true;
@@ -701,12 +652,12 @@ function missingColumn(err: unknown): boolean {
 }
 
 async function upsertRows(batch: unknown[]) {
-  return rest<{ kind?: string; record_id?: string; updated_at?: string }[]>(
-    `${TABLE}?on_conflict=user_id,kind,record_id&select=kind,record_id,updated_at`,
+  return rest<{ record_id?: string; updated_at?: string }[]>(
+    `${TABLE}?on_conflict=user_id,kind,record_id&select=record_id,updated_at`,
     {
       method: 'POST',
       body: batch,
-      // An upsert: the same event edited twice must update its row, not fail on the primary key.
+      // An upsert: the same guest edited twice must update their row, not fail on the primary key.
       headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     }
   );
@@ -717,8 +668,8 @@ async function upsertRows(batch: unknown[]) {
  *
  * The read-back is what keeps every device's timestamps in a single clock: a row written here and a
  * row written on the laptop are then both dated by Postgres, so comparing them means something.
- * `select=` keeps the response to three columns — without it the whole `data` payload comes back and
- * a first sync would pay for itself twice.
+ * `select=` keeps the response to two columns — without it the whole `data` payload comes back and a
+ * first sync would pay for itself twice.
  */
 async function pushRows(rows: SyncRow[], config: SyncConfig): Promise<Map<string, number>> {
   const times = new Map<string, number>();
@@ -729,7 +680,7 @@ async function pushRows(rows: SyncRow[], config: SyncConfig): Promise<Map<string
 
   for (let i = 0; i < rows.length; i += UPLOAD_LIMIT) {
     const batch = rows.slice(i, i + UPLOAD_LIMIT);
-    let answer: { kind?: string; record_id?: string; updated_at?: string }[];
+    let answer: { record_id?: string; updated_at?: string }[];
     try {
       answer = await upsertRows(batch.map((row) => rowForServer(row, config.userId, device)));
     } catch (err) {
@@ -742,7 +693,7 @@ async function pushRows(rows: SyncRow[], config: SyncConfig): Promise<Map<string
     }
     for (const row of Array.isArray(answer) ? answer : []) {
       const at = Date.parse(row?.updated_at ?? '');
-      if (row?.kind && row?.record_id && Number.isFinite(at)) times.set(rowKey(row.kind, row.record_id), at);
+      if (row?.record_id && Number.isFinite(at)) times.set(row.record_id, at);
     }
   }
   // A push that went through carrying the stamp is proof the project has the columns. A push of
@@ -768,7 +719,7 @@ async function pushRows(rows: SyncRow[], config: SyncConfig): Promise<Map<string
 export function detectServerClock(rows: SyncRow[], times: Map<string, number>): boolean | null {
   let seen = false;
   for (const row of rows) {
-    const at = times.get(rowKey(row.kind, row.id));
+    const at = times.get(row.key);
     if (at === undefined) continue;
     if (at !== row.updatedAt) return true;
     seen = true;
@@ -781,39 +732,37 @@ export function detectServerClock(rows: SyncRow[], times: Map<string, number>): 
  * timestamp the server gave it.
  *
  * The database is re-read first, because the user does not stop dragging guests around while a
- * request is in flight: an event edited between the push and this moment must stay flagged, or that
+ * request is in flight: a record edited between the push and this moment must stay flagged, or that
  * edit would sit on this device for ever, believed to have been sent. Comparing `updatedAt` against
  * what was actually pushed is how that is told apart.
+ *
+ * Two maps rather than one, and each row is looked up in the one its own kind belongs to. A record
+ * and its tombstone never coexist, but they *do* swap places — undoing a delete brings the record
+ * back under the same key — and writing a tombstone-shaped object into the records store (or the
+ * reverse) would corrupt the row rather than merely miss it.
  */
 async function markPushed(rows: SyncRow[], times: Map<string, number>): Promise<number> {
   if (rows.length === 0) return 0;
   const state = await readLocalState();
-  // Two maps rather than one, and each row is looked up in the map its own kind belongs to. An event
-  // and its tombstone never coexist, but they *do* swap places — undoing a delete re-creates the
-  // event under the same id — and writing a tombstone-shaped object into the events store (or the
-  // reverse) would corrupt the record rather than merely miss it.
-  const recordsByKey = new Map<string, StoredEvent>();
-  const stonesByKey = new Map<string, Tombstone>();
-  for (const rec of state.records) if (rec?.id) recordsByKey.set(rowKey(EVENTS_KIND, rec.id), rec);
-  for (const stone of state.deletions) if (stone?.kind && stone?.id) stonesByKey.set(rowKey(stone.kind, stone.id), stone);
+  const recordsByKey = new Map(state.records.map((record) => [record.key, record]));
+  const stonesByKey = new Map(state.deletions.map((stone) => [stone.key, stone]));
 
-  const records: StoredEvent[] = [];
+  const records: SyncRecord[] = [];
   const stones: Tombstone[] = [];
   let count = 0;
 
   for (const row of rows) {
-    const key = rowKey(row.kind, row.id);
-    const local = row.deleted ? stonesByKey.get(key) : recordsByKey.get(key);
+    const local = row.deleted ? stonesByKey.get(row.key) : recordsByKey.get(row.key);
     if (!local) continue;
     if ((Number(local.updatedAt) || 0) !== row.updatedAt) continue;
 
-    const at = times.get(key) ?? row.updatedAt;
+    const at = times.get(row.key) ?? row.updatedAt;
     if (row.deleted) stones.push({ ...(local as Tombstone), updatedAt: at, pending: false });
-    else records.push({ ...(local as StoredEvent), updatedAt: at, pending: false });
+    else records.push({ ...(local as SyncRecord), updatedAt: at, pending: false });
     count++;
   }
 
-  await putEventsRaw(records);
+  await putRecordsRaw(records);
   await putTombstones(stones);
   return count;
 }
@@ -881,8 +830,8 @@ async function repairIfShort(config: SyncConfig, skip: boolean): Promise<number>
     // Written before the work rather than after: a check that keeps failing half way through must
     // not run on every single sync from then on.
     saveConfig({ checkedAt: Date.now() });
-    // Read here rather than handed in: what this device holds is whatever survived the download
-    // that has just been applied, and re-flagging a stale copy would undo it.
+    // Read here rather than handed in: what this device holds is whatever survived the download that
+    // has just been applied, and re-flagging a stale copy would undo it.
     const state = await readLocalState();
     if (inCloud === null || inCloud >= localCount(state)) return 0;
     return await repairCopy(state);
@@ -897,7 +846,7 @@ async function repairIfShort(config: SyncConfig, skip: boolean): Promise<number>
  * One sync, in whichever of the four shapes applies.
  *
  * The ordinary one (no `mode`, connection long since settled) is what it sounds like: pull what
- * changed, apply it unless this device is holding an unsent change to the same event, push what it
+ * changed, apply it unless this device is holding an unsent change to the same record, push what it
  * is holding.
  *
  * The other three exist because a device that has just installed the app has nothing, and "nothing"
@@ -909,8 +858,7 @@ async function repairIfShort(config: SyncConfig, skip: boolean): Promise<number>
  *   never heard of. Both sides survive.
  * - **TAKE**: the cloud copy replaces what is here. The download completes *before* anything local
  *   is cleared, so a failed request leaves the events untouched.
- * - **PUSH**: this device is declared the right one and everything here goes up over the cloud. The
- *   panel makes the user type the word for that one.
+ * - **PUSH**: this device is declared the right one and everything here goes up over the cloud.
  */
 async function runSync({ full = false, mode = null }: { full?: boolean; mode?: SyncMode | null }): Promise<SyncResult> {
   const startedAt = Date.now();
@@ -926,17 +874,16 @@ async function runSync({ full = false, mode = null }: { full?: boolean; mode?: S
     const fromScratch = Boolean(mode) || full || Boolean(config.fullPushNext);
     const fullDownload = fromScratch || undecided;
 
-    let state = await readLocalState();
-    const stamped = await stampUnstamped(state);
+    // Events saved before this release have no rows yet; this is where they get them.
+    const stamped = await ensureRecords();
 
     const rows = await downloadRows(fullDownload ? '' : config.pulledAt);
 
     // Cleared only now, with the whole cloud copy already in hand: a download that failed half way
     // must leave the device exactly as it was, not empty.
-    if (mode === MODES.TAKE) {
-      await clearSyncedStores();
-      state = await readLocalState();
-    }
+    if (mode === MODES.TAKE) await clearSyncedStores();
+
+    const state = await readLocalState();
 
     // Joining a copy is the one time an unsent local change is not the newer truth — it is whatever
     // this browser happened to write before it had anywhere to send it.
@@ -948,12 +895,11 @@ async function runSync({ full = false, mode = null }: { full?: boolean; mode?: S
 
     // Everything the cloud already holds, from the download that has just finished — so a merge can
     // push what is missing without asking the project a second time.
-    const cloudSeen = mode === MODES.MERGE ? new Set(rows.map((row) => rowKey(row.kind, row.id))) : null;
+    const cloudSeen = mode === MODES.MERGE ? new Set(rows.map((row) => row.key)) : null;
     const exclude = cloudSeen ? new Set([...plan.keys, ...cloudSeen]) : plan.keys;
 
     // Read again rather than reused: what goes up is what is on disk *after* the download was
-    // applied and the repair re-flagged whatever the cloud turned out to be missing. Pushing the
-    // pre-download copy would send back the very rows that have just replaced it.
+    // applied and the repair re-flagged whatever the cloud turned out to be missing.
     const afterApply = await readLocalState();
 
     const toPush =
@@ -1033,7 +979,7 @@ export async function countCloud(): Promise<number | null> {
   // `limit=1` keeps the body to one row; the number itself rides in the header. Deliberately no
   // `Range` header alongside it — a range asking for a row an empty table does not have is answered
   // with 416, and an empty cloud copy is exactly the state right after the delete button. The
-  // bookkeeping rows are not the user's events, so they are left out of the count.
+  // bookkeeping rows are not the user's data, so they are left out of the count.
   const res = await rest(`${TABLE}?kind=neq.${META_KIND}&select=record_id&limit=1`, {
     headers: { Prefer: 'count=exact' },
     raw: true,
