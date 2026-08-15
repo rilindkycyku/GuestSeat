@@ -13,6 +13,8 @@ export const sq = {
     undo: 'Zhbëj',
     confirmFinal: 'Po, vazhdo',
     confirmStep: 'Hapi {{step}} nga {{total}}',
+    typeToConfirm: 'Shkruani {{word}} për të vazhduar',
+    copy: 'Kopjo',
   },
   events: {
     title: 'Ngjarjet e tua',
@@ -497,5 +499,271 @@ export const sq = {
     load: 'Ngarko listën e ndarë',
     loaded: 'U ngarkua lista e ndarë me {{count}} të ftuar.',
     invalid: 'Kjo lidhje ndarjeje nuk u lexua dot.',
+  },
+  backup: {
+    title: 'Të dhënat & sinkronizimi',
+    tab: 'Kopja',
+    navDesc: 'Mbani një skedar me çdo event, ose sinkronizoni mes pajisjeve',
+    navDescConnected: 'Skedari i kopjes, dhe kopja në cloud me të cilën sinkronizon kjo pajisje',
+    fileTitle: 'Skedari i kopjes',
+    fileDesc:
+      'Një skedar i vetëm me të gjitha eventet e ruajtura — mysafirët, tavolinat, etiketat dhe të dhënat e ftesës. Kjo është kopja që i mbijeton një shfletuesi të pastruar, një telefoni të humbur ose një kompjuteri të ri.',
+    export: 'Shkarko kopjen',
+    importReplace: 'Rikthe nga skedari',
+    importMerge: 'Shto nga skedari',
+    modesHint:
+      'Rikthimi e kthen këtë shfletues saktësisht siç është skedari. Shtimi sjell vetëm eventet që nuk i keni ende, pra një skedar i vjetër nuk mund t’ju fshijë punën e re.',
+    exported: 'Kopja u shkarkua — {{count}} evente.',
+    exportFailed: 'Kopja nuk u krijua.',
+    importFailed: 'Skedari nuk u importua.',
+    replaceTitle: 'Rikthe nga skedari',
+    replaceConfirm:
+      'Të rikthehen {{count}} evente nga ky skedar? Gjithçka që ndodhet tani në këtë pajisje ({{existing}} evente) zëvendësohet me atë që mban skedari.',
+    replaceConfirmFinal: 'Kontrolli i fundit: {{existing}} evente të ruajtura në këtë pajisje fshihen dhe zëvendësohen nga skedari.',
+    replace: 'Rikthe',
+    mergeTitle: 'Shto nga skedari',
+    mergeConfirm: 'Të shtohen eventet e këtij skedari ({{count}}) që nuk janë ende këtu? Asgjë e ruajtur nuk preket.',
+    merge: 'Shto eventet',
+    merged: 'U shtuan {{added}} evente; {{existing}} ishin tashmë këtu dhe mbetën si ishin.',
+    restored: 'U rikthyen {{added}} evente nga skedari.',
+    storedTitle: 'Çka ruhet këtu',
+    eventsLabel: 'Evente',
+    guestsLabel: 'Mysafirë',
+    tablesLabel: 'Tavolina',
+    storedNote:
+      'Gjithçka ndodhet vetëm në këtë shfletues, përveçse kur aktivizoni sinkronizimin. Skedari i kopjes është e vetmja gjë që i mbijeton pastrimit të të dhënave të faqes.',
+    storage: {
+      title: 'Qëndrueshmëria e të dhënave',
+      desc: 'Shfletuesit i fshijnë vetë të dhënat e një faqeje kur pajisja mbetet pa hapësirë, dhe Safari i fshin ato të një faqeje që nuk vizitohet për shtatë ditë shfletimi — bashkë me listat e mysafirëve. Ruajtja e qëndrueshme e përjashton aplikacionin nga kjo.',
+      on: 'Aktualisht është aktive.',
+      request: 'Kërko ruajtje të qëndrueshme',
+      recheck: 'Kontrollo përsëri',
+      granted: 'Shfletuesi e shënoi ruajtjen e këtij aplikacioni si të qëndrueshme.',
+      refused:
+        'Shfletuesi nuk e dha (ende) ruajtjen e qëndrueshme. Përdorimi i rregullt, shtimi te faqeshënuesit ose te ekrani bazë e bën më të mundshme.',
+    },
+    errors: {
+      notJson: 'Ky skedar nuk është JSON i lexueshëm.',
+      unrecognized: 'Ky skedar nuk është një kopje e GuestSeat.',
+      otherApp: 'Ky skedar është kopje e “{{app}}”, jo e GuestSeat.',
+      empty: 'Ky skedar nuk mban asnjë event.',
+    },
+  },
+  sync: {
+    tab: 'Sinkronizimi',
+    working: 'Duke punuar…',
+    failed: 'Sinkronizimi dështoi.',
+    result: 'U morën {{pulled}} ndryshime dhe u dërguan {{pushed}}.',
+    decisionBanner:
+      'Kjo pajisje po vetëm lexon nga projekti. Derisa të vendosni çfarë të ndodhë me kopjen në cloud, asgjë nga këtu nuk dërgohet lart — kështu një pajisje e sapo nisur nuk i mbishkruan dot të dhënat e vërteta.',
+    decisionAction: 'Shiko dhe vendos',
+    schemaOutdated:
+      'Projekti juaj është në versionin {{version}} të skemës, kurse ky aplikacion pret versionin {{latest}}. Deri sa të përditësohet, gjërat e reja mund të mos ruhen si duhet.',
+    updateProject: 'Përditëso projektin',
+    noServerClock:
+      'Projekti juaj nuk po e vendos vetë orën e rreshtave — ka gjasa skripti të jetë ekzekutuar para se ai hap të ekzistonte. Pa të, një pajisje me orë të pasaktë mund t’i mbajë ndryshimet e veta pa u parë nga të tjerat.',
+    sessionGone:
+      'Sesioni i kësaj pajisjeje nuk vlen më. Projekti dhe çelësi janë ende këtu — mjafton fjalëkalimi, pra hapin 1 mund ta kaloni.',
+    connectedTitle: 'E lidhur me projektin tuaj',
+    lastSync: 'Sinkronizimi i fundit',
+    lastFailed: 'Përpjekja e fundit dështoi: {{error}}',
+    lastSummary:
+      'Herën e fundit u morën {{pulled}} ndryshime dhe u dërguan {{pushed}}. Te projekti ndodhen {{cloud}} rreshta nga {{local}} rekorde që mban kjo pajisje.',
+    missingRows:
+      'Projektit i mungojnë {{count}} rekorde që ndodhen në këtë pajisje. Ndodh kur tabela zbrazet ose rikrijohet jashtë aplikacionit: pajisja i mban ato si të dërguara dhe nuk i çon më lart.',
+    repair: 'Riparo kopjen në cloud',
+    repaired: 'U gjetën {{found}} rekorde që mungonin te projekti; u dërguan {{pushed}}.',
+    autoLabel: 'Sinkronizo automatikisht',
+    autoDesc:
+      'Kur është aktiv, sinkronizimi bëhet vetë: kur hapet aplikacioni, pak sekonda pas çdo ndryshimi, kur ktheheni te skeda dhe kur pajisja kthehet online.',
+    syncNow: 'Sinkronizo tani',
+    disconnect: 'Shkëput këtë pajisje',
+    disconnectConfirm:
+      'Kjo pajisje ndalon së sinkronizuari dhe harron projektin, çelësin dhe sesionin. Të dhënat tuaja mbeten të plota si këtu ashtu edhe në Supabase — mund të rilidheni kur të doni.',
+    disconnected: 'Kjo pajisje u shkëput nga sinkronizimi.',
+    changeKey: 'Ndrysho çelësin publik',
+    changeKeyHint:
+      'Çelësi i ri provohet te projekti para se të ruhet, pra një çelës i gabuar nuk e lë pajisjen pa sinkronizim. Për të kaluar te një projekt tjetër duhet shkëputja.',
+    saveKey: 'Ruaj çelësin',
+    newKey: 'Çelësi publik i ri',
+    keyChanged: 'Çelësi u përditësua — kjo pajisje po e përdor atë të riun.',
+    connect: {
+      step1: 'Hapi 1 — krijoni projektin dhe tabelën',
+      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
+      step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
+      siteUrlCopied: 'Adresa u kopjua.',
+      openDashboard: 'Hap panelin e Supabase',
+      step1c:
+        'Te Project Settings merrni Project URL (te Data API) dhe çelësin publishable — sb_publishable_… te API Keys. Edhe çelësi i vjetër anon punon. Çelësat secret / service_role mos i kopjoni kurrë këtu.',
+      step1d:
+        'Shtypni «Konfiguro projektin» më poshtë: hapet redaktori juaj SQL me skriptin brenda dhe mjafton Run. Tabelën nuk e krijon dot çelësi që ngjitni te hapi 2 — Supabase nuk ia lejon atij këtë punë, dhe kjo është mbrojtje, jo mangësi.',
+      step2: 'Hapi 2 — lidhni këtë pajisje',
+      step2Body:
+        'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',
+      projectUrl: 'Project URL',
+      publicKey: 'Çelësi publik',
+      keyPlaceholder: 'sb_publishable_… ose eyJhbGciOi…',
+      email: 'Email',
+      emailPlaceholder: 'ju@shembull.com',
+      password: 'Fjalëkalimi',
+      passwordPlaceholder: 'të paktën 6 karaktere',
+      keyHint: 'Çelësi publishable (ose anon i vjetër) — ai i destinuar për shfletues.',
+      signIn: 'Hyr dhe sinkronizo',
+      signUp: 'Krijo llogari',
+      confirmEmail:
+        'Llogaria u krijua, por projekti kërkon konfirmim me email. Hapni linkun që sapo ju erdhi dhe pastaj shtypni «Hyr».',
+      connectedUndecided:
+        'U lidh me projektin dhe u morën {{count}} ndryshime. Kjo pajisje nuk ka dërguar ende asgjë — zgjidhni çfarë duhet të ndodhë me kopjen në cloud.',
+    },
+    setup: {
+      title: 'Konfigurimi i projektit',
+      open: 'Konfiguro projektin',
+      intro:
+        'Çelësi që ruhet në këtë pajisje lexon e shkruan rreshta; krijimin e tabelës Supabase nuk ia lejon, dhe kjo është mbrojtje, jo mangësi. Prandaj ky hap i vetëm bëhet te projekti juaj: butoni «Hap SQL Editor» e hap redaktorin me skriptin brenda, mjafton Run. Ekzekutohet një herë, por përsëritja nuk prish gjë — çdo hap i tij kontrollon vetë nëse ekziston.',
+      noRef:
+        'Adresa e projektit nuk duket si një adresë Supabase, prandaj linku nuk e gjen dot redaktorin — hapeni vetë te projekti juaj dhe ngjitni skriptin.',
+      copy: 'Kopjo skriptin',
+      copied: 'U kopjua',
+      copyFailed: 'Shfletuesi nuk e lejoi kopjimin automatik — zgjidhni tekstin më sipër dhe kopjojeni vetë.',
+      thenCheck: 'Pasi ta keni ekzekutuar, kthehuni këtu dhe shtypni «Kontrollo projektin»: përgjigjen e jep vetë baza juaj, jo ky ekran.',
+      openEditor: 'Hap SQL Editor',
+      check: 'Kontrollo projektin',
+      checking: 'Duke kontrolluar…',
+      ready: 'Projekti është gati — tabela, rregulli i sigurisë, ora e serverit dhe indeksi janë në vend. Sinkronizimi po vazhdon vetë.',
+      updated: 'Projekti u përditësua. Sinkronizimi po vazhdon vetë.',
+      needAccount:
+        'Kontrolli bëhet me llogarinë tuaj brenda projektit, prandaj plotësoni më parë hapin 2 (email dhe fjalëkalim). Nëse skripti u ekzekutua, lidhja do të kalojë pa asnjë pengesë.',
+    },
+    join: {
+      title: 'Kjo pajisje sapo u lidh',
+      reading: 'Po lexohet çfarë ndodhet te projekti juaj…',
+      readOnly:
+        'Derisa të zgjidhni, kjo pajisje vetëm lexon nga projekti — asgjë nuk shkon lart. Kështu një pajisje e sapo nisur nuk i mbishkruan dot të dhënat e vërteta.',
+      inProject: 'Te projekti',
+      onBoth: 'Në të dyja anët',
+      onDevice: 'Në këtë pajisje',
+      split: '{{onlyLocal}} rekorde ndodhen vetëm këtu, {{onlyCloud}} vetëm te projekti.',
+      deviceEmpty: 'Kjo pajisje duket e sapo nisur: nuk mban asgjë të sajën.',
+      cloudEmpty: 'Projekti është bosh — kjo është hera e parë që dërgohet diçka atje.',
+      recommended: 'rekomandohet',
+      mergeTitle: 'Bashko të dyja',
+      mergeHint:
+        'Asgjë nuk humbet. Aty ku i njëjti event ndodhet në të dyja anët, mbetet versioni i projektit; {{count}} rekorde që i ka vetëm kjo pajisje ngarkohen lart.',
+      takeTitle: 'Merr kopjen e projektit',
+      takeHint: 'Kjo pajisje bëhet kopje e projektit: {{count}} rekorde që ndodhen vetëm këtu fshihen.',
+      pushTitle: 'Dërgo këtë pajisje',
+      pushHint:
+        'Gjithçka këtu shkon lart dhe mbishkruan {{count}} rekorde të projektit. Përdoreni vetëm nëse kjo pajisje është ajo me të dhënat e sakta.',
+      pushHintEmpty: 'Ngarkon gjithçka që ka kjo pajisje te projekti bosh.',
+      later: 'Më vonë',
+      continue: 'Vazhdo',
+    },
+    modes: {
+      intro: 'Kur dy pajisje nuk përputhen dhe doni ta zgjidhni ju vetë se cila ka të drejtë:',
+      merge: 'Bashko me projektin',
+      take: 'Merr gjithçka nga projekti',
+      push: 'Dërgo gjithçka nga kjo pajisje',
+      takeTitle: 'Merr gjithçka nga projekti',
+      takeConfirm:
+        'Kjo pajisje bëhet kopje e projektit tuaj. Çdo event që ndodhet vetëm këtu fshihet dhe nuk kthehet dot. Të dhënat te projekti nuk preken. Nëse nuk jeni i sigurt, mbylleni këtë dhe zgjidhni «Bashko».',
+      takeConfirmLabel: 'Zëvendëso këtë pajisje',
+      takeWord: 'MERR',
+      pushTitle: 'Dërgo këtë pajisje mbi kopjen në cloud',
+      pushConfirm:
+        'Gjithçka që ndodhet në këtë pajisje shkon te projekti dhe mbishkruan çfarë ka aty — aktualisht {{rows}} rreshta. Pajisjet e tjera do ta marrin këtë version në sinkronizimin e tyre të radhës. Përdoreni vetëm nëse kjo pajisje është ajo me të dhënat e sakta.',
+      pushConfirmLabel: 'E kuptoj, dërgo',
+      pushWord: 'DËRGO',
+    },
+    devices: {
+      title: 'Pajisjet tuaja',
+      thisIs: 'Kjo pajisje quhet',
+      rename: 'ndrysho',
+      reading: 'Po lexohen pajisjet…',
+      none: 'Asnjë pajisje nuk është shënuar ende te projekti. Shënimi shtohet në sinkronizimin e radhës.',
+      unnamed: 'Pajisje pa emër',
+      thisOne: '(kjo pajisje)',
+      line: 'Sinkronizoi {{when}} · mban {{records}} rekorde · dërgoi {{pushed}} herën e fundit',
+      forget: 'Hiq nga lista',
+      forgetTitle: 'Hiq pajisjen nga lista',
+      forgetConfirm:
+        'Hiqet nga lista pajisja “{{name}}”. Të dhënat e saj te projekti nuk preken — kjo fshin vetëm shënimin se ajo pajisje ka sinkronizuar ndonjëherë. Nëse sinkronizon sërish, rishfaqet.',
+    },
+    trail: {
+      show: 'Shiko ndryshimet e fundit te projekti',
+      hide: 'Fshih ndryshimet e fundit',
+      reading: 'Po lexohet…',
+      none: 'Projekti nuk ka ende asnjë rresht.',
+      written: 'u shkrua një event',
+      deleted: 'u fshi një event',
+      noDevice: 'pa gjurmë pajisjeje',
+    },
+    time: {
+      today: 'sot {{time}}',
+      yesterday: 'dje {{time}}',
+      daysAgo: '{{count}} ditë më parë',
+    },
+    badge: {
+      busy: 'Duke sinkronizuar…',
+      failed: 'Sinkronizimi i fundit dështoi — hapni panelin e sinkronizimit',
+      sessionGone: 'Sesioni ka mbaruar — hyni sërish që sinkronizimi të vazhdojë',
+      undecided: 'Kjo pajisje po vetëm lexon — vendosni çfarë të ndodhë me kopjen në cloud',
+      waiting: 'Ka ndryshime që presin të dërgohen',
+      offline: 'Pa internet — ndryshimet presin',
+      ok: 'Sinkronizimi është aktiv',
+    },
+    danger: {
+      title: 'Kopja në cloud',
+      desc:
+        'Zbraz tabelën te projekti juaj. Përdoreni nëse doni të nisni sinkronizimin nga e para ose të hiqni gjithçka nga Supabase; eventet në këtë shfletues nuk preken dhe sinkronizimi i radhës i ringarkon nga këtu.',
+      button: 'Fshi kopjen në cloud',
+      confirm:
+        'Fshihen të gjitha rreshtat tuaj te projekti — aktualisht {{rows}}. Të dhënat në këtë shfletues nuk preken, por pajisjet që nuk kanë sinkronizuar ende nuk i marrin dot ndryshimet e ngarkuara deri tani. Nëse doni thjesht ta ndalni sinkronizimin, përdorni «Shkëput këtë pajisje» — kopja mbetet e paprekur.',
+      confirmLabel: 'E kuptoj, vazhdo',
+      confirmFinal: 'Hapi i fundit. Rreshtat te projekti juaj Supabase fshihen përgjithmonë dhe veprimi nuk zhbëhet nga këtu.',
+      word: 'FSHI',
+      done: 'Kopja në cloud u zbraz.',
+    },
+    errors: {
+      network: 'Projekti nuk u arrit — kontrolloni internetin dhe adresën e projektit.',
+      credentials: 'Email-i ose fjalëkalimi nuk përputhen me këtë projekt.',
+      emailNotConfirmed:
+        'Email-i nuk është konfirmuar ende — hapni linkun që ju dërgoi Supabase, ose çaktivizoni konfirmimin te Authentication → Providers → Email.',
+      userExists: 'Kjo llogari ekziston tashmë në projekt — përdorni «Hyr» në vend të «Krijo llogari».',
+      weakPassword: 'Fjalëkalimi është shumë i shkurtër për këtë projekt (zakonisht duhen të paktën 6 karaktere).',
+      signupDisabled: 'Projekti i ka çaktivizuar regjistrimet e reja — aktivizojini te Authentication → Providers → Email.',
+      key: 'Projekti nuk e pranoi çelësin publik — kontrolloni se është kopjuar i plotë dhe nga ky projekt.',
+      table: 'Projekti nuk është konfiguruar ende — tabela e tij nuk ekziston. «Konfiguro projektin» e hap skriptin që e krijon.',
+      permission: 'Projekti nuk e lejoi këtë veprim — kontrolloni që rregullat e sigurisë të skriptit janë krijuar.',
+      session: 'Sesioni skadoi — hyni sërish me email dhe fjalëkalim.',
+      notConfigured: 'Sinkronizimi nuk është konfiguruar në këtë pajisje.',
+      notMigrated: 'Projekti ende nuk e ka atë që krijon skripti. Ekzekutojeni te SQL Editor dhe provoni sërish.',
+      auth: 'Projekti nuk e pranoi hyrjen.',
+      server: 'Projekti u përgjigj me një gabim.',
+      badUrl: 'Adresa e projektit nuk duket e vlefshme — kopjoni «Project URL» nga Supabase (p.sh. https://abcdefgh.supabase.co).',
+      needCredentials: 'Shkruani email-in dhe fjalëkalimin e llogarisë brenda projektit tuaj.',
+    },
+    keyErrors: {
+      empty: 'Shkruani çelësin publik (publishable, ose anon i vjetër) të projektit.',
+      secret: 'Ky është çelësi sekret (secret) — ai nuk vendoset kurrë në shfletues. Përdorni çelësin publishable.',
+      serviceRole:
+        'Ky është çelësi service_role — ai anashkalon çdo rregull sigurie dhe nuk duhet ruajtur në shfletues. Përdorni çelësin anon public.',
+      role: 'Çelësi ka rolin “{{role}}”; duhet çelësi publik i projektit.',
+      shape: 'Çelësi nuk duket si një çelës Supabase (sb_publishable_… ose anon i vjetër).',
+    },
+    safety: {
+      title: 'Sa e sigurt është',
+      publicKey:
+        'Çelësi publik nuk është fjalëkalim. Ai është publik nga natyra — çdo aplikacion Supabase e dërgon te shfletuesi. Ajo që mbron të dhënat është rregulli RLS i skriptit: pa hyrë me email dhe fjalëkalim, çelësi nuk lexon dot asnjë rresht.',
+      secretKey: 'Çelësat secret / service_role mos i vendosni kurrë këtu. Ata i anashkalojnë rregullat, dhe aplikacioni i refuzon vetë.',
+      storedHere:
+        'Kredencialet ruhen në këtë pajisje (localStorage), bashkë me sesionin. Nuk janë më të ndjeshme se vetë listat e mysafirëve, që tashmë ndodhen në këtë shfletues. Në një kompjuter të përbashkët përdorni «Shkëput këtë pajisje» kur mbaroni.',
+      ownProject: 'Të dhënat shkojnë vetëm te projekti juaj, në rajonin që zgjidhni ju, dhe udhëtojnë përmes HTTPS. GuestSeat mbetet pa server.',
+      lastWins:
+        'Fiton pajisja që sinkronizon e fundit, event për event. Nëse i njëjti event redaktohet në dy pajisje pa sinkronizuar në mes, mbetet versioni që mbërriti më vonë — evente të ndryshme nuk përplasen kurrë.',
+      newDevice:
+        'Një pajisje e re nuk dërgon asgjë pa ju pyetur. Sapo lidhet, ajo vetëm lexon dhe ju tregon sa mban secila anë; deri sa të zgjidhni, kopja në cloud nuk preket.',
+      deviceTrail:
+        'Çdo rresht mban emrin e pajisjes që e dërgoi. Me një email të vetëm në të gjitha pajisjet, kjo është e vetmja mënyrë për të parë se cila prej tyre bëri një ndryshim — shihni «Pajisjet tuaja» më lart.',
+    },
   },
 } satisfies TranslationDict;

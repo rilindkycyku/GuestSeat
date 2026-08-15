@@ -29,6 +29,10 @@ interface SettingsModalProps {
   onEditEventDetails: () => void;
   onEditInvitation: () => void;
   onSwitchEvents: () => void;
+  /** Open the data & sync dialog. */
+  onOpenData: () => void;
+  /** Whether a Supabase project is set up on this device, for the row's one-line summary. */
+  syncConfigured: boolean;
   onClose: () => void;
 }
 
@@ -225,6 +229,8 @@ export function SettingsModal({
   onEditEventDetails,
   onEditInvitation,
   onSwitchEvents,
+  onOpenData,
+  syncConfigured,
   onClose,
 }: SettingsModalProps) {
   const { t, lang, setLang } = useLanguage();
@@ -372,6 +378,12 @@ export function SettingsModal({
 
         <Section title={t('settings.data')} icon="🗄️">
           <div className="space-y-2">
+            <NavRow
+              icon="☁️"
+              title={t('backup.title')}
+              description={syncConfigured ? t('backup.navDescConnected') : t('backup.navDesc')}
+              onClick={onOpenData}
+            />
             <button onClick={onUnseatAll} className={actionButton}>
               {t('settings.unseatAll')}
             </button>

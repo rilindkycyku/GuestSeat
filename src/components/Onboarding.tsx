@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ImportError, parseImportedJson } from '../lib/importGuests';
 import { parseImportedCsv } from '../lib/importCsv';
 import { useLanguage } from '../hooks/useLanguage';
@@ -22,6 +22,8 @@ interface OnboardingProps {
   onSeedTraditionsChange: (on: boolean) => void;
   /** Return to the events picker instead of creating an event — shown only when events already exist. */
   onBack?: () => void;
+  /** Extra top-right controls — the sync indicator and the way into data & sync. */
+  controls?: ReactNode;
 }
 
 export function Onboarding({
@@ -31,6 +33,7 @@ export function Onboarding({
   seedTraditions,
   onSeedTraditionsChange,
   onBack,
+  controls,
 }: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,7 @@ export function Onboarding({
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 px-4 py-16 sm:py-12 relative">
-      <SettingsControls className="absolute top-4 right-4" />
+      <SettingsControls className="absolute top-4 right-4">{controls}</SettingsControls>
       {onBack && (
         <button
           onClick={onBack}

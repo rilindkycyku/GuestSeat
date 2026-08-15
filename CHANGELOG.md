@@ -9,6 +9,35 @@ folded into the release they belong to.
 
 ---
 
+## 1.15.0
+
+The two answers to "where does this list exist besides this browser?" — a file you keep, and a cloud
+copy that keeps itself.
+
+- **Sync across your devices, through a project you own.** GuestSeat still has no server: you bring
+  your own Supabase project, and the events travel through *your* database. Setup is a script the app
+  opens in your own SQL editor (the key a browser holds can create rows, never a table — that is
+  protection, not a gap), and from then on the phone and the laptop keep each other in step by
+  themselves: on open, a few seconds after any change, when the tab comes back, when the device comes
+  back online.
+- **A new device can't overwrite an evening's work.** As soon as it connects it only *reads*, and
+  shows how much each side holds; until you choose — keep both, take the project's copy, or send this
+  device up — nothing goes up. The two destructive directions ask for a word to be typed.
+- **The last device to sync wins, per event**, and never before it has sent what it is holding: an
+  unsent change beats what comes down, so a phone with a wrong clock keeps its edits. Deletions
+  travel as tombstones rather than being downloaded straight back. Once a day the two sides are
+  counted, and a cloud copy that turns out to be short is repaired.
+- **Which device did that.** Every row carries the device that wrote it, and the panel lists your
+  devices and the project's recent changes — with one email signed in everywhere, that is the only
+  question the data itself cannot answer.
+- **A backup file with every event in it.** The board's JSON export writes the event that happens to
+  be open; this writes them all, with their ids. Restoring puts the browser back to what the file
+  says, and *Add from file* only brings in what isn't here — so an old backup can't undo newer work.
+  Persistent storage can be requested from the same screen, which is what keeps Safari from clearing
+  a site left unvisited for a week.
+- Tests: 42 more, covering the merge rules, the row shapes, key and project-address validation, and
+  the backup file in both directions.
+
 ## 1.14.0
 
 The two screens where a mistake costs the most: the guest's own lookup, and the buttons that

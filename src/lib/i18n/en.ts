@@ -11,6 +11,8 @@ export const en = {
     undo: 'Undo',
     confirmFinal: 'Yes, continue',
     confirmStep: 'Step {{step}} of {{total}}',
+    typeToConfirm: 'Type {{word}} to confirm',
+    copy: 'Copy',
   },
   events: {
     title: 'Your events',
@@ -495,6 +497,272 @@ export const en = {
     load: 'Load shared list',
     loaded: 'Loaded shared list with {{count}} guests.',
     invalid: 'That share link could not be read.',
+  },
+  backup: {
+    title: 'Data & sync',
+    tab: 'Backup',
+    navDesc: 'Keep a file of every event, or sync across devices',
+    navDescConnected: 'Backup file, and the cloud copy this device syncs with',
+    fileTitle: 'Backup file',
+    fileDesc:
+      'One file with every saved event — guests, tables, tags and invitation details. This is the copy that survives a cleared browser, a lost phone or a new laptop.',
+    export: 'Download backup',
+    importReplace: 'Restore from file',
+    importMerge: 'Add from file',
+    modesHint:
+      'Restore puts this browser back to exactly what the file holds. Add only brings in events you don’t already have, so an old file can’t undo newer work.',
+    exported: 'Backup downloaded — {{count}} events.',
+    exportFailed: 'The backup could not be created.',
+    importFailed: 'The file could not be imported.',
+    replaceTitle: 'Restore from file',
+    replaceConfirm:
+      'Restore {{count}} events from this file? Everything now on this device ({{existing}} events) is replaced by what the file holds.',
+    replaceConfirmFinal: 'Last check: {{existing}} events saved on this device are deleted and replaced by the file.',
+    replace: 'Restore',
+    mergeTitle: 'Add from file',
+    mergeConfirm: 'Add the events from this file ({{count}}) that aren’t here yet? Nothing already saved is touched.',
+    merge: 'Add events',
+    merged: '{{added}} events added; {{existing}} were already here and were left as they are.',
+    restored: 'Restored {{added}} events from the file.',
+    storedTitle: 'What’s stored here',
+    eventsLabel: 'Events',
+    guestsLabel: 'Guests',
+    tablesLabel: 'Tables',
+    storedNote:
+      'All of it lives in this browser only, unless you turn on sync. A backup file is the only thing that survives clearing site data.',
+    storage: {
+      title: 'Keeping the data',
+      desc: 'Browsers delete a site’s data when the device runs low on space, and Safari clears a site left unvisited for seven browsing days — guest lists included. Persistent storage exempts this app from that.',
+      on: 'It is currently on.',
+      request: 'Ask for persistent storage',
+      recheck: 'Check again',
+      granted: 'The browser marked this app’s storage as persistent.',
+      refused:
+        'The browser hasn’t granted persistent storage (yet). Using the app regularly, bookmarking it or adding it to your home screen makes it likelier.',
+    },
+    errors: {
+      notJson: 'That file isn’t readable JSON.',
+      unrecognized: 'That file isn’t a GuestSeat backup.',
+      otherApp: 'That file is a backup of “{{app}}”, not of GuestSeat.',
+      empty: 'That file holds no events.',
+    },
+  },
+  sync: {
+    tab: 'Sync',
+    working: 'Working…',
+    failed: 'Sync failed.',
+    result: 'Pulled {{pulled}} changes, sent {{pushed}}.',
+    decisionBanner:
+      'This device is only reading from the project. Until you say what should happen to the cloud copy, nothing from here is sent up — so a device that has just been set up can’t overwrite the real plan.',
+    decisionAction: 'Look and decide',
+    schemaOutdated:
+      'Your project is on schema version {{version}}, while this app expects version {{latest}}. Until it’s updated, new things may not be stored properly.',
+    updateProject: 'Update the project',
+    noServerClock:
+      'Your project isn’t stamping rows with its own clock — the setup script was probably run before that step existed. Without it, a device with a wrong clock can keep changes the others never see.',
+    sessionGone:
+      'This device’s session has expired. The project and the key are still here — only the password is needed, so you can skip step 1.',
+    connectedTitle: 'Connected to your project',
+    lastSync: 'Last sync',
+    lastFailed: 'The last attempt failed: {{error}}',
+    lastSummary:
+      'Last time, {{pulled}} changes came down and {{pushed}} went up. The project holds {{cloud}} rows against {{local}} records on this device.',
+    missingRows:
+      'The project is missing {{count}} records that are on this device. It happens when the table is emptied or rebuilt outside the app: this device counts them as sent and never offers them again.',
+    repair: 'Repair the cloud copy',
+    repaired: 'Found {{found}} records the project was missing; {{pushed}} were sent.',
+    autoLabel: 'Sync automatically',
+    autoDesc:
+      'When on, syncing happens by itself: when the app opens, a few seconds after any change, when you come back to the tab, and when the device comes back online.',
+    syncNow: 'Sync now',
+    disconnect: 'Disconnect this device',
+    disconnectConfirm:
+      'This device stops syncing and forgets the project, the key and the session. Your data stays complete both here and in Supabase — you can reconnect whenever you like.',
+    disconnected: 'This device is no longer syncing.',
+    changeKey: 'Change the public key',
+    changeKeyHint:
+      'The new key is tried against the project before it’s saved, so a mistyped one can’t leave this device unable to sync. Moving to a different project means disconnecting instead.',
+    saveKey: 'Save key',
+    newKey: 'New public key',
+    keyChanged: 'The key was updated — this device is using the new one.',
+    connect: {
+      step1: 'Step 1 — create the project and the table',
+      step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
+      step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
+      siteUrlCopied: 'Address copied.',
+      openDashboard: 'Open Supabase dashboard',
+      step1c:
+        'Under Project Settings, take the Project URL (in Data API) and the publishable key — sb_publishable_… under API Keys. An older anon key works too. Never copy a secret / service_role key here.',
+      step1d:
+        'Press “Set up the project” below: it opens your own SQL editor with the script already in it, and all that’s left is Run. The key you paste in step 2 can’t create the table — Supabase doesn’t allow it, and that is protection, not a gap.',
+      step2: 'Step 2 — connect this device',
+      step2Body:
+        'The account is created inside your own project, nowhere else. Use the same email and password on every device you want kept in step: “Create account” the first time, “Sign in” on the others.',
+      projectUrl: 'Project URL',
+      publicKey: 'Public key',
+      keyPlaceholder: 'sb_publishable_… or eyJhbGciOi…',
+      email: 'Email',
+      emailPlaceholder: 'you@example.com',
+      password: 'Password',
+      passwordPlaceholder: 'at least 6 characters',
+      keyHint: 'The publishable (or older anon) key — the one meant for browsers.',
+      signIn: 'Sign in and sync',
+      signUp: 'Create account',
+      confirmEmail:
+        'The account was created, but the project asks for email confirmation. Open the link you were just sent, then press “Sign in”.',
+      connectedUndecided:
+        'Connected, and {{count}} changes came down. This device hasn’t sent anything yet — choose what should happen to the cloud copy.',
+    },
+    setup: {
+      title: 'Set up the project',
+      open: 'Set up the project',
+      intro:
+        'The key stored on this device reads and writes rows; creating the table is something Supabase doesn’t allow it to do, and that is protection rather than a gap. So this one step happens in your project: “Open SQL editor” opens it with the script already in the box, and all that’s left is Run. It runs once, but running it again changes nothing — every step checks whether it already exists.',
+      noRef:
+        'That project address doesn’t look like a Supabase one, so the link can’t find the editor — open it yourself in your project and paste the script.',
+      copy: 'Copy script',
+      copied: 'Copied',
+      copyFailed: 'The browser wouldn’t copy it automatically — select the text above and copy it by hand.',
+      thenCheck: 'Once you’ve run it, come back here and press “Check the project”: the answer comes from your database, not from this screen.',
+      openEditor: 'Open SQL editor',
+      check: 'Check the project',
+      checking: 'Checking…',
+      ready: 'The project is ready — the table, the security rule, the server clock and the index are all in place. Syncing is carrying on by itself.',
+      updated: 'The project was updated. Syncing is carrying on by itself.',
+      needAccount:
+        'The check runs as your account inside the project, so fill in step 2 first (email and password). If the script ran, connecting will go through without a hitch.',
+    },
+    join: {
+      title: 'This device has just connected',
+      reading: 'Reading what’s in your project…',
+      readOnly:
+        'Until you choose, this device only reads from the project — nothing goes up. That way a device that has just been set up can’t overwrite the real plan.',
+      inProject: 'In the project',
+      onBoth: 'On both sides',
+      onDevice: 'On this device',
+      split: '{{onlyLocal}} records are only here, {{onlyCloud}} only in the project.',
+      deviceEmpty: 'This device looks freshly started: it holds nothing of its own.',
+      cloudEmpty: 'The project is empty — this is the first time anything is sent there.',
+      recommended: 'recommended',
+      mergeTitle: 'Keep both',
+      mergeHint:
+        'Nothing is lost. Where the same event exists on both sides, the project’s version stays; the {{count}} records only this device has are uploaded.',
+      takeTitle: 'Take the project’s copy',
+      takeHint: 'This device becomes a copy of the project: the {{count}} records that exist only here are deleted.',
+      pushTitle: 'Send this device up',
+      pushHint:
+        'Everything here goes up and overwrites {{count}} records in the project. Use it only if this device is the one with the right data.',
+      pushHintEmpty: 'Uploads everything this device holds to the empty project.',
+      later: 'Later',
+      continue: 'Continue',
+    },
+    modes: {
+      intro: 'When two devices disagree and you want to settle it yourself:',
+      merge: 'Merge with the project',
+      take: 'Take everything from the project',
+      push: 'Send everything from this device',
+      takeTitle: 'Take everything from the project',
+      takeConfirm:
+        'This device becomes a copy of your project. Every event that exists only here is deleted and cannot be brought back. The data in the project is untouched. If you are not sure, cancel and choose Merge.',
+      takeConfirmLabel: 'Replace this device',
+      takeWord: 'TAKE',
+      pushTitle: 'Send this device over the cloud copy',
+      pushConfirm:
+        'Everything on this device goes to the project and overwrites what is there — currently {{rows}} rows. The other devices will take this version on their next sync. Use it only if this device is the one with the right data.',
+      pushConfirmLabel: 'I understand, send',
+      pushWord: 'SEND',
+    },
+    devices: {
+      title: 'Your devices',
+      thisIs: 'This device is called',
+      rename: 'rename',
+      reading: 'Reading the devices…',
+      none: 'No device has signed itself into the project yet. The note is added on the next sync.',
+      unnamed: 'Unnamed device',
+      thisOne: '(this device)',
+      line: 'Synced {{when}} · holds {{records}} records · sent {{pushed}} last time',
+      forget: 'Remove from the list',
+      forgetTitle: 'Remove the device from the list',
+      forgetConfirm:
+        '“{{name}}” is removed from the list. Its data in the project is untouched — this only deletes the note that the device ever synced. If it syncs again, it reappears.',
+    },
+    trail: {
+      show: 'Show the project’s recent changes',
+      hide: 'Hide recent changes',
+      reading: 'Reading…',
+      none: 'The project holds no rows yet.',
+      written: 'an event was written',
+      deleted: 'an event was deleted',
+      noDevice: 'no device recorded',
+    },
+    time: {
+      today: 'today {{time}}',
+      yesterday: 'yesterday {{time}}',
+      daysAgo: '{{count}} days ago',
+    },
+    badge: {
+      busy: 'Syncing…',
+      failed: 'The last sync failed — open the sync panel',
+      sessionGone: 'The session has expired — sign in again to keep syncing',
+      undecided: 'This device is only reading — decide what happens to the cloud copy',
+      waiting: 'There are changes waiting to be sent',
+      offline: 'Offline — changes are waiting',
+      ok: 'Sync is on',
+    },
+    danger: {
+      title: 'The cloud copy',
+      desc:
+        'Empties the table in your project. Use it to start syncing from scratch or to remove everything from Supabase; the events in this browser are untouched, and the next sync uploads them again from here.',
+      button: 'Delete the cloud copy',
+      confirm:
+        'This deletes all your rows in your project — currently {{rows}}. The data in this browser is untouched, but devices that haven’t synced yet cannot receive what was uploaded so far. To simply stop syncing, use “Disconnect this device” instead: the copy stays intact.',
+      confirmLabel: 'I understand, continue',
+      confirmFinal: 'Last step. The rows in your Supabase project are deleted for good, and this cannot be undone from here.',
+      word: 'DELETE',
+      done: 'The cloud copy is now empty.',
+    },
+    errors: {
+      network: 'The project couldn’t be reached — check the internet connection and the project address.',
+      credentials: 'The email or password doesn’t match this project.',
+      emailNotConfirmed:
+        'That email hasn’t been confirmed yet — open the link Supabase sent, or turn confirmation off under Authentication → Providers → Email.',
+      userExists: 'That account already exists in the project — use “Sign in” instead of “Create account”.',
+      weakPassword: 'That password is too short for this project (usually at least 6 characters).',
+      signupDisabled: 'The project has new sign-ups turned off — enable them under Authentication → Providers → Email.',
+      key: 'The project didn’t accept the public key — check it was copied whole and from this project.',
+      table: 'The project isn’t set up yet — its table doesn’t exist. “Set up the project” opens the script that creates it.',
+      permission: 'The project refused the operation — check the security rule from the script was created.',
+      session: 'The session expired — sign in again with your email and password.',
+      notConfigured: 'Sync isn’t set up on this device.',
+      notMigrated: 'The project still doesn’t have what the script creates. Run it in the SQL editor and try again.',
+      auth: 'The project refused the sign-in.',
+      server: 'The project answered with an error.',
+      badUrl: 'That project address doesn’t look valid — copy “Project URL” from Supabase (e.g. https://abcdefgh.supabase.co).',
+      needCredentials: 'Enter the email and password of the account inside your project.',
+    },
+    keyErrors: {
+      empty: 'Enter the project’s public key (publishable, or the older anon).',
+      secret: 'That is the secret key — it never belongs in a browser. Use the publishable key.',
+      serviceRole:
+        'That is the service_role key — it bypasses every security rule and must not be stored in a browser. Use the anon public key.',
+      role: 'That key has the role “{{role}}”; the project’s public key is the one needed.',
+      shape: 'That doesn’t look like a Supabase key (sb_publishable_… or an older anon key).',
+    },
+    safety: {
+      title: 'How safe is this',
+      publicKey:
+        'The public key is not a password. It is public by nature — every Supabase app sends it to the browser. What protects the data is the script’s row-level-security rule: without signing in, the key cannot read a single row.',
+      secretKey: 'Never paste a secret / service_role key here. Those bypass the rules, and the app refuses them outright.',
+      storedHere:
+        'The credentials are stored on this device (localStorage), along with the session. They are no more sensitive than the guest lists themselves, which already sit in this browser. On a shared computer, use “Disconnect this device” when you’re done.',
+      ownProject: 'The data goes only to your project, in the region you chose, over HTTPS. GuestSeat still has no server.',
+      lastWins:
+        'The last device to sync wins, per event. If the same event is edited on two devices without syncing in between, the version that arrived later is the one kept — different events never collide.',
+      newDevice:
+        'A new device sends nothing without asking you. As soon as it connects it only reads, and shows how much each side holds; until you choose, the cloud copy is untouched.',
+      deviceTrail:
+        'Every row carries the name of the device that sent it. With one email signed in everywhere, that is the only way to see which device made a change — see “Your devices” above.',
+    },
   },
 };
 

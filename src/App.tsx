@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
+import { useSync } from './hooks/useSync';
 import { useBoardDnd } from './hooks/useBoardDnd';
 import { useTableTags, type TableFilter } from './hooks/useTableTags';
 import { useGuestBadges } from './hooks/useGuestBadges';
@@ -34,6 +35,8 @@ import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
+import { DataModal, type DataTab } from './components/DataModal';
+import { SyncBadge } from './components/sync/SyncBadge';
 import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
@@ -66,6 +69,7 @@ export default function App() {
     events,
     createEvent,
     switchEvent,
+    reload,
     closeEvent,
     deleteEvent,
     renameEvent,
@@ -101,6 +105,9 @@ export default function App() {
   } = useEventState();
   const { t } = useLanguage();
   const { toast, showToast, dismissToast } = useToast();
+  // Cloud sync runs alongside the board: it writes straight to IndexedDB, so whatever it brings down
+  // is re-read through `reload` rather than merged into React state by hand.
+  const sync = useSync({ ready, onApplied: reload });
 
   const [query, setQuery] = useState('');
   // When true, show onboarding to create another event even though saved events already exist
@@ -118,6 +125,8 @@ export default function App() {
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [autoSeatReport, setAutoSeatReport] = useState<Pick<AutoSeatResult, 'seated' | 'unplaced'> | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Which tab of the data dialog is open, or null when it is closed.
+  const [dataTab, setDataTab] = useState<DataTab | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
@@ -485,9 +494,38 @@ export default function App() {
     closeEvent();
   };
 
+  // The sync indicator and the way into data & sync, for the screens that have no header of their
+  // own — a device that has just taken the cloud copy may have no events at all to open.
+  const cornerControls = (
+    <>
+      <SyncBadge sync={sync} onOpen={() => setDataTab('sync')} />
+      <button
+        onClick={() => setDataTab('backup')}
+        title={t('backup.title')}
+        aria-label={t('backup.title')}
+        className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+      >
+        🗄️
+      </button>
+    </>
+  );
+
+  const dataModal = dataTab && (
+    <DataModal
+      events={events}
+      sync={sync}
+      initialTab={dataTab}
+      askConfirm={askConfirm}
+      onToast={showToast}
+      onImported={reload}
+      onClose={() => setDataTab(null)}
+    />
+  );
+
   // The onboarding screen, optionally with a Back link (shown when other events already exist).
   const onboardingScreen = (onBack?: () => void) => (
     <Onboarding
+      controls={cornerControls}
       onBack={onBack}
       onImported={(result, fallbackName, eventType) =>
         startEvent({
@@ -555,6 +593,7 @@ export default function App() {
         {showPicker ? (
           <EventPicker
             events={events}
+            controls={cornerControls}
             onOpen={(id) => void switchEvent(id)}
             onNew={() => setCreatingNew(true)}
             onRename={renameEvent}
@@ -563,6 +602,7 @@ export default function App() {
         ) : (
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
+        {dataModal}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
@@ -587,6 +627,8 @@ export default function App() {
           onOpenOverview={() => setStatsOpen(true)}
           onOpenEvents={handleCloseToPicker}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenData={(tab) => setDataTab(tab)}
+          sync={sync}
           onShowInvitation={() => setInvitationOpen(true)}
           onShowQr={() => setQrOpen(true)}
           onToast={showToast}
@@ -931,6 +973,11 @@ export default function App() {
             setSettingsOpen(false);
             handleCloseToPicker();
           }}
+          onOpenData={() => {
+            setSettingsOpen(false);
+            setDataTab('backup');
+          }}
+          syncConfigured={sync.configured}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
           systemTags={systemTags}
@@ -945,6 +992,8 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
+
+      {dataModal}
 
       {toastNode}
       <Analytics />

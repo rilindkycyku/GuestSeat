@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { eventTypeConfig } from '../lib/eventTypes';
 import { SettingsControls } from './SettingsControls';
@@ -11,6 +11,8 @@ interface EventPickerProps {
   onNew: () => void;
   onRename: (id: string, name: string) => void;
   onDelete: (event: EventSummary) => void;
+  /** Extra top-right controls — the sync indicator and the way into data & sync. */
+  controls?: ReactNode;
 }
 
 /**
@@ -18,7 +20,7 @@ interface EventPickerProps {
  * card resumes that event exactly where it was left; the primary button starts a fresh one. Each
  * event lives independently in IndexedDB, so closing one and opening another loses nothing.
  */
-export function EventPicker({ events, onOpen, onNew, onRename, onDelete }: EventPickerProps) {
+export function EventPicker({ events, onOpen, onNew, onRename, onDelete, controls }: EventPickerProps) {
   const { t, lang } = useLanguage();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -39,7 +41,7 @@ export function EventPicker({ events, onOpen, onNew, onRename, onDelete }: Event
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-16 sm:py-12 relative">
-      <SettingsControls className="absolute top-4 right-4" />
+      <SettingsControls className="absolute top-4 right-4">{controls}</SettingsControls>
       <div className="w-full max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white text-2xl mb-4 shadow-lg shadow-indigo-600/20">

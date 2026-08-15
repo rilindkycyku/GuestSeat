@@ -4,6 +4,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useDialog } from '../hooks/useDialog';
 import { useExportActions } from '../hooks/useExportActions';
 import { ExportMenu } from './ExportMenu';
+import { SyncBadge } from './sync/SyncBadge';
+import type { SyncState } from '../hooks/useSync';
 import type { EventState } from '../types';
 
 interface NavBarProps {
@@ -21,6 +23,9 @@ interface NavBarProps {
   onOpenOverview: () => void;
   onOpenEvents: () => void;
   onOpenSettings: () => void;
+  /** Open the data & sync dialog, on the tab named. */
+  onOpenData: (tab: 'backup' | 'sync') => void;
+  sync: SyncState;
   onShowInvitation: () => void;
   onShowQr: () => void;
   onToast: (msg: string) => void;
@@ -113,6 +118,8 @@ export function NavBar({
   onOpenOverview,
   onOpenEvents,
   onOpenSettings,
+  onOpenData,
+  sync,
   onShowInvitation,
   onShowQr,
   onToast,
@@ -214,6 +221,7 @@ export function NavBar({
             </button>
             <ExportMenu state={state} kind="share" onToast={onToast} onShowQr={onShowQr} />
             <ExportMenu state={state} kind="export" onToast={onToast} onShowInvitation={onShowInvitation} />
+            <SyncBadge sync={sync} onOpen={() => onOpenData('sync')} />
             <button onClick={toggleTheme} className={iconButtonClass} title={themeLabel} aria-label={t('settings.theme')}>
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
@@ -236,6 +244,7 @@ export function NavBar({
           </div>
 
           <div className="lg:hidden flex items-center gap-1.5 shrink-0">
+            <SyncBadge sync={sync} onOpen={() => onOpenData('sync')} />
             <button onClick={onOpenSettings} className={iconButtonClass} aria-label={t('settings.title')}>
               ⚙️
             </button>
@@ -363,6 +372,7 @@ export function NavBar({
             <DrawerRow icon="🎉" label={t('checkin.title')} onClick={pick(onOpenCheckIn)} />
             <DrawerRow icon="📊" label={t('settings.overview')} onClick={pick(onOpenOverview)} />
             <DrawerRow icon="📁" label={t('events.myEvents')} onClick={pick(onOpenEvents)} />
+            <DrawerRow icon="🗄️" label={t('backup.title')} onClick={pick(() => onOpenData('backup'))} />
             <DrawerRow icon="⚙️" label={t('settings.title')} onClick={pick(onOpenSettings)} />
 
             <GroupLabel>{t('settings.appearance')}</GroupLabel>

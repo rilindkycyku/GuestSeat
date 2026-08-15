@@ -25,6 +25,45 @@
 | **🔎 Find your seat** | The QR comes in two flavours: the full plan (for a co-planner) or a **guest link** that opens a read-only "type your name, see your table" lookup — nothing saved, nothing editable, and no names listed until someone types. |
 | **📤 Export** | **JSON** (full, re-importable — every field round-trips), **PDF** (a gold-framed cream seating chart with per-part pages, a share QR and a branded footer), **table cards** and **place cards** (folded tent cards, one per guest, four to a page), and **Excel** (`.xlsx`) — a styled charcoal-and-gold ExcelJS workbook with *Guests* and *Tables* sheets. The board itself also prints cleanly with <kbd>Ctrl</kbd>+<kbd>P</kbd>. |
 | **💾 Persistence** | Every event is saved automatically to **IndexedDB**, so a planner can keep several events side by side and reopen the last one they had open. Lists saved by older versions are migrated from `localStorage` on first run. |
+| **🗄️ Backup** | One file with **every** saved event — the copy that survives a cleared browser or a new laptop. Restore puts the browser back to exactly what the file holds; *Add from file* only brings in events you don't already have, so an old backup can't undo newer work. |
+| **☁️ Sync** | Optional two-way sync across your devices through **a Supabase project you own** — see below. |
+
+---
+
+## ☁️ Sync across devices
+
+GuestSeat has no server, and this is the honest version of "the same plan on my phone and my laptop":
+you bring **your own** Supabase project, the events travel through **your** database, and nothing
+belonging to GuestSeat is anywhere in the path.
+
+**Setting it up** (Settings → Data & sync → Sync):
+
+1. Create a free Supabase project.
+2. Set its **Site URL** to this app's address, so the confirmation link comes back here.
+3. Copy the **Project URL** and the **publishable** key (`sb_publishable_…`; an older `anon` key works
+   too). A `secret` / `service_role` key is refused outright — it bypasses row-level security and must
+   never sit in a browser.
+4. Press **Set up the project**: it opens your own SQL editor with the script already in the box, and
+   all that's left is Run. The key in your browser reaches PostgREST only, which serves rows and
+   cannot create a table — that is protection, not a gap.
+5. Sign in with an account that exists inside your project, on each device you want kept in step.
+
+**How it behaves:**
+
+- One row per event, keyed by `(user, kind, record_id)`, with the event itself in a `jsonb` column —
+  so a release that adds a field to a guest needs no migration in anybody's own database.
+- A sync pulls what changed, applies it unless this device is holding an unsent change to the same
+  event, then pushes what it's holding. **The last device to sync wins, per event**; different events
+  never collide. An unsent local change is never discarded before it has been sent, so a device with
+  a wrong clock still keeps its edits.
+- Deleting leaves a tombstone, so a deletion travels instead of the record being downloaded again.
+- **A newly connected device pushes nothing** until you've been shown what each side holds and said
+  what should happen — merge, take the project's copy, or send this device up. That is what stands
+  between a phone you've just installed the app on and an evening of seating work.
+- Every row is stamped with the device that wrote it, and the panel lists your devices and the
+  project's recent changes — with one email signed in everywhere, that's the only way to answer
+  "which of my devices did that?".
+- Row-level security means the public key alone reads nothing: without signing in, not a single row.
 
 ---
 
@@ -73,7 +112,7 @@ or six PRs of iteration. [`CHANGELOG.md`](CHANGELOG.md) lists each release with 
 ## ✅ Tests & checks
 
 ```bash
-npm test        # Vitest — share-link codec, importers, auto-seating, board search
+npm test        # Vitest — share-link codec, importers, auto-seating, board search, sync merge rules, backup files
 npm run lint    # oxlint
 npx tsc -b      # typecheck
 ```
