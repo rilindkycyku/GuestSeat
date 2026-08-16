@@ -13,6 +13,11 @@ export const sq = {
     undo: 'Zhbëj',
     confirmFinal: 'Po, vazhdo',
     confirmStep: 'Hapi {{step}} nga {{total}}',
+    typeToConfirm: 'Shkruani {{word}} për të vazhduar',
+    copy: 'Kopjo',
+    blockedTitle: 'GuestSeat është i hapur në një skedë tjetër',
+    blockedBody:
+      'Kjo skedë po e pret: një përditësim i duhen të dhënat e ruajtura vetëm për vete për një çast. Mbyllni skedën ose dritaren tjetër — kjo vazhdon vetë, pa pasur nevojë të shtypni asgjë.',
   },
   events: {
     title: 'Ngjarjet e tua',
@@ -74,6 +79,7 @@ export const sq = {
     overview: 'Përmbledhje',
     overviewDesc: 'Numra, pjesëmarrja, balanca e anëve & menyja',
     data: 'Të dhënat',
+    help: 'Ndihma',
     unseatAll: 'Hiq të gjithë nga tavolinat',
     unseatAllConfirm: 'Të hiqen të gjithë të ftuarit nga tavolinat?',
     unseatAllConfirmFinal: 'Konfirmimi i fundit: {{count}} të ftuar mbeten pa tavolinë dhe rregullimi i tavolinave humbet.',
@@ -497,5 +503,731 @@ export const sq = {
     load: 'Ngarko listën e ndarë',
     loaded: 'U ngarkua lista e ndarë me {{count}} të ftuar.',
     invalid: 'Kjo lidhje ndarjeje nuk u lexua dot.',
+  },
+  guide: {
+    title: 'Udhëzuesi',
+    subtitle: 'Çdo ekran i aplikacionit, i shpjeguar hap pas hapi — çfarë bën, si përdoret dhe çka ia vlen të dihet para se ta prekni.',
+    open: 'Udhëzuesi',
+    openDesc: 'Çdo ekran, i shpjeguar hap pas hapi',
+    readMore: 'Si funksionon kjo',
+    searchPlaceholder: 'Kërko te udhëzimet…',
+    searchClear: 'Pastro kërkimin',
+    searchEmpty: 'Asnjë udhëzim nuk përmban këtë fjalë.',
+    stepsTitle: 'Hapat',
+    tipsTitle: 'Ia vlen të dihet',
+    seeAlso: 'Shih edhe:',
+    previous: 'Më parë',
+    next: 'Më pas',
+    openScreen: 'Hape',
+    groups: {
+      planning: 'Planifikimi i uljes',
+      day: 'Vetë eventi',
+      data: 'Të dhënat tuaja',
+    },
+    entries: {
+      start: {
+        label: 'Fillimi i shpejtë',
+        title: 'Fillimi i shpejtë',
+        summary:
+          'Pesë hapa nga një aplikacion bosh te një plan uljeje i përfunduar. Nuk ka llogari për të hapur te ne dhe asgjë nuk del nga ky shfletues — derisa ta lidhni vetë sinkronizimin me një projekt Supabase tuajin, ose të merrni vetë një kopje.',
+        steps: [
+          {
+            title: 'Nisni një event',
+            text: 'Importoni një listë që e keni tashmë, filloni bosh dhe shkruajini emrat rrugës, ose ngarkoni listën demo për t’i parë gjërat më parë. Cilëndo që zgjidhni, bëhet një event i ruajtur; aplikacioni mban sa të doni, njëri pranë tjetrit.',
+          },
+          {
+            title: 'Shtoni tavolinat',
+            text: 'Shtoni tavolinat dhe caktoni sa ulen te secila. Çdo tavolinë e re trashëgon madhësinë e formën e së fundit, pra një sallë me tavolina dhjetëvendëshe bëhet me pak prekje. Jepuni anën e dhëndrit a të nuses, nëse kjo ka rëndësi për ju.',
+          },
+          {
+            title: 'Ulni njerëzit',
+            text: 'Tërhiqni mysafirët nga paneli i paulurve mbi tavolina, ose shtypni Uljen automatike dhe lëreni aplikacionin t’i mbushë me një hap që zhbëhet — i mban çiftet bashkë dhe të afërmit e grindur larg njëri-tjetrit.',
+          },
+          {
+            title: 'Plotësoni detajet e eventit',
+            text: 'Çifti, salla, data dhe programi shkruhen një herë dhe pastaj dalin te ftesa, te plani i uljes, te kartelat e tavolinave e te ato të vendeve.',
+          },
+          {
+            title: 'Printoni, ndani, dhe mbani një kopje',
+            text: 'Printoni planin e kartelat, ndani planin me link a QR, dhe shkarkoni skedarin e kopjes — ky aplikacion nuk ka server të vetin, pra kopja jeni ju.',
+          },
+        ],
+        tips: [
+          'Punon edhe pa internet dhe shtohet te ekrani bazë i telefonit (Share → Add to Home Screen) — në iPhone kjo është edhe mbrojtja më e mirë që shfletuesi të mos i fshijë të dhënat.',
+          'Tema e errët dhe e bardhë ndërrohen nga shiriti i sipërm; zgjedhja mbahet mend në këtë pajisje.',
+          'Shqipja dhe anglishtja ndërrohen te Cilësimet, dhe çdo eksport e ndjek gjuhën në të cilën jeni.',
+        ],
+      },
+      import: {
+        label: 'Importimi i listës',
+        title: 'Si sillet lista brenda',
+        summary:
+          'Një mysafiri i mjafton vetëm emri — gjithçka tjetër është opsionale dhe shtohet më vonë. Importimi lexon tri forma JSON-i dhe një CSV, dhe çdo skedar që e ka nxjerrë vetë ky aplikacion kthehet i plotë.',
+        steps: [
+          {
+            title: 'Zgjidhni skedarin',
+            text: 'Te ekrani i parë përdorni «Zgjidh skedarin», ose butonin Importo lart sapo të keni një event të hapur. Punon edhe tërheqja e lëshimi i skedarit.',
+          },
+          {
+            title: 'E grupuar, e sheshtë, ose një eksport i GuestSeat',
+            text: 'Një skedar i grupuar — { "A": ["Ana", "Besnik"] } — bëhet një tavolinë për çdo çelës, me ata mysafirë të ulur aty. Një varg i thjeshtë emrash mbërrin i paulur. Një skedar i nxjerrë nga ky aplikacion kthen gjithçka: etiketat, uljen, ardhjet dhe ftesën.',
+          },
+          {
+            title: 'CSV nga një tabelë',
+            text: 'Një rresht kokë me kolonat emër / mbiemër / tavolinë lexohet njësoj, pra një listë e mbajtur në Excel a Google Sheets nuk ka nevojë për konvertim.',
+          },
+          {
+            title: 'Zëvendëso ose shto',
+            text: 'Importimi te një event tashmë i hapur ju pyet cilën donit. Shtimi i bashkon dy paletat e etiketave, që lista të bëra veç e veç të mos përplasen për të njëjtën etiketë.',
+          },
+        ],
+        tips: [
+          'Emrat e tavolinave të krijuara nga një skedar i grupuar mund të jenë shkronja (Tavolina A) ose numra (Tavolina 1) — zgjidhni para se të importoni.',
+          'Asgjë nuk ngarkohet për të lexuar një skedar: leximi bëhet brenda këtij shfletuesi.',
+        ],
+      },
+      board: {
+        label: 'Tabela e uljes',
+        title: 'Si ulen njerëzit',
+        summary:
+          'Tabela mban tavolinat tuaja; paneli majtas mban këdo që nuk është ulur ende. Këtu bëhet pjesa më e madhe e punës, dhe është ndërtuar të jetë e shpejtë me mausin ose vetëm me tastierë.',
+        steps: [
+          {
+            title: 'Tërhiqni, ose përdorni tastierën',
+            text: 'Tërhiqni një mysafir mbi një tavolinë, ose kthejeni te paneli për ta ngritur. Me tastierë: Space e merr mysafirin, shigjetat lëvizin mes tavolinave, Space e ul, Esc heq dorë.',
+          },
+          {
+            title: 'Gjeni këdo shpejt',
+            text: 'Shtypni / ose ⌘K (Ctrl-K) për të kaluar te kërkimi. Gjen emrin, mbiemrin ose tavolinën, dhe tabela rrëshqet te përputhja e parë e ta ndriçon.',
+          },
+          {
+            title: 'Listë ose plan salle',
+            text: 'Çelësi mbi tabelë e ndërron listën e tavolinave me planin e sallës, me tavolina të rrumbullakëta e të gjata. Ulja bëhet njësoj në të dyja — plani i sallës është më i lehtë për t’ia dhënë dikujt që rregullon sallën.',
+          },
+          {
+            title: 'Shikoni shiritin e ecurisë',
+            text: 'Shiriti i hollë nën titull tregon sa mysafirë kanë vend. Numri pranë emrit të eventit e thotë të njëjtën gjë me shifra.',
+          },
+        ],
+        tips: [
+          'Një tavolinë e plotë nuk pranon më mysafirë dhe e thotë; ndryshojini kapacitetin nëse salla nxë vërtet më shumë.',
+          'Në telefon butoni + poshtë djathtas është rruga e shpejtë për të shtuar një mysafir a tavolinë, për të hapur regjistrimin, ose për të treguar QR-në.',
+        ],
+      },
+      guests: {
+        label: 'Mysafirët',
+        title: 'Çfarë mund të mbani shënim për një mysafir',
+        summary:
+          'Prekni cilindo mysafir për t’i hapur kartelën. Vetëm emri kërkohet; gjithçka tjetër ekziston sepse një listë e vërtetë e ftuarish e do diku.',
+        steps: [
+          {
+            title: 'Emri, shënimi, tavolina',
+            text: 'Mbiemri është opsional dhe emri është gjithmonë ai me të cilin njihet mysafiri. Shënimi është për çka i duhet mikpritësit — një karrocë, një ardhje me vonesë, një nevojë ushqimore — dhe nuk del te ekranet që i shohin mysafirët.',
+          },
+          {
+            title: 'Ardhja dhe ushqimi',
+            text: 'Vjen, nuk vjen, ose në pritje. Ata që kanë refuzuar i kapërcen ulja automatike dhe nuk marrin kartelë vendi, kurse lart shihen totalet që rrjedhin.',
+          },
+          {
+            title: 'Lidhni dy mysafirë',
+            text: 'Të lidhurit duhet të ulen bashkë. Nëse lidhni dikë të paulur me dikë tashmë të ulur, ai ulet menjëherë te e njëjta tavolinë — mënyra më e shpejtë për të vendosur një çift a një familje.',
+          },
+          {
+            title: 'Mbajini dy larg njëri-tjetrit',
+            text: 'E kundërta, për të afërmit që i ka çdo listë. Ulja automatike nuk i vë kurrë në një tavolinë; ulja e tyre bashkë me dorë prapë lejohet, dhe aplikacioni thjesht jua thotë — sepse ndonjëherë e dini ju më mirë.',
+          },
+        ],
+        tips: [
+          'Etiketat te një mysafir punojnë si ato te një tavolinë — familja, ana, fëmijët, vegjetarianët — dhe ulja automatike përpiqet t’i mbajë bashkë ata që kanë të njëjtën.',
+          'Fshirja e një mysafiri zhbëhet nga njoftimi që shfaqet menjëherë pas saj.',
+        ],
+      },
+      tables: {
+        label: 'Tavolinat',
+        title: 'Tavolinat',
+        summary:
+          'Shtoni tavolina sipas nevojës. Çdo e re trashëgon madhësinë e formën e së fundit, dhe pikërisht kjo e bën të shpejtë një sallë me tavolina të njëjta.',
+        steps: [
+          {
+            title: 'Kapaciteti dhe forma',
+            text: 'Një tavolinë mund të jetë e rrumbullakët ose e gjatë, dhe nxë sa të thoni ju. Numri te kartela është të ulur / kapacitet, pra një tavolinë e mbingarkuar duket menjëherë.',
+          },
+          {
+            title: 'Ana dhe etiketat',
+            text: 'Shënojeni tavolinën si e anës së dhëndrit a të nuses, dhe jepini etiketat tuaja. Rreshti i filtrave mbi tabelë pastaj e ngushton gjithçka te një etiketë e vetme.',
+          },
+          {
+            title: 'Kopjoni në vend që ta përsërisni veten',
+            text: 'Kopjimi i një tavoline merr kapacitetin, formën, anën dhe etiketat — jo mysafirët — dhe e numëron kopjen si tavolinë të re.',
+          },
+          {
+            title: 'Kur hiqet një',
+            text: 'Heqja e një tavoline pyet vetëm kur dikush është ende ulur aty. Mysafirët e saj nuk fshihen: kthehen te paneli i paulurve.',
+          },
+        ],
+        tips: [
+          'Plani i printuar i uljes ndahet sipas anës — tavolinat e dhëndrit, ato të nuses, pastaj të tjerat — pra anët ia vlen t’i caktoni nëse printoni.',
+          'Mbylli / hapi të gjitha ndodhet lart djathtas te tabela, dhe ndihmon sapo tavolinat kalojnë sa nxë një ekran.',
+        ],
+      },
+      autoSeat: {
+        label: 'Ulja automatike',
+        title: 'Ulja automatike',
+        summary:
+          'Një prekje i mbush tavolinat nga lista e paulurve, me një hap që mund ta zhbëni. Është menduar si draft i parë që pastaj e rregulloni ju, jo si fjala e fundit.',
+        steps: [
+          {
+            title: 'Çfarë respekton',
+            text: 'Të lidhurit i vendos bashkë, të ndarët nuk i vë kurrë në një tavolinë, dhe ata që kanë të njëjtën etiketë i grumbullon — pra një familje bie te një tavolinë e nuk shpërndahet nëpër sallë.',
+          },
+          {
+            title: 'Çfarë nuk e prek',
+            text: 'Nuk lëviz kurrë dikë që është ulur tashmë. Kjo e bën të sigurt ta shtypni sërish sa herë që lista rritet, dhe do të thotë se rregullimet tuaja i mbijetojnë.',
+          },
+          {
+            title: 'Lexoni raportin',
+            text: 'Kur dikë nuk e vendos dot, ju thotë kë, të grupuar sipas familjes, dhe nëse pengesa ishte vendi apo një ndarje. Kjo e kthen «nuk punoi» në «shto një tavolinë» ose «merr një vendim».',
+          },
+          {
+            title: 'Zhbëjeni po s’ju pëlqeu',
+            text: 'Njoftimi që shfaqet pas saj e zhbën tërë mbushjen me një prekje, sado mysafirë të ketë lëvizur.',
+          },
+        ],
+        tips: [
+          'Mysafirët e shënuar se nuk vijnë lihen aty ku janë — ulja automatike nuk shpenzon vend për ta.',
+          'Ulja automatike ndodhet edhe te Cilësimet, pra arrihet edhe kur tabela është e filtruar a nën kërkim.',
+        ],
+      },
+      tags: {
+        label: 'Etiketat & filtrat',
+        title: 'Etiketat dhe filtrimi',
+        summary:
+          'Etiketat i shpikni ju: familja, ana, fëmijët, vegjetarianët, stafi. Gjithçka tjetër në aplikacion i kupton — filtri i tabelës, ulja automatike, eksportet.',
+        steps: [
+          {
+            title: 'Krijojini rrugës',
+            text: 'Një etiketë krijohet drejt e nga një tavolinë a një mysafir, pa kaluar më parë te Cilësimet, dhe i bashkohet paletës menjëherë.',
+          },
+          {
+            title: 'Ngjyrosini',
+            text: 'Çdo etiketë merr një ngjyrë nga paleta; etiketat e reja e përshkojnë atë me radhë, që dy të njëpasnjëshme të mbeten të dallueshme. Ngjyrën e ndryshoni te Cilësimet → Etiketat.',
+          },
+          {
+            title: 'Filtroni tabelën',
+            text: 'Rreshti i çipave mbi tabelë e ngushton te një etiketë e vetme, me numrin e tavolinave që e mbajnë. «Të gjitha» i kthen sërish.',
+          },
+        ],
+        tips: [
+          'Etiketat dhëndri / nusja janë të integruara: nuk riemërtohen e nuk fshihen, sepse plani i printuar organizohet sipas tyre.',
+          'Fshirja e një etikete e heq atë nga çdo mysafir e tavolinë që e mbante, dhe nuk zhbëhet.',
+        ],
+      },
+      details: {
+        label: 'Detajet e eventit',
+        title: 'Detajet e vetë eventit',
+        summary:
+          'Çifti, salla, adresa, data dhe ora. Të shkruara një herë këtu, dalin kudo ku eventi duhet të prezantohet.',
+        steps: [
+          {
+            title: 'Plotësoni çfarë keni',
+            text: 'Asgjë nuk është e detyrueshme. Ajo që lini bosh thjesht nuk del te fletët e printuara, në vend që të dalë si rresht i zbrazët.',
+          },
+          {
+            title: 'Zgjidhni llojin e eventit',
+            text: 'Dasma, fejesa, nata e kënasë, ditëlindja e të tjerat e ndryshojnë fjalorin që përdor aplikacioni dhe atë me të cilën nis një ftesë e re.',
+          },
+          {
+            title: 'Shihini kudo',
+            text: 'Këto detaje kryesojnë planin e uljes, kartelat e tavolinave dhe ato të vendeve, dhe mbushin ftesën — pra një ndryshim këtu i përditëson të gjitha fletët.',
+          },
+        ],
+        tips: ['Emri i eventit ndryshohet lart, duke prekur titullin.'],
+      },
+      invitation: {
+        label: 'Ftesa',
+        title: 'Ftesa e printueshme',
+        summary:
+          'Një ftesë PDF e përfunduar në tri dizajne, e ndërtuar nga detajet e eventit plus një mesazh e një program që i shkruani këtu.',
+        steps: [
+          {
+            title: 'Shkruani mesazhin dhe programin',
+            text: 'Mesazhi janë ato pak rreshta lart; programi është rrjedha e mbrëmjes. Çdo rresht i programit merr një ilustrim sipas fjalëve të veta, pra përcjellja, darka dhe vallja duken ndryshe.',
+          },
+          {
+            title: 'Zgjidhni një dizajn',
+            text: 'Klasik, Modern ose Romantik. Ndryshojnë faqosja, shkronjat dhe zbukurimet; fjalët mbeten tuajat.',
+          },
+          {
+            title: 'Shkarkoni PDF-në',
+            text: 'Ndërtohet brenda shfletuesit tuaj, në cilësi printimi, gati për t’ia dërguar një shtypshkronje ose për ta ndarë si skedar.',
+          },
+        ],
+        tips: [
+          'Ftesa me qëllim nuk mban kod QR: nuk duhet t’ia japë tërë listën e të ftuarve kujtdo që e merr.',
+          'Dasmat shqiptare kanë një program tradicional — ndizeni programin e parambushur te ekrani i nisjes dhe çdo ftesë e re nis me të.',
+        ],
+      },
+      share: {
+        label: 'Ndarja & QR',
+        title: 'Si ndahet plani',
+        summary:
+          'Linku e mban tërë listën brenda vetë linkut. Nuk ka server që e ruan, prandaj linku mund të jetë i gjatë — dhe prandaj asgjë nga ç’ndani nuk ruhet askund prej nesh.',
+        steps: [
+          {
+            title: 'Zgjidhni për kë është',
+            text: 'Plani i plotë është për një bashkëplanifikues a ndihmës: marrin tërë listën, të redaktueshme. Linku i mysafirit hap një kërkim vetëm-lexim «shkruaj emrin, shih tavolinën» që nuk rendit askënd derisa dikush të shkruajë.',
+          },
+          {
+            title: 'Dërgojeni në mënyrën e lehtë',
+            text: 'Tregoni QR-në për dikë që ju rri pranë, përdorni ndarjen e sistemit a WhatsApp për dikë që s’është aty, ose kopjoni linkun dhe ngjiteni kudo.',
+          },
+          {
+            title: 'Çfarë merr marrësi',
+            text: 'Një listë e ndarë mbërrin si event *i ri* te pajisja e tij, pra nuk zëvendëson kurrë atë me të cilën po punonte. Ndryshimet e tij të mëvonshme janë të tijat — një link është kopje, jo lidhje e gjallë.',
+          },
+        ],
+        tips: [
+          'Një listë shumë e madhe nuk hyn në një kod QR; dërgoni linkun, që nuk e ka atë kufi.',
+          'Për një lidhje të gjallë mes pajisjeve tuaja, përdorni sinkronizimin, jo një link ndarjeje.',
+        ],
+      },
+      checkin: {
+        label: 'Regjistrimi',
+        title: 'Ditën e eventit',
+        summary:
+          'Një listë në tërë ekranin, e menduar për një gisht te dera: kërkoni emrin, prekni për ta shënuar si të ardhur, prekni sërish për ta zhbërë.',
+        steps: [
+          {
+            title: 'Gjeni mysafirin',
+            text: 'Shkruani cilëndo pjesë të emrit. Theksat s’kanë rëndësi — «Kycyku» gjen «Kyçyku» — dhe emri shkruhet në cilindo rend.',
+          },
+          {
+            title: 'Dalloni emrat e njëjtë',
+            text: 'Çdo rezultat tregon çfarë keni mbajtur shënim: tavolinën, etiketat, me kë është i lidhur. Dy kushërinj me të njëjtin emër pushojnë së qeni hamendje.',
+          },
+          {
+            title: 'Shënojeni si të ardhur',
+            text: 'Një prekje shënon një ardhje, tjetra e zhbën, dhe lart numërohet sa nga të priturit kanë hyrë.',
+          },
+        ],
+        tips: [
+          'Rivendosja e të gjitha ardhjeve pyet dy herë dhe thotë sa po fshihen.',
+          'Ky është ekrani për ta hapur me telefon te dera, ndërsa ulja rregullohet ende në kompjuter — me sinkronizimin të ndezur, të dyja mbeten.',
+        ],
+      },
+      stats: {
+        label: 'Përmbledhja',
+        title: 'Përmbledhja',
+        summary: 'Shifrat pas tabelës: sa e mbushur është salla, si po shkojnë përgjigjet, dhe çfarë kërkon ende një vendim.',
+        steps: [
+          {
+            title: 'Vendet dhe mysafirët',
+            text: 'Sa mysafirë, sa janë ulur, dhe sa kapacitet ka mbetur — përgjigjja më e shpejtë për «a na duhet edhe një tavolinë?».',
+          },
+          {
+            title: 'Ardhjet me një sy',
+            text: 'Vijnë, nuk vijnë dhe ende në pritje, që ta dini sa e listës është ende hamendje.',
+          },
+          {
+            title: 'Tavolinë për tavolinë',
+            text: 'Cilat tavolina janë plot, cilat gjysmë bosh, dhe cilat pa asnjeri.',
+          },
+        ],
+        tips: ['I lexon të njëjtat të dhëna që përdorin eksportet, pra nëse një shifër duket gabim këtu, është gabim edhe te fleta e printuar.'],
+      },
+      exports: {
+        label: 'Printimi & eksportet',
+        title: 'Printimi dhe eksportet',
+        summary:
+          'Pesë skedarë, secili për një çast tjetër të mbrëmjes. Të gjithë ndërtohen brenda shfletuesit tuaj — prodhimi i njërit nuk ngarkon asgjë askund.',
+        steps: [
+          {
+            title: 'Plani i uljes (PDF)',
+            text: 'Kopja juaj: një fletë krem me kornizë, ku tavolinat e dhëndrit, ato të nuses dhe të paulurit nisin secila në faqen e vet, që pjesët të printohen e të ndahen veç e veç.',
+          },
+          {
+            title: 'Kartelat e tavolinave (PDF)',
+            text: 'Një kartelë për tavolinë, katër në një fletë A4 me udhëzues prerjeje, me emrat e atyre që ulen aty. Priteni dhe vendosni nga një mbi çdo tavolinë.',
+          },
+          {
+            title: 'Kartelat e vendeve (PDF)',
+            text: 'Një kartelë e palosur për çdo mysafir të ulur, me emrin e shtypur dy herë — gjysma e sipërme përmbys — që të lexohet nga të dyja anët pasi paloset.',
+          },
+          {
+            title: 'Excel dhe JSON',
+            text: 'Libri ka një fletë Mysafirët dhe një fletë Tavolinat, për këdo që do t’i rendisë e mbledhë vetë. JSON-i është eventi i plotë, i riimportueshëm këtu me çdo fushë të paprekur.',
+          },
+        ],
+        tips: [
+          'Vetë tabela printohet pastër me Ctrl-P, nëse doni ekranin ashtu siç duket.',
+          'Çdo fletë mban emrin e eventit dhe se ku u prodhua, pra një fletë e gjetur më vonë shpjegohet vetë.',
+        ],
+      },
+      backup: {
+        label: 'Kopja',
+        title: 'Si mbahet një kopje',
+        summary:
+          'Ky aplikacion nuk ka server të vetin, pra kopja jeni ju. Një skedar i vetëm mban çdo event të ruajtur me id-në e vet — kopja që i mbijeton një shfletuesi të pastruar, një telefoni të humbur ose një kompjuteri të ri.',
+        steps: [
+          {
+            title: 'Shkarkoni kopjen',
+            text: 'Cilësimet → Të dhënat & sinkronizimi → Kopja → Shkarko kopjen. Është një skedar i vetëm JSON me të gjitha eventet tuaja, jo vetëm me atë që ndodhet i hapur.',
+          },
+          {
+            title: 'Mbajeni diku tjetër',
+            text: 'Dërgojani vetes me email, ose lëreni në një dosje në cloud. Një kopje që rri vetëm te pajisja nga doli nuk është kopje.',
+          },
+          {
+            title: 'Rikthimi, ose shtimi',
+            text: 'Rikthimi e kthen këtë shfletues saktësisht siç është skedari. Shtimi nga skedari sjell vetëm eventet që nuk i keni, pra një kopje e vjetër e hapur gabimisht nuk mund t’ju fshijë punën e re.',
+          },
+          {
+            title: 'Kërkoni ruajtje të qëndrueshme',
+            text: 'Te i njëjti ekran. Shfletuesit i hedhin të dhënat e një faqeje kur mbaron hapësira, dhe Safari e pastron një faqe të pavizituar për shtatë ditë shfletimi — kjo e përjashton aplikacionin nga ajo.',
+          },
+        ],
+        tips: [
+          'Skedari i kopjes është JSON i thjeshtë: mund ta hapni, ta lexoni dhe ta mbani me vite pa këtë aplikacion.',
+          'Rikthimi pyet dy herë kur është duke zëvendësuar evente që i keni në pajisje, dhe thotë sa janë.',
+        ],
+      },
+      sync: {
+        label: 'Sinkronizimi',
+        title: 'E njëjta listë në dy pajisje',
+        summary:
+          'Opsional, dhe i fikur derisa ta ndizni vetë. Nuk ka llogari GuestSeat dhe as server tonin: ju sillni një projekt Supabase falas tuajin, dhe eventet udhëtojnë përmes bazës *suaj*.',
+        steps: [
+          {
+            title: 'Krijoni një projekt',
+            text: 'Te supabase.com — plani falas mjafton, se një dasmë janë disa qindra rreshta të vegjël.',
+          },
+          {
+            title: 'Kthejeni nga ky aplikacion',
+            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur.',
+          },
+          {
+            title: 'Kopjoni dy gjërat që i duhen',
+            text: 'Project Settings → Project URL, dhe çelësin publishable (sb_publishable_…). Punon edhe çelësi i vjetër anon. Mos kopjoni kurrë një çelës secret / service_role — ai anashkalon çdo rregull sigurie, dhe aplikacioni e refuzon gjithsesi.',
+          },
+          {
+            title: 'Krijoni tabelën',
+            text: 'Shtypni «Konfiguro projektin»: hapet redaktori juaj SQL me skriptin brenda, dhe mjafton Run. Kthehuni e shtypni «Kontrollo projektin» — përgjigjen e jep baza juaj, jo ekrani. Çelësi te shfletuesi lexon e shkruan rreshta por nuk krijon dot tabelë, dhe kjo është mbrojtje, jo mangësi.',
+          },
+          {
+            title: 'Hyni në çdo pajisje',
+            text: 'Krijoni llogarinë me email e fjalëkalim — ajo rri brenda projektit tuaj, askund tjetër — dhe pastaj përdorni po ato dy në çdo pajisje tjetër.',
+          },
+        ],
+        tips: [
+          'Një pajisje e re vetëm lexon derisa të zgjidhni çfarë duhet të ndodhë: mbaji të dyja, merr kopjen e projektit, ose dërgo këtë pajisje. Kjo është ajo që ndal një telefon të sapoinstaluar të mbishkruajë punën e një mbrëmjeje.',
+          'Bashkimi bëhet mysafir për mysafir dhe tavolinë për tavolinë, pra mund të shtoni një mysafir në kompjuter ndërsa dikush regjistron ardhjet me telefon te dera, dhe të dyja mbeten. Vetëm i njëjti mysafir i ndryshuar në të dyja anët njëkohësisht mund të përplaset, dhe atëherë fiton sinkronizimi i fundit.',
+          'Sapo ndizet, kujdeset vetë: kur hapet aplikacioni, pak sekonda pas çdo ndryshimi, kur ktheheni te skeda, dhe kur pajisja kthehet online. Ikona e resë lart është i gjithë statusi.',
+          'Pajisjet tuaja renditen me emër dhe me atë që bëri secila e fundit — e vetmja mënyrë për t’i dhënë përgjigje pyetjes «cila prej pajisjeve të mia e bëri atë?», kur një email i vetëm është i futur kudo.',
+        ],
+      },
+      privacy: {
+        label: 'Privatësia',
+        title: 'Ku ndodhen vërtet të dhënat tuaja',
+        summary:
+          'Listat e të ftuarve ruhen në këtë shfletues dhe askund tjetër si parazgjedhje. Pa llogari, pa server tonin, pa analitikë mbi emrat e mysafirëve tuaj.',
+        steps: [
+          {
+            title: 'Në këtë pajisje',
+            text: 'Gjithçka rri te baza e vetë shfletuesit (IndexedDB). Pastrimi i të dhënave të faqes e fshin — dhe pikërisht prandaj ka rëndësi skedari i kopjes.',
+          },
+          {
+            title: 'Kur ndani',
+            text: 'Linku e mban listën brenda vetes, pra shkon te kush ia dërgoni ju dhe te askush tjetër. Asgjë nuk ruhet te ndonjë server që ndarja të funksionojë.',
+          },
+          {
+            title: 'Kur sinkronizoni',
+            text: 'Rreshtat shkojnë te projekti Supabase që krijuat ju, në rajonin që zgjodhët, përmes HTTPS. GuestSeat nuk ka kopje dhe nuk ka si t’i lexojë.',
+          },
+        ],
+        tips: [
+          'Çelësi publik i ruajtur në këtë pajisje nuk është fjalëkalim: ai është publik nga natyra, dhe rregulli i sigurisë nga skripti është ai që e bën të pavlefshëm pa email-in e fjalëkalimin tuaj.',
+          'Në një kompjuter të përbashkët, përdorni «Shkëput këtë pajisje» kur të mbaroni.',
+        ],
+      },
+    },
+  },
+  backup: {
+    title: 'Të dhënat & sinkronizimi',
+    tab: 'Kopja',
+    navDesc: 'Mbani një skedar me çdo event, ose sinkronizoni mes pajisjeve',
+    navDescConnected: 'Skedari i kopjes, dhe kopja në cloud me të cilën sinkronizon kjo pajisje',
+    fileTitle: 'Skedari i kopjes',
+    fileDesc:
+      'Një skedar i vetëm me të gjitha eventet e ruajtura — mysafirët, tavolinat, etiketat dhe të dhënat e ftesës. Kjo është kopja që i mbijeton një shfletuesi të pastruar, një telefoni të humbur ose një kompjuteri të ri.',
+    export: 'Shkarko kopjen',
+    importReplace: 'Rikthe nga skedari',
+    importMerge: 'Shto nga skedari',
+    modesHint:
+      'Rikthimi e kthen këtë shfletues saktësisht siç është skedari. Shtimi sjell vetëm eventet që nuk i keni ende, pra një skedar i vjetër nuk mund t’ju fshijë punën e re.',
+    exported: 'Kopja u shkarkua — {{count}} evente.',
+    exportFailed: 'Kopja nuk u krijua.',
+    importFailed: 'Skedari nuk u importua.',
+    replaceTitle: 'Rikthe nga skedari',
+    replaceConfirm:
+      'Të rikthehen {{count}} evente nga ky skedar? Gjithçka që ndodhet tani në këtë pajisje ({{existing}} evente) zëvendësohet me atë që mban skedari.',
+    replaceConfirmFinal: 'Kontrolli i fundit: {{existing}} evente të ruajtura në këtë pajisje fshihen dhe zëvendësohen nga skedari.',
+    replace: 'Rikthe',
+    mergeTitle: 'Shto nga skedari',
+    mergeConfirm: 'Të shtohen eventet e këtij skedari ({{count}}) që nuk janë ende këtu? Asgjë e ruajtur nuk preket.',
+    merge: 'Shto eventet',
+    merged: 'U shtuan {{added}} evente; {{existing}} ishin tashmë këtu dhe mbetën si ishin.',
+    restored: 'U rikthyen {{added}} evente nga skedari.',
+    storedTitle: 'Çka ruhet këtu',
+    eventsLabel: 'Evente',
+    guestsLabel: 'Mysafirë',
+    tablesLabel: 'Tavolina',
+    storedNote:
+      'Gjithçka ndodhet vetëm në këtë shfletues, përveçse kur aktivizoni sinkronizimin. Skedari i kopjes është e vetmja gjë që i mbijeton pastrimit të të dhënave të faqes.',
+    storage: {
+      title: 'Qëndrueshmëria e të dhënave',
+      desc: 'Shfletuesit i fshijnë vetë të dhënat e një faqeje kur pajisja mbetet pa hapësirë, dhe Safari i fshin ato të një faqeje që nuk vizitohet për shtatë ditë shfletimi — bashkë me listat e mysafirëve. Ruajtja e qëndrueshme e përjashton aplikacionin nga kjo.',
+      on: 'Aktualisht është aktive.',
+      request: 'Kërko ruajtje të qëndrueshme',
+      recheck: 'Kontrollo përsëri',
+      granted: 'Shfletuesi e shënoi ruajtjen e këtij aplikacioni si të qëndrueshme.',
+      refused:
+        'Shfletuesi nuk e dha (ende) ruajtjen e qëndrueshme. Përdorimi i rregullt, shtimi te faqeshënuesit ose te ekrani bazë e bën më të mundshme.',
+    },
+    errors: {
+      notJson: 'Ky skedar nuk është JSON i lexueshëm.',
+      unrecognized: 'Ky skedar nuk është një kopje e GuestSeat.',
+      otherApp: 'Ky skedar është kopje e “{{app}}”, jo e GuestSeat.',
+      empty: 'Ky skedar nuk mban asnjë event.',
+    },
+  },
+  sync: {
+    tab: 'Sinkronizimi',
+    openPanel: 'Hap',
+    working: 'Duke punuar…',
+    failed: 'Sinkronizimi dështoi.',
+    result: 'U morën {{pulled}} ndryshime dhe u dërguan {{pushed}}.',
+    decisionBanner:
+      'Kjo pajisje po vetëm lexon nga projekti. Derisa të vendosni çfarë të ndodhë me kopjen në cloud, asgjë nga këtu nuk dërgohet lart — kështu një pajisje e sapo nisur nuk i mbishkruan dot të dhënat e vërteta.',
+    decisionAction: 'Shiko dhe vendos',
+    schemaOutdated:
+      'Projekti juaj është në versionin {{version}} të skemës, kurse ky aplikacion pret versionin {{latest}}. Deri sa të përditësohet, gjërat e reja mund të mos ruhen si duhet.',
+    updateProject: 'Përditëso projektin',
+    noServerClock:
+      'Projekti juaj nuk po e vendos vetë orën e rreshtave — ka gjasa skripti të jetë ekzekutuar para se ai hap të ekzistonte. Pa të, një pajisje me orë të pasaktë mund t’i mbajë ndryshimet e veta pa u parë nga të tjerat.',
+    sessionGone:
+      'Sesioni i kësaj pajisjeje nuk vlen më. Projekti dhe çelësi janë ende këtu — mjafton fjalëkalimi, pra hapin 1 mund ta kaloni.',
+    connectedTitle: 'E lidhur me projektin tuaj',
+    lastSync: 'Sinkronizimi i fundit',
+    lastFailed: 'Përpjekja e fundit dështoi: {{error}}',
+    lastSummary:
+      'Herën e fundit u morën {{pulled}} ndryshime dhe u dërguan {{pushed}}. Te projekti ndodhen {{cloud}} rreshta nga {{local}} rekorde që mban kjo pajisje.',
+    missingRows:
+      'Projektit i mungojnë {{count}} rekorde që ndodhen në këtë pajisje. Ndodh kur tabela zbrazet ose rikrijohet jashtë aplikacionit: pajisja i mban ato si të dërguara dhe nuk i çon më lart.',
+    repair: 'Riparo kopjen në cloud',
+    repaired: 'U gjetën {{found}} rekorde që mungonin te projekti; u dërguan {{pushed}}.',
+    autoLabel: 'Sinkronizo automatikisht',
+    autoDesc:
+      'Kur është aktiv, sinkronizimi bëhet vetë: kur hapet aplikacioni, pak sekonda pas çdo ndryshimi, kur ktheheni te skeda dhe kur pajisja kthehet online.',
+    syncNow: 'Sinkronizo tani',
+    disconnect: 'Shkëput këtë pajisje',
+    disconnectConfirm:
+      'Kjo pajisje ndalon së sinkronizuari dhe harron projektin, çelësin dhe sesionin. Të dhënat tuaja mbeten të plota si këtu ashtu edhe në Supabase — mund të rilidheni kur të doni.',
+    disconnected: 'Kjo pajisje u shkëput nga sinkronizimi.',
+    changeKey: 'Ndrysho çelësin publik',
+    changeKeyHint:
+      'Çelësi i ri provohet te projekti para se të ruhet, pra një çelës i gabuar nuk e lë pajisjen pa sinkronizim. Për të kaluar te një projekt tjetër duhet shkëputja.',
+    saveKey: 'Ruaj çelësin',
+    newKey: 'Çelësi publik i ri',
+    keyChanged: 'Çelësi u përditësua — kjo pajisje po e përdor atë të riun.',
+    kinds: {
+      event: 'Evente',
+      guest: 'Mysafirë',
+      table: 'Tavolina',
+      total: 'Gjithsej',
+    },
+    stored: {
+      title: 'Çka ruhet në secilën anë',
+      counting: 'Po numërohen të dyja anët…',
+      here: 'Në këtë pajisje',
+      nothing: 'Ende asgjë në asnjërën anë.',
+      split: '{{both}} rekorde ndodhen në të dyja anët, {{onlyLocal}} vetëm këtu dhe {{onlyCloud}} vetëm te projekti. Numërohen edhe shënimet e fshirjeve, prandaj një shifër këtu mund të jetë më e madhe se ajo që shfaq tabela.',
+    },
+    connect: {
+      step1: 'Hapi 1 — krijoni projektin dhe tabelën',
+      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
+      step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
+      siteUrlCopied: 'Adresa u kopjua.',
+      openDashboard: 'Hap panelin e Supabase',
+      step1c:
+        'Te Project Settings merrni Project URL (te Data API) dhe çelësin publishable — sb_publishable_… te API Keys. Edhe çelësi i vjetër anon punon. Çelësat secret / service_role mos i kopjoni kurrë këtu.',
+      step1d:
+        'Shtypni «Konfiguro projektin» më poshtë: hapet redaktori juaj SQL me skriptin brenda dhe mjafton Run. Tabelën nuk e krijon dot çelësi që ngjitni te hapi 2 — Supabase nuk ia lejon atij këtë punë, dhe kjo është mbrojtje, jo mangësi.',
+      step2: 'Hapi 2 — lidhni këtë pajisje',
+      step2Body:
+        'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',
+      projectUrl: 'Project URL',
+      publicKey: 'Çelësi publik',
+      keyPlaceholder: 'sb_publishable_… ose eyJhbGciOi…',
+      email: 'Email',
+      emailPlaceholder: 'ju@shembull.com',
+      password: 'Fjalëkalimi',
+      passwordPlaceholder: 'të paktën 6 karaktere',
+      keyHint: 'Çelësi publishable (ose anon i vjetër) — ai i destinuar për shfletues.',
+      signIn: 'Hyr dhe sinkronizo',
+      signUp: 'Krijo llogari',
+      confirmEmail:
+        'Llogaria u krijua, por projekti kërkon konfirmim me email. Hapni linkun që sapo ju erdhi dhe pastaj shtypni «Hyr».',
+      connectedUndecided:
+        'U lidh me projektin dhe u morën {{count}} ndryshime. Kjo pajisje nuk ka dërguar ende asgjë — zgjidhni çfarë duhet të ndodhë me kopjen në cloud.',
+    },
+    setup: {
+      title: 'Konfigurimi i projektit',
+      open: 'Konfiguro projektin',
+      intro:
+        'Çelësi që ruhet në këtë pajisje lexon e shkruan rreshta; krijimin e tabelës Supabase nuk ia lejon, dhe kjo është mbrojtje, jo mangësi. Prandaj ky hap i vetëm bëhet te projekti juaj: butoni «Hap SQL Editor» e hap redaktorin me skriptin brenda, mjafton Run. Ekzekutohet një herë, por përsëritja nuk prish gjë — çdo hap i tij kontrollon vetë nëse ekziston.',
+      noRef:
+        'Adresa e projektit nuk duket si një adresë Supabase, prandaj linku nuk e gjen dot redaktorin — hapeni vetë te projekti juaj dhe ngjitni skriptin.',
+      copy: 'Kopjo skriptin',
+      copied: 'U kopjua',
+      copyFailed: 'Shfletuesi nuk e lejoi kopjimin automatik — zgjidhni tekstin më sipër dhe kopjojeni vetë.',
+      thenCheck: 'Pasi ta keni ekzekutuar, kthehuni këtu dhe shtypni «Kontrollo projektin»: përgjigjen e jep vetë baza juaj, jo ky ekran.',
+      openEditor: 'Hap SQL Editor',
+      check: 'Kontrollo projektin',
+      checking: 'Duke kontrolluar…',
+      ready: 'Projekti është gati — tabela, rregulli i sigurisë, ora e serverit dhe indeksi janë në vend. Sinkronizimi po vazhdon vetë.',
+      updated: 'Projekti u përditësua. Sinkronizimi po vazhdon vetë.',
+      needAccount:
+        'Kontrolli bëhet me llogarinë tuaj brenda projektit, prandaj plotësoni më parë hapin 2 (email dhe fjalëkalim). Nëse skripti u ekzekutua, lidhja do të kalojë pa asnjë pengesë.',
+    },
+    join: {
+      title: 'Kjo pajisje sapo u lidh',
+      reading: 'Po lexohet çfarë ndodhet te projekti juaj…',
+      readOnly:
+        'Derisa të zgjidhni, kjo pajisje vetëm lexon nga projekti — asgjë nuk shkon lart. Kështu një pajisje e sapo nisur nuk i mbishkruan dot të dhënat e vërteta.',
+      inProject: 'Te projekti',
+      split: '{{onlyLocal}} rekorde ndodhen vetëm këtu, {{onlyCloud}} vetëm te projekti.',
+      deviceEmpty: 'Kjo pajisje duket e sapo nisur: nuk mban asgjë të sajën.',
+      cloudEmpty: 'Projekti është bosh — kjo është hera e parë që dërgohet diçka atje.',
+      recommended: 'rekomandohet',
+      mergeTitle: 'Bashko të dyja',
+      mergeHint:
+        'Asgjë nuk humbet. Aty ku i njëjti event ndodhet në të dyja anët, mbetet versioni i projektit; {{count}} rekorde që i ka vetëm kjo pajisje ngarkohen lart.',
+      takeTitle: 'Merr kopjen e projektit',
+      takeHint: 'Kjo pajisje bëhet kopje e projektit: {{count}} rekorde që ndodhen vetëm këtu fshihen.',
+      pushTitle: 'Dërgo këtë pajisje',
+      pushHint:
+        'Gjithçka këtu shkon lart dhe mbishkruan {{count}} rekorde të projektit. Përdoreni vetëm nëse kjo pajisje është ajo me të dhënat e sakta.',
+      pushHintEmpty: 'Ngarkon gjithçka që ka kjo pajisje te projekti bosh.',
+      later: 'Më vonë',
+      continue: 'Vazhdo',
+    },
+    modes: {
+      intro: 'Kur dy pajisje nuk përputhen dhe doni ta zgjidhni ju vetë se cila ka të drejtë:',
+      merge: 'Bashko me projektin',
+      take: 'Merr gjithçka nga projekti',
+      push: 'Dërgo gjithçka nga kjo pajisje',
+      takeTitle: 'Merr gjithçka nga projekti',
+      takeConfirm:
+        'Kjo pajisje bëhet kopje e projektit tuaj. Çdo event që ndodhet vetëm këtu fshihet dhe nuk kthehet dot. Të dhënat te projekti nuk preken. Nëse nuk jeni i sigurt, mbylleni këtë dhe zgjidhni «Bashko».',
+      takeConfirmLabel: 'Zëvendëso këtë pajisje',
+      takeWord: 'MERR',
+      pushTitle: 'Dërgo këtë pajisje mbi kopjen në cloud',
+      pushConfirm:
+        'Gjithçka që ndodhet në këtë pajisje shkon te projekti dhe mbishkruan çfarë ka aty — aktualisht {{rows}} rreshta. Pajisjet e tjera do ta marrin këtë version në sinkronizimin e tyre të radhës. Përdoreni vetëm nëse kjo pajisje është ajo me të dhënat e sakta.',
+      pushConfirmLabel: 'E kuptoj, dërgo',
+      pushWord: 'DËRGO',
+    },
+    devices: {
+      title: 'Pajisjet tuaja',
+      thisIs: 'Kjo pajisje quhet',
+      rename: 'ndrysho',
+      reading: 'Po lexohen pajisjet…',
+      none: 'Asnjë pajisje nuk është shënuar ende te projekti. Shënimi shtohet në sinkronizimin e radhës.',
+      unnamed: 'Pajisje pa emër',
+      thisOne: '(kjo pajisje)',
+      line: 'Sinkronizoi {{when}} · mban {{records}} rekorde · dërgoi {{pushed}} herën e fundit',
+      forget: 'Hiq nga lista',
+      forgetTitle: 'Hiq pajisjen nga lista',
+      forgetConfirm:
+        'Hiqet nga lista pajisja “{{name}}”. Të dhënat e saj te projekti nuk preken — kjo fshin vetëm shënimin se ajo pajisje ka sinkronizuar ndonjëherë. Nëse sinkronizon sërish, rishfaqet.',
+    },
+    trail: {
+      show: 'Shiko ndryshimet e fundit te projekti',
+      hide: 'Fshih ndryshimet e fundit',
+      reading: 'Po lexohet…',
+      none: 'Projekti nuk ka ende asnjë rresht.',
+      written: 'u shkrua një event',
+      deleted: 'u fshi një event',
+      noDevice: 'pa gjurmë pajisjeje',
+    },
+    time: {
+      today: 'sot {{time}}',
+      yesterday: 'dje {{time}}',
+      daysAgo: '{{count}} ditë më parë',
+    },
+    badge: {
+      busy: 'Duke sinkronizuar…',
+      failed: 'Sinkronizimi i fundit dështoi — hapni panelin e sinkronizimit',
+      sessionGone: 'Sesioni ka mbaruar — hyni sërish që sinkronizimi të vazhdojë',
+      undecided: 'Kjo pajisje po vetëm lexon — vendosni çfarë të ndodhë me kopjen në cloud',
+      waiting: 'Ka ndryshime që presin të dërgohen',
+      offline: 'Pa internet — ndryshimet presin',
+      ok: 'Sinkronizimi është aktiv',
+      failedShort: 'Sinkronizimi dështoi — asgjë nuk po del nga kjo pajisje.',
+    },
+    danger: {
+      title: 'Kopja në cloud',
+      desc:
+        'Zbraz tabelën te projekti juaj. Përdoreni nëse doni të nisni sinkronizimin nga e para ose të hiqni gjithçka nga Supabase; eventet në këtë shfletues nuk preken dhe sinkronizimi i radhës i ringarkon nga këtu.',
+      button: 'Fshi kopjen në cloud',
+      confirm:
+        'Fshihen të gjitha rreshtat tuaj te projekti — aktualisht {{rows}}. Të dhënat në këtë shfletues nuk preken, por pajisjet që nuk kanë sinkronizuar ende nuk i marrin dot ndryshimet e ngarkuara deri tani. Nëse doni thjesht ta ndalni sinkronizimin, përdorni «Shkëput këtë pajisje» — kopja mbetet e paprekur.',
+      confirmLabel: 'E kuptoj, vazhdo',
+      confirmFinal: 'Hapi i fundit. Rreshtat te projekti juaj Supabase fshihen përgjithmonë dhe veprimi nuk zhbëhet nga këtu.',
+      word: 'FSHI',
+      done: 'Kopja në cloud u zbraz.',
+    },
+    errors: {
+      network: 'Projekti nuk u arrit — kontrolloni internetin dhe adresën e projektit.',
+      credentials: 'Email-i ose fjalëkalimi nuk përputhen me këtë projekt.',
+      emailNotConfirmed:
+        'Email-i nuk është konfirmuar ende — hapni linkun që ju dërgoi Supabase, ose çaktivizoni konfirmimin te Authentication → Providers → Email.',
+      userExists: 'Kjo llogari ekziston tashmë në projekt — përdorni «Hyr» në vend të «Krijo llogari».',
+      weakPassword: 'Fjalëkalimi është shumë i shkurtër për këtë projekt (zakonisht duhen të paktën 6 karaktere).',
+      signupDisabled: 'Projekti i ka çaktivizuar regjistrimet e reja — aktivizojini te Authentication → Providers → Email.',
+      key: 'Projekti nuk e pranoi çelësin publik — kontrolloni se është kopjuar i plotë dhe nga ky projekt.',
+      table: 'Projekti nuk është konfiguruar ende — tabela e tij nuk ekziston. «Konfiguro projektin» e hap skriptin që e krijon.',
+      permission: 'Projekti nuk e lejoi këtë veprim — kontrolloni që rregullat e sigurisë të skriptit janë krijuar.',
+      session: 'Sesioni skadoi — hyni sërish me email dhe fjalëkalim.',
+      notConfigured: 'Sinkronizimi nuk është konfiguruar në këtë pajisje.',
+      notMigrated: 'Projekti ende nuk e ka atë që krijon skripti. Ekzekutojeni te SQL Editor dhe provoni sërish.',
+      auth: 'Projekti nuk e pranoi hyrjen.',
+      server: 'Projekti u përgjigj me një gabim.',
+      badUrl: 'Adresa e projektit nuk duket e vlefshme — kopjoni «Project URL» nga Supabase (p.sh. https://abcdefgh.supabase.co).',
+      needCredentials: 'Shkruani email-in dhe fjalëkalimin e llogarisë brenda projektit tuaj.',
+    },
+    keyErrors: {
+      empty: 'Shkruani çelësin publik (publishable, ose anon i vjetër) të projektit.',
+      secret: 'Ky është çelësi sekret (secret) — ai nuk vendoset kurrë në shfletues. Përdorni çelësin publishable.',
+      serviceRole:
+        'Ky është çelësi service_role — ai anashkalon çdo rregull sigurie dhe nuk duhet ruajtur në shfletues. Përdorni çelësin anon public.',
+      role: 'Çelësi ka rolin “{{role}}”; duhet çelësi publik i projektit.',
+      shape: 'Çelësi nuk duket si një çelës Supabase (sb_publishable_… ose anon i vjetër).',
+    },
+    safety: {
+      title: 'Sa e sigurt është',
+      publicKey:
+        'Çelësi publik nuk është fjalëkalim. Ai është publik nga natyra — çdo aplikacion Supabase e dërgon te shfletuesi. Ajo që mbron të dhënat është rregulli RLS i skriptit: pa hyrë me email dhe fjalëkalim, çelësi nuk lexon dot asnjë rresht.',
+      secretKey: 'Çelësat secret / service_role mos i vendosni kurrë këtu. Ata i anashkalojnë rregullat, dhe aplikacioni i refuzon vetë.',
+      storedHere:
+        'Kredencialet ruhen në këtë pajisje (localStorage), bashkë me sesionin. Nuk janë më të ndjeshme se vetë listat e mysafirëve, që tashmë ndodhen në këtë shfletues. Në një kompjuter të përbashkët përdorni «Shkëput këtë pajisje» kur mbaroni.',
+      ownProject: 'Të dhënat shkojnë vetëm te projekti juaj, në rajonin që zgjidhni ju, dhe udhëtojnë përmes HTTPS. GuestSeat mbetet pa server.',
+      lastWins:
+        'Fiton pajisja që sinkronizon e fundit, event për event. Nëse i njëjti event redaktohet në dy pajisje pa sinkronizuar në mes, mbetet versioni që mbërriti më vonë — evente të ndryshme nuk përplasen kurrë.',
+      newDevice:
+        'Një pajisje e re nuk dërgon asgjë pa ju pyetur. Sapo lidhet, ajo vetëm lexon dhe ju tregon sa mban secila anë; deri sa të zgjidhni, kopja në cloud nuk preket.',
+      deviceTrail:
+        'Çdo rresht mban emrin e pajisjes që e dërgoi. Me një email të vetëm në të gjitha pajisjet, kjo është e vetmja mënyrë për të parë se cila prej tyre bëri një ndryshim — shihni «Pajisjet tuaja» më lart.',
+    },
   },
 } satisfies TranslationDict;

@@ -44,6 +44,13 @@ export function useEventState() {
     activeIdRef.current = activeId;
   }, [activeId]);
 
+  // A state object that came *out of* IndexedDB — opening an event, or re-reading one that cloud
+  // sync has just rewritten. The persist effect below skips exactly that object: writing it straight
+  // back would stamp it as a change made on this device and hand the next sync a copy of what it has
+  // this second finished downloading. Identity, not equality, so a real edit a moment later still
+  // saves normally.
+  const loadedRef = useRef<EventState | null>(null);
+
   // One-time load: migrate any legacy localStorage event, then hydrate the open event + the list.
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +64,7 @@ export function useEventState() {
         if (cancelled) return;
         setEvents(all.map(summarize));
         setActiveIdState(rec ? active : null);
+        loadedRef.current = rec ? rec.state : null;
         setState(rec ? rec.state : null);
       } catch {
         // IndexedDB unavailable (e.g. private mode with storage blocked) — start empty.
@@ -74,6 +82,10 @@ export function useEventState() {
   // toggling a tag) don't churn the picker list.
   useEffect(() => {
     if (!ready || !activeId || !state) return;
+    if (loadedRef.current === state) {
+      loadedRef.current = null;
+      return;
+    }
     const rec: StoredEvent = { id: activeId, state };
     void putEvent(rec);
     setEvents((prev) => {
@@ -103,8 +115,33 @@ export function useEventState() {
     const rec = await getEvent(id);
     if (!rec) return;
     setActiveIdState(id);
+    loadedRef.current = rec.state;
     setState(rec.state);
     void setActiveId(id);
+  }, []);
+
+  /**
+   * Re-read what is on disk, after something other than this hook wrote to it — today that is cloud
+   * sync applying what came down from another device.
+   *
+   * The open event is re-hydrated in place, so a guest seated on the phone appears on the laptop
+   * without a reload; if that event was deleted elsewhere, the board drops back to the picker rather
+   * than going on editing something that no longer exists anywhere.
+   */
+  const reload = useCallback(async () => {
+    const all = await getAllEvents();
+    setEvents(all.map(summarize));
+    const current = activeIdRef.current;
+    if (!current) return;
+    const rec = all.find((e) => e.id === current);
+    if (!rec) {
+      setActiveIdState(null);
+      setState(null);
+      void setActiveId(null);
+      return;
+    }
+    loadedRef.current = rec.state;
+    setState(rec.state);
   }, []);
 
   // Close the open event and return to the events picker — the event stays saved for later.
@@ -532,6 +569,7 @@ export function useEventState() {
     events,
     createEvent,
     switchEvent,
+    reload,
     closeEvent,
     deleteEvent,
     renameEvent,

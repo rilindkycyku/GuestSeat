@@ -11,6 +11,11 @@ export const en = {
     undo: 'Undo',
     confirmFinal: 'Yes, continue',
     confirmStep: 'Step {{step}} of {{total}}',
+    typeToConfirm: 'Type {{word}} to confirm',
+    copy: 'Copy',
+    blockedTitle: 'GuestSeat is open in another tab',
+    blockedBody:
+      'This tab is waiting for it: an update needs the saved data to itself for a moment. Close the other tab or window — this one carries on by itself, with nothing to press.',
   },
   events: {
     title: 'Your events',
@@ -72,6 +77,7 @@ export const en = {
     overview: 'Overview',
     overviewDesc: 'Counts, RSVP, side balance & meals',
     data: 'Data',
+    help: 'Help',
     unseatAll: 'Unseat all guests',
     unseatAllConfirm: 'Remove all guests from their tables?',
     unseatAllConfirmFinal: 'Last check: {{count}} guests lose their table and the seating you arranged is gone.',
@@ -495,6 +501,732 @@ export const en = {
     load: 'Load shared list',
     loaded: 'Loaded shared list with {{count}} guests.',
     invalid: 'That share link could not be read.',
+  },
+  guide: {
+    title: 'Guide',
+    subtitle: 'Every screen of the app, explained step by step — what it does, how it’s used, and what’s worth knowing before you touch it.',
+    open: 'Guide',
+    openDesc: 'Every screen, explained step by step',
+    readMore: 'How this works',
+    searchPlaceholder: 'Search the guide…',
+    searchClear: 'Clear search',
+    searchEmpty: 'No entry contains that word.',
+    stepsTitle: 'Steps',
+    tipsTitle: 'Worth knowing',
+    seeAlso: 'See also:',
+    previous: 'Previous',
+    next: 'Next',
+    openScreen: 'Open it',
+    groups: {
+      planning: 'Planning the seating',
+      day: 'The event itself',
+      data: 'Your data',
+    },
+    entries: {
+      start: {
+        label: 'Quick start',
+        title: 'Quick start',
+        summary:
+          'Five steps from an empty app to a finished seating plan. There is no account to open with us and nothing leaves this browser — until you connect sync to a Supabase project of your own, or take a backup yourself.',
+        steps: [
+          {
+            title: 'Start an event',
+            text: 'Import a guest list you already have, start blank and type names as you go, or load the demo list to look around first. Whichever you pick becomes a saved event; the app keeps as many as you like, side by side.',
+          },
+          {
+            title: 'Add your tables',
+            text: 'Add tables and set how many each one seats. Every new table inherits the size and shape of the last, so a room of ten-seat rounds takes a few taps. Give them the groom’s or the bride’s side if that matters to you.',
+          },
+          {
+            title: 'Seat people',
+            text: 'Drag guests from the unseated panel onto tables, or press Auto-seat and let the app fill them in one undoable step — it keeps couples together and feuding relatives apart.',
+          },
+          {
+            title: 'Fill in the event details',
+            text: 'The couple, the venue, the date and the schedule are typed once and then appear on the invitation, the seating chart, the table cards and the place cards.',
+          },
+          {
+            title: 'Print, share, and keep a copy',
+            text: 'Print the chart and the cards, share the plan by link or QR, and download a backup file — this app has no server of its own, so the copy is you.',
+          },
+        ],
+        tips: [
+          'It works offline and can be added to a phone’s home screen (Share → Add to Home Screen), which on iPhone is also the best protection against the browser deleting its data.',
+          'Light and dark are switched from the header; the choice is remembered on this device.',
+          'Albanian and English are switched from Settings, and every export follows the language you are in.',
+        ],
+      },
+      import: {
+        label: 'Importing a list',
+        title: 'Bringing a guest list in',
+        summary:
+          'A guest needs only a first name — everything else is optional and can be added later. Import reads three shapes of JSON and a CSV, and anything this app exported comes back whole.',
+        steps: [
+          {
+            title: 'Choose the file',
+            text: 'On the first screen use "Choose file", or the Import button in the header once an event is open. Drag and drop works too.',
+          },
+          {
+            title: 'Grouped, flat, or a GuestSeat export',
+            text: 'A grouped file — { "A": ["Ana", "Besnik"] } — becomes one table per key with those guests seated at it. A plain array of names arrives unseated. A file this app exported returns everything: tags, seating, attendance and the invitation.',
+          },
+          {
+            title: 'CSV from a spreadsheet',
+            text: 'A header row with name / surname / table columns is read the same way, so a list kept in Excel or Google Sheets needs no conversion.',
+          },
+          {
+            title: 'Replace or add',
+            text: 'Importing into an event that is already open asks which you meant. Adding merges the two tag palettes, so lists built separately don’t fight over the same tag.',
+          },
+        ],
+        tips: [
+          'Table names generated from a grouped file can be letters (Table A) or numbers (Table 1) — choose before importing.',
+          'Nothing is uploaded to read a file: the parsing happens in this browser.',
+        ],
+      },
+      board: {
+        label: 'The seating board',
+        title: 'Seating people',
+        summary:
+          'The board holds your tables; the panel on the left holds everyone not seated yet. This is where most of the work happens, and it is built to be quick with a mouse or with the keyboard alone.',
+        steps: [
+          {
+            title: 'Drag, or use the keyboard',
+            text: 'Drag a guest onto a table, or back to the panel to unseat them. With the keyboard: Space picks a guest up, arrow keys move between tables, Space seats them, Esc cancels.',
+          },
+          {
+            title: 'Find anyone fast',
+            text: 'Press / or ⌘K (Ctrl-K) to jump to search. It matches a name, a surname or a table, and the board scrolls to the first match and highlights it.',
+          },
+          {
+            title: 'List or floor plan',
+            text: 'The toggle above the board swaps a list of tables for a floor plan of round and long tables. Both seat the same way — the floor plan is easier to hand to someone arranging the room.',
+          },
+          {
+            title: 'Watch the progress bar',
+            text: 'The slim bar under the header is how many of your guests have a seat. The count beside the event name says the same in numbers.',
+          },
+        ],
+        tips: [
+          'A full table refuses new guests and says so; change its capacity if the room actually fits more.',
+          'On a phone the + button bottom-right is the quick way to add a guest or a table, open check-in, or show the QR.',
+        ],
+      },
+      guests: {
+        label: 'Guests',
+        title: 'What you can record about a guest',
+        summary:
+          'Tap any guest to open their card. Only the first name is required; everything else exists because a real guest list needs it somewhere.',
+        steps: [
+          {
+            title: 'Name, note, table',
+            text: 'Surname is optional and the name is always what the guest is known by. The note is for anything the host needs — a wheelchair, a late arrival, a dietary need — and it stays out of guest-facing screens.',
+          },
+          {
+            title: 'Attendance and meal',
+            text: 'Coming, not coming, or pending. Guests who declined are skipped by auto-seating and get no place card, and the header shows the running totals.',
+          },
+          {
+            title: 'Link two guests',
+            text: 'Linked guests must sit together. Linking someone unseated to someone already seated seats them at the same table straight away — the fastest way to place a couple or a family.',
+          },
+          {
+            title: 'Keep two apart',
+            text: 'The opposite, for the relatives everybody has. Auto-seating never puts them at one table; seating them together by hand is still allowed, and the app just says so, because sometimes you know better.',
+          },
+        ],
+        tips: [
+          'Tags on a guest work like tags on a table — family, side, children, vegetarian — and auto-seating tries to keep people who share one together.',
+          'Deleting a guest can be undone from the toast that appears straight afterwards.',
+        ],
+      },
+      tables: {
+        label: 'Tables',
+        title: 'Tables',
+        summary:
+          'Add tables as you need them. Each new one inherits the last one’s size and shape, which is what makes a room of identical tables quick.',
+        steps: [
+          {
+            title: 'Capacity and shape',
+            text: 'A table can be round or long, and seats as many as you say. The count on the card is seated / capacity, so a table that is over-full is visible at a glance.',
+          },
+          {
+            title: 'Side and tags',
+            text: 'Mark a table as the groom’s or the bride’s side, and give it your own tags. The filter row above the board then narrows everything to one tag at a time.',
+          },
+          {
+            title: 'Duplicate instead of repeating yourself',
+            text: 'Duplicating a table copies its capacity, shape, side and tags — but not its guests — and numbers the copy as a new table.',
+          },
+          {
+            title: 'Removing one',
+            text: 'Removing a table asks first only when someone is still sitting at it. Its guests are not deleted: they go back to the unseated panel.',
+          },
+        ],
+        tips: [
+          'The printed seating chart is split by side — the groom’s tables, the bride’s tables, then everything else — so the sides are worth setting if you print.',
+          'Collapse all / expand all is at the top right of the board, which helps once there are more tables than fit a screen.',
+        ],
+      },
+      autoSeat: {
+        label: 'Auto-seating',
+        title: 'Auto-seating',
+        summary:
+          'One tap fills the tables from the unseated pool, in a single step you can undo. It is meant as a first draft you then adjust, not as the last word.',
+        steps: [
+          {
+            title: 'What it honours',
+            text: 'Linked guests are placed together, kept-apart guests never share a table, and people who share a tag are clustered — so a family lands at one table rather than scattered across the room.',
+          },
+          {
+            title: 'What it leaves alone',
+            text: 'It never moves anyone already seated. That makes it safe to press again every time the list grows, and it means your own arrangements survive it.',
+          },
+          {
+            title: 'Read the report',
+            text: 'When it cannot place someone it says who, grouped by family, and whether the obstacle was space or a keep-apart. That turns "it didn’t work" into "add a table" or "make a call".',
+          },
+          {
+            title: 'Undo if you don’t like it',
+            text: 'The toast that appears afterwards undoes the whole fill in one press, however many guests it moved.',
+          },
+        ],
+        tips: [
+          'Guests marked as not coming are left where they are — auto-seating does not spend a seat on them.',
+          'Auto-seat is also in Settings, so it is reachable while the board is filtered or searched.',
+        ],
+      },
+      tags: {
+        label: 'Tags & filters',
+        title: 'Tags and filtering',
+        summary:
+          'Tags are yours to invent: family, side, children, vegetarian, staff. Everything else in the app understands them — the board filter, auto-seating, the exports.',
+        steps: [
+          {
+            title: 'Make them as you go',
+            text: 'A tag can be created straight from a table or a guest, without visiting Settings first, and it joins the palette immediately.',
+          },
+          {
+            title: 'Colour them',
+            text: 'Each tag gets a colour from the palette; new tags cycle through it so consecutive ones stay distinguishable. Change any colour in Settings → Tags.',
+          },
+          {
+            title: 'Filter the board',
+            text: 'The row of chips above the board narrows it to one tag at a time, with the count of tables carrying it. "All" brings everything back.',
+          },
+        ],
+        tips: [
+          'The groom / bride tags are built in: they cannot be renamed or deleted, because the printed chart is organised by them.',
+          'Deleting a tag removes it from every guest and table that carried it, and cannot be undone.',
+        ],
+      },
+      details: {
+        label: 'Event details',
+        title: 'The event’s own details',
+        summary:
+          'The couple, the venue, the address, the date and the time. Typed once here, they appear anywhere the event has to introduce itself.',
+        steps: [
+          {
+            title: 'Fill in what you have',
+            text: 'Nothing is required. What you leave empty is simply left out of the printed sheets rather than showing as a blank line.',
+          },
+          {
+            title: 'Choose the kind of event',
+            text: 'Wedding, engagement, henna night, birthday and the rest change the wording the app uses and what a fresh invitation starts with.',
+          },
+          {
+            title: 'See it everywhere',
+            text: 'These details head the seating chart, the table cards and the place cards, and fill the invitation — so a change here updates every printout.',
+          },
+        ],
+        tips: ['The event’s name is edited from the header, by tapping the title.'],
+      },
+      invitation: {
+        label: 'Invitation',
+        title: 'The printable invitation',
+        summary:
+          'A finished invitation PDF in three designs, built from the event details plus a message and a schedule you write here.',
+        steps: [
+          {
+            title: 'Write the message and the schedule',
+            text: 'The message is the few lines at the top; the schedule is the programme of the evening. Each schedule line gets an illustration matched to its words, so a send-off, a dinner and a dance look different.',
+          },
+          {
+            title: 'Pick a design',
+            text: 'Classic, Modern or Romantic. The layout, the type and the ornaments change; the words stay yours.',
+          },
+          {
+            title: 'Download the PDF',
+            text: 'It is generated in your browser, at print quality, ready to send to a print shop or to share as a file.',
+          },
+        ],
+        tips: [
+          'The invitation deliberately carries no QR code: it should not hand your whole guest list to whoever receives it.',
+          'Albanian weddings have a traditional programme — turn on the pre-filled schedule in the onboarding screen and every new invitation starts with it.',
+        ],
+      },
+      share: {
+        label: 'Sharing & QR',
+        title: 'Sharing the plan',
+        summary:
+          'A share link carries the whole list inside the link itself. There is no server holding it, which is why the link can be long — and why nothing you share is stored anywhere by us.',
+        steps: [
+          {
+            title: 'Choose who it is for',
+            text: 'The full plan is for a co-planner or a helper: they get the whole editable list. The guest link opens a read-only "type your name, see your table" lookup that lists nobody until somebody types.',
+          },
+          {
+            title: 'Send it the easy way',
+            text: 'Show the QR for someone standing next to you, use the share sheet or WhatsApp for someone who isn’t, or copy the link and paste it anywhere.',
+          },
+          {
+            title: 'What the recipient gets',
+            text: 'A shared list arrives as a *new* event on their device, so it never replaces what they were working on. Their later edits are theirs — a link is a copy, not a live connection.',
+          },
+        ],
+        tips: [
+          'A very large list will not fit in a QR code; send the link instead, which has no such limit.',
+          'For a live connection between your own devices, use sync rather than a share link.',
+        ],
+      },
+      checkin: {
+        label: 'Check-in',
+        title: 'On the day',
+        summary:
+          'A full-screen list built for one thumb at a door: search a name, tap to mark them arrived, tap again to undo.',
+        steps: [
+          {
+            title: 'Find the guest',
+            text: 'Type any part of a name. Accents don’t matter — "Kycyku" finds "Kyçyku" — and the name can be typed in either order.',
+          },
+          {
+            title: 'Tell namesakes apart',
+            text: 'Each result shows what you already recorded: their table, their tags, who they are linked to. Two cousins with the same name stop being a guessing game.',
+          },
+          {
+            title: 'Mark them in',
+            text: 'One tap marks an arrival, another undoes it, and the header counts how many of the expected guests are in.',
+          },
+        ],
+        tips: [
+          'Resetting all arrivals asks twice and says how many are about to be cleared.',
+          'This is the screen to open on the phone at the door while the seating is still being adjusted on a laptop — with sync on, both survive.',
+        ],
+      },
+      stats: {
+        label: 'Overview',
+        title: 'The overview',
+        summary: 'The numbers behind the board: how full the room is, how the answers are going, and what still needs a decision.',
+        steps: [
+          {
+            title: 'Seats and guests',
+            text: 'How many guests, how many are seated, and how much capacity is left — the quickest answer to "do we need another table?".',
+          },
+          {
+            title: 'Attendance at a glance',
+            text: 'Coming, not coming and still pending, so you know how much of the list is still guesswork.',
+          },
+          {
+            title: 'Per table',
+            text: 'Which tables are full, which are half empty, and which have nobody at all.',
+          },
+        ],
+        tips: ['It reads the same data the exports use, so if a number looks wrong here, it is wrong on the printout too.'],
+      },
+      exports: {
+        label: 'Printing & exports',
+        title: 'Printing and exports',
+        summary:
+          'Five files, each for a different moment of the evening. All of them are built in your browser — producing one uploads nothing.',
+        steps: [
+          {
+            title: 'The seating chart (PDF)',
+            text: 'Your own copy: a framed cream sheet with the groom’s tables, the bride’s tables and the unseated each starting on their own page, so the parts can be printed and handed out separately.',
+          },
+          {
+            title: 'Table cards (PDF)',
+            text: 'One card per table, four to an A4 sheet with cut guides, listing who sits there. Cut them apart and stand one on each table.',
+          },
+          {
+            title: 'Place cards (PDF)',
+            text: 'One folded tent card per seated guest, with the name printed twice — the upper half upside down — so it reads from both sides once folded.',
+          },
+          {
+            title: 'Excel and JSON',
+            text: 'The workbook has a Guests sheet and a Tables sheet for anyone who wants to sort and total it themselves. The JSON is the full event, re-importable here with every field intact.',
+          },
+        ],
+        tips: [
+          'The board itself prints cleanly with Ctrl-P if you want the screen as it looks.',
+          'Every sheet is stamped with the event name and where it was generated, so a printout found later explains itself.',
+        ],
+      },
+      backup: {
+        label: 'Backup',
+        title: 'Keeping a copy',
+        summary:
+          'This app has no server of its own, so the backup is you. One file holds every saved event with its ids — the copy that survives a cleared browser, a lost phone or a new laptop.',
+        steps: [
+          {
+            title: 'Download the backup',
+            text: 'Settings → Data & sync → Backup → Download backup. It is a single JSON file with all of your events, not just the one that happens to be open.',
+          },
+          {
+            title: 'Keep it somewhere else',
+            text: 'Email it to yourself, or drop it in a cloud folder. A backup that lives only on the device it came from is not a backup.',
+          },
+          {
+            title: 'Restoring, or adding',
+            text: 'Restore puts this browser back to exactly what the file holds. Add from file only brings in events you don’t already have, so an old backup opened by mistake cannot undo newer work.',
+          },
+          {
+            title: 'Ask for persistent storage',
+            text: 'On the same screen. Browsers throw a site’s data away when space runs short, and Safari clears a site left unvisited for seven browsing days — this exempts the app from that.',
+          },
+        ],
+        tips: [
+          'The backup file is plain JSON: you can open it, read it, and keep it for years without this app.',
+          'Restoring asks twice when it is about to replace events already on the device, and says how many.',
+        ],
+      },
+      sync: {
+        label: 'Sync',
+        title: 'The same list on two devices',
+        summary:
+          'Optional, and off until you turn it on. There is no GuestSeat account and no server of ours: you bring a free Supabase project of your own, and the events travel through *your* database.',
+        steps: [
+          {
+            title: 'Create a project',
+            text: 'At supabase.com — the free plan is plenty, since a wedding is a few hundred small rows.',
+          },
+          {
+            title: 'Point it back at this app',
+            text: 'In the project: Authentication → URL Configuration → set Site URL to this app’s address. The sync screen shows the address with a copy button. Supabase’s default sends the confirmation email to a page that doesn’t exist; with this set, that link brings you back here already signed in.',
+          },
+          {
+            title: 'Copy the two things it needs',
+            text: 'Project Settings → the Project URL, and the publishable key (sb_publishable_…). An older anon key works too. Never copy a secret / service_role key — it bypasses every security rule, and the app refuses it anyway.',
+          },
+          {
+            title: 'Create the table',
+            text: 'Press "Set up the project": it opens your own SQL editor with the script already in the box, and all that’s left is Run. Come back and press "Check the project" — the answer comes from your database, not from the screen. The key in your browser can read and write rows but cannot create a table, and that is protection, not a gap.',
+          },
+          {
+            title: 'Sign in on each device',
+            text: 'Create the account with an email and password — it lives inside your project, nowhere else — then use the same two on every other device.',
+          },
+        ],
+        tips: [
+          'A new device only reads until you choose what should happen: keep both, take the project’s copy, or send this device up. That is what stops a freshly installed phone overwriting an evening’s work.',
+          'It merges per guest and per table, so you can add a guest on the laptop while someone checks people in on a phone at the door and both survive. Only the same guest edited in both places at once can collide, and then the later sync wins.',
+          'Once it is on it looks after itself: when the app opens, a few seconds after any change, when you return to the tab, and when the device comes back online. The cloud icon in the header is the whole status.',
+          'Your devices are listed by name with what each last did — the only way to answer "which of my devices did that?" when one email is signed in everywhere.',
+        ],
+      },
+      privacy: {
+        label: 'Privacy',
+        title: 'Where your data actually is',
+        summary:
+          'Guest lists are stored in this browser and nowhere else by default. No account, no server of ours, no analytics on your guests’ names.',
+        steps: [
+          {
+            title: 'On this device',
+            text: 'Everything lives in the browser’s own database (IndexedDB). Clearing site data deletes it — which is exactly why the backup file matters.',
+          },
+          {
+            title: 'When you share',
+            text: 'A share link carries the list inside the link, so it reaches whoever you send it to and nobody else. Nothing is stored on a server to make sharing work.',
+          },
+          {
+            title: 'When you sync',
+            text: 'Rows go to the Supabase project you created, in the region you chose, over HTTPS. GuestSeat has no copy and no way to read it.',
+          },
+        ],
+        tips: [
+          'The public key stored on this device is not a password: it is public by design, and the security rule from the setup script is what makes it useless without your email and password.',
+          'On a shared computer, use "Disconnect this device" when you are finished.',
+        ],
+      },
+    },
+  },
+  backup: {
+    title: 'Data & sync',
+    tab: 'Backup',
+    navDesc: 'Keep a file of every event, or sync across devices',
+    navDescConnected: 'Backup file, and the cloud copy this device syncs with',
+    fileTitle: 'Backup file',
+    fileDesc:
+      'One file with every saved event — guests, tables, tags and invitation details. This is the copy that survives a cleared browser, a lost phone or a new laptop.',
+    export: 'Download backup',
+    importReplace: 'Restore from file',
+    importMerge: 'Add from file',
+    modesHint:
+      'Restore puts this browser back to exactly what the file holds. Add only brings in events you don’t already have, so an old file can’t undo newer work.',
+    exported: 'Backup downloaded — {{count}} events.',
+    exportFailed: 'The backup could not be created.',
+    importFailed: 'The file could not be imported.',
+    replaceTitle: 'Restore from file',
+    replaceConfirm:
+      'Restore {{count}} events from this file? Everything now on this device ({{existing}} events) is replaced by what the file holds.',
+    replaceConfirmFinal: 'Last check: {{existing}} events saved on this device are deleted and replaced by the file.',
+    replace: 'Restore',
+    mergeTitle: 'Add from file',
+    mergeConfirm: 'Add the events from this file ({{count}}) that aren’t here yet? Nothing already saved is touched.',
+    merge: 'Add events',
+    merged: '{{added}} events added; {{existing}} were already here and were left as they are.',
+    restored: 'Restored {{added}} events from the file.',
+    storedTitle: 'What’s stored here',
+    eventsLabel: 'Events',
+    guestsLabel: 'Guests',
+    tablesLabel: 'Tables',
+    storedNote:
+      'All of it lives in this browser only, unless you turn on sync. A backup file is the only thing that survives clearing site data.',
+    storage: {
+      title: 'Keeping the data',
+      desc: 'Browsers delete a site’s data when the device runs low on space, and Safari clears a site left unvisited for seven browsing days — guest lists included. Persistent storage exempts this app from that.',
+      on: 'It is currently on.',
+      request: 'Ask for persistent storage',
+      recheck: 'Check again',
+      granted: 'The browser marked this app’s storage as persistent.',
+      refused:
+        'The browser hasn’t granted persistent storage (yet). Using the app regularly, bookmarking it or adding it to your home screen makes it likelier.',
+    },
+    errors: {
+      notJson: 'That file isn’t readable JSON.',
+      unrecognized: 'That file isn’t a GuestSeat backup.',
+      otherApp: 'That file is a backup of “{{app}}”, not of GuestSeat.',
+      empty: 'That file holds no events.',
+    },
+  },
+  sync: {
+    tab: 'Sync',
+    openPanel: 'Open',
+    working: 'Working…',
+    failed: 'Sync failed.',
+    result: 'Pulled {{pulled}} changes, sent {{pushed}}.',
+    decisionBanner:
+      'This device is only reading from the project. Until you say what should happen to the cloud copy, nothing from here is sent up — so a device that has just been set up can’t overwrite the real plan.',
+    decisionAction: 'Look and decide',
+    schemaOutdated:
+      'Your project is on schema version {{version}}, while this app expects version {{latest}}. Until it’s updated, new things may not be stored properly.',
+    updateProject: 'Update the project',
+    noServerClock:
+      'Your project isn’t stamping rows with its own clock — the setup script was probably run before that step existed. Without it, a device with a wrong clock can keep changes the others never see.',
+    sessionGone:
+      'This device’s session has expired. The project and the key are still here — only the password is needed, so you can skip step 1.',
+    connectedTitle: 'Connected to your project',
+    lastSync: 'Last sync',
+    lastFailed: 'The last attempt failed: {{error}}',
+    lastSummary:
+      'Last time, {{pulled}} changes came down and {{pushed}} went up. The project holds {{cloud}} rows against {{local}} records on this device.',
+    missingRows:
+      'The project is missing {{count}} records that are on this device. It happens when the table is emptied or rebuilt outside the app: this device counts them as sent and never offers them again.',
+    repair: 'Repair the cloud copy',
+    repaired: 'Found {{found}} records the project was missing; {{pushed}} were sent.',
+    autoLabel: 'Sync automatically',
+    autoDesc:
+      'When on, syncing happens by itself: when the app opens, a few seconds after any change, when you come back to the tab, and when the device comes back online.',
+    syncNow: 'Sync now',
+    disconnect: 'Disconnect this device',
+    disconnectConfirm:
+      'This device stops syncing and forgets the project, the key and the session. Your data stays complete both here and in Supabase — you can reconnect whenever you like.',
+    disconnected: 'This device is no longer syncing.',
+    changeKey: 'Change the public key',
+    changeKeyHint:
+      'The new key is tried against the project before it’s saved, so a mistyped one can’t leave this device unable to sync. Moving to a different project means disconnecting instead.',
+    saveKey: 'Save key',
+    newKey: 'New public key',
+    keyChanged: 'The key was updated — this device is using the new one.',
+    kinds: {
+      event: 'Events',
+      guest: 'Guests',
+      table: 'Tables',
+      total: 'Total',
+    },
+    stored: {
+      title: 'What’s stored on each side',
+      counting: 'Counting both sides…',
+      here: 'On this device',
+      nothing: 'Nothing on either side yet.',
+      split: '{{both}} records are on both sides, {{onlyLocal}} only here and {{onlyCloud}} only in the project. Deletions are counted too, so a number here can be larger than what the board shows.',
+    },
+    connect: {
+      step1: 'Step 1 — create the project and the table',
+      step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
+      step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
+      siteUrlCopied: 'Address copied.',
+      openDashboard: 'Open Supabase dashboard',
+      step1c:
+        'Under Project Settings, take the Project URL (in Data API) and the publishable key — sb_publishable_… under API Keys. An older anon key works too. Never copy a secret / service_role key here.',
+      step1d:
+        'Press “Set up the project” below: it opens your own SQL editor with the script already in it, and all that’s left is Run. The key you paste in step 2 can’t create the table — Supabase doesn’t allow it, and that is protection, not a gap.',
+      step2: 'Step 2 — connect this device',
+      step2Body:
+        'The account is created inside your own project, nowhere else. Use the same email and password on every device you want kept in step: “Create account” the first time, “Sign in” on the others.',
+      projectUrl: 'Project URL',
+      publicKey: 'Public key',
+      keyPlaceholder: 'sb_publishable_… or eyJhbGciOi…',
+      email: 'Email',
+      emailPlaceholder: 'you@example.com',
+      password: 'Password',
+      passwordPlaceholder: 'at least 6 characters',
+      keyHint: 'The publishable (or older anon) key — the one meant for browsers.',
+      signIn: 'Sign in and sync',
+      signUp: 'Create account',
+      confirmEmail:
+        'The account was created, but the project asks for email confirmation. Open the link you were just sent, then press “Sign in”.',
+      connectedUndecided:
+        'Connected, and {{count}} changes came down. This device hasn’t sent anything yet — choose what should happen to the cloud copy.',
+    },
+    setup: {
+      title: 'Set up the project',
+      open: 'Set up the project',
+      intro:
+        'The key stored on this device reads and writes rows; creating the table is something Supabase doesn’t allow it to do, and that is protection rather than a gap. So this one step happens in your project: “Open SQL editor” opens it with the script already in the box, and all that’s left is Run. It runs once, but running it again changes nothing — every step checks whether it already exists.',
+      noRef:
+        'That project address doesn’t look like a Supabase one, so the link can’t find the editor — open it yourself in your project and paste the script.',
+      copy: 'Copy script',
+      copied: 'Copied',
+      copyFailed: 'The browser wouldn’t copy it automatically — select the text above and copy it by hand.',
+      thenCheck: 'Once you’ve run it, come back here and press “Check the project”: the answer comes from your database, not from this screen.',
+      openEditor: 'Open SQL editor',
+      check: 'Check the project',
+      checking: 'Checking…',
+      ready: 'The project is ready — the table, the security rule, the server clock and the index are all in place. Syncing is carrying on by itself.',
+      updated: 'The project was updated. Syncing is carrying on by itself.',
+      needAccount:
+        'The check runs as your account inside the project, so fill in step 2 first (email and password). If the script ran, connecting will go through without a hitch.',
+    },
+    join: {
+      title: 'This device has just connected',
+      reading: 'Reading what’s in your project…',
+      readOnly:
+        'Until you choose, this device only reads from the project — nothing goes up. That way a device that has just been set up can’t overwrite the real plan.',
+      inProject: 'In the project',
+      split: '{{onlyLocal}} records are only here, {{onlyCloud}} only in the project.',
+      deviceEmpty: 'This device looks freshly started: it holds nothing of its own.',
+      cloudEmpty: 'The project is empty — this is the first time anything is sent there.',
+      recommended: 'recommended',
+      mergeTitle: 'Keep both',
+      mergeHint:
+        'Nothing is lost. Where the same event exists on both sides, the project’s version stays; the {{count}} records only this device has are uploaded.',
+      takeTitle: 'Take the project’s copy',
+      takeHint: 'This device becomes a copy of the project: the {{count}} records that exist only here are deleted.',
+      pushTitle: 'Send this device up',
+      pushHint:
+        'Everything here goes up and overwrites {{count}} records in the project. Use it only if this device is the one with the right data.',
+      pushHintEmpty: 'Uploads everything this device holds to the empty project.',
+      later: 'Later',
+      continue: 'Continue',
+    },
+    modes: {
+      intro: 'When two devices disagree and you want to settle it yourself:',
+      merge: 'Merge with the project',
+      take: 'Take everything from the project',
+      push: 'Send everything from this device',
+      takeTitle: 'Take everything from the project',
+      takeConfirm:
+        'This device becomes a copy of your project. Every event that exists only here is deleted and cannot be brought back. The data in the project is untouched. If you are not sure, cancel and choose Merge.',
+      takeConfirmLabel: 'Replace this device',
+      takeWord: 'TAKE',
+      pushTitle: 'Send this device over the cloud copy',
+      pushConfirm:
+        'Everything on this device goes to the project and overwrites what is there — currently {{rows}} rows. The other devices will take this version on their next sync. Use it only if this device is the one with the right data.',
+      pushConfirmLabel: 'I understand, send',
+      pushWord: 'SEND',
+    },
+    devices: {
+      title: 'Your devices',
+      thisIs: 'This device is called',
+      rename: 'rename',
+      reading: 'Reading the devices…',
+      none: 'No device has signed itself into the project yet. The note is added on the next sync.',
+      unnamed: 'Unnamed device',
+      thisOne: '(this device)',
+      line: 'Synced {{when}} · holds {{records}} records · sent {{pushed}} last time',
+      forget: 'Remove from the list',
+      forgetTitle: 'Remove the device from the list',
+      forgetConfirm:
+        '“{{name}}” is removed from the list. Its data in the project is untouched — this only deletes the note that the device ever synced. If it syncs again, it reappears.',
+    },
+    trail: {
+      show: 'Show the project’s recent changes',
+      hide: 'Hide recent changes',
+      reading: 'Reading…',
+      none: 'The project holds no rows yet.',
+      written: 'an event was written',
+      deleted: 'an event was deleted',
+      noDevice: 'no device recorded',
+    },
+    time: {
+      today: 'today {{time}}',
+      yesterday: 'yesterday {{time}}',
+      daysAgo: '{{count}} days ago',
+    },
+    badge: {
+      busy: 'Syncing…',
+      failed: 'The last sync failed — open the sync panel',
+      sessionGone: 'The session has expired — sign in again to keep syncing',
+      undecided: 'This device is only reading — decide what happens to the cloud copy',
+      waiting: 'There are changes waiting to be sent',
+      offline: 'Offline — changes are waiting',
+      ok: 'Sync is on',
+      failedShort: 'Sync failed — nothing is leaving this device.',
+    },
+    danger: {
+      title: 'The cloud copy',
+      desc:
+        'Empties the table in your project. Use it to start syncing from scratch or to remove everything from Supabase; the events in this browser are untouched, and the next sync uploads them again from here.',
+      button: 'Delete the cloud copy',
+      confirm:
+        'This deletes all your rows in your project — currently {{rows}}. The data in this browser is untouched, but devices that haven’t synced yet cannot receive what was uploaded so far. To simply stop syncing, use “Disconnect this device” instead: the copy stays intact.',
+      confirmLabel: 'I understand, continue',
+      confirmFinal: 'Last step. The rows in your Supabase project are deleted for good, and this cannot be undone from here.',
+      word: 'DELETE',
+      done: 'The cloud copy is now empty.',
+    },
+    errors: {
+      network: 'The project couldn’t be reached — check the internet connection and the project address.',
+      credentials: 'The email or password doesn’t match this project.',
+      emailNotConfirmed:
+        'That email hasn’t been confirmed yet — open the link Supabase sent, or turn confirmation off under Authentication → Providers → Email.',
+      userExists: 'That account already exists in the project — use “Sign in” instead of “Create account”.',
+      weakPassword: 'That password is too short for this project (usually at least 6 characters).',
+      signupDisabled: 'The project has new sign-ups turned off — enable them under Authentication → Providers → Email.',
+      key: 'The project didn’t accept the public key — check it was copied whole and from this project.',
+      table: 'The project isn’t set up yet — its table doesn’t exist. “Set up the project” opens the script that creates it.',
+      permission: 'The project refused the operation — check the security rule from the script was created.',
+      session: 'The session expired — sign in again with your email and password.',
+      notConfigured: 'Sync isn’t set up on this device.',
+      notMigrated: 'The project still doesn’t have what the script creates. Run it in the SQL editor and try again.',
+      auth: 'The project refused the sign-in.',
+      server: 'The project answered with an error.',
+      badUrl: 'That project address doesn’t look valid — copy “Project URL” from Supabase (e.g. https://abcdefgh.supabase.co).',
+      needCredentials: 'Enter the email and password of the account inside your project.',
+    },
+    keyErrors: {
+      empty: 'Enter the project’s public key (publishable, or the older anon).',
+      secret: 'That is the secret key — it never belongs in a browser. Use the publishable key.',
+      serviceRole:
+        'That is the service_role key — it bypasses every security rule and must not be stored in a browser. Use the anon public key.',
+      role: 'That key has the role “{{role}}”; the project’s public key is the one needed.',
+      shape: 'That doesn’t look like a Supabase key (sb_publishable_… or an older anon key).',
+    },
+    safety: {
+      title: 'How safe is this',
+      publicKey:
+        'The public key is not a password. It is public by nature — every Supabase app sends it to the browser. What protects the data is the script’s row-level-security rule: without signing in, the key cannot read a single row.',
+      secretKey: 'Never paste a secret / service_role key here. Those bypass the rules, and the app refuses them outright.',
+      storedHere:
+        'The credentials are stored on this device (localStorage), along with the session. They are no more sensitive than the guest lists themselves, which already sit in this browser. On a shared computer, use “Disconnect this device” when you’re done.',
+      ownProject: 'The data goes only to your project, in the region you chose, over HTTPS. GuestSeat still has no server.',
+      lastWins:
+        'The last device to sync wins, per event. If the same event is edited on two devices without syncing in between, the version that arrived later is the one kept — different events never collide.',
+      newDevice:
+        'A new device sends nothing without asking you. As soon as it connects it only reads, and shows how much each side holds; until you choose, the cloud copy is untouched.',
+      deviceTrail:
+        'Every row carries the name of the device that sent it. With one email signed in everywhere, that is the only way to see which device made a change — see “Your devices” above.',
+    },
   },
 };
 

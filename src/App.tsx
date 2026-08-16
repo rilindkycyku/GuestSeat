@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
+import { useSync } from './hooks/useSync';
 import { useBoardDnd } from './hooks/useBoardDnd';
 import { useTableTags, type TableFilter } from './hooks/useTableTags';
 import { useGuestBadges } from './hooks/useGuestBadges';
@@ -34,6 +35,10 @@ import { EventDetailsModal } from './components/EventDetailsModal';
 import { QrModal } from './components/QrModal';
 import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
+import { DataModal, type DataTab } from './components/DataModal';
+import { GuideModal } from './components/GuideModal';
+import type { GuideScreen } from './lib/guide';
+import { SyncBadge } from './components/sync/SyncBadge';
 import { AutoSeatReport } from './components/AutoSeatReport';
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
@@ -49,6 +54,7 @@ import {
   type ViewMode,
   type TableColumns,
 } from './lib/storage';
+import { onDbBlocked } from './lib/db';
 import { getDemoEventState } from './lib/demoEvent';
 import { eventTypeConfig } from './lib/eventTypes';
 import { autoSeat, type AutoSeatResult } from './lib/autoSeat';
@@ -66,6 +72,7 @@ export default function App() {
     events,
     createEvent,
     switchEvent,
+    reload,
     closeEvent,
     deleteEvent,
     renameEvent,
@@ -101,6 +108,9 @@ export default function App() {
   } = useEventState();
   const { t } = useLanguage();
   const { toast, showToast, dismissToast } = useToast();
+  // Cloud sync runs alongside the board: it writes straight to IndexedDB, so whatever it brings down
+  // is re-read through `reload` rather than merged into React state by hand.
+  const sync = useSync({ ready, onApplied: reload });
 
   const [query, setQuery] = useState('');
   // When true, show onboarding to create another event even though saved events already exist
@@ -118,6 +128,20 @@ export default function App() {
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [autoSeatReport, setAutoSeatReport] = useState<Pick<AutoSeatResult, 'seated' | 'unplaced'> | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Which tab of the data dialog is open, or null when it is closed.
+  const [dataTab, setDataTab] = useState<DataTab | null>(null);
+  // Another tab is holding the database at an older version, so this one cannot open it yet. It
+  // clears itself the moment that tab closes — see `onDbBlocked` in lib/db.ts.
+  const [dbBlocked, setDbBlocked] = useState(false);
+  useEffect(() => onDbBlocked(setDbBlocked), []);
+  // Which entry of the guide is open, or null when the guide is closed. Opening it *at* an entry is
+  // the point: "how do I set sync up?" should land on sync.
+  const [guideAt, setGuideAt] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const openGuide = (entry?: string) => {
+    setGuideAt(entry ?? null);
+    setGuideOpen(true);
+  };
   const [statsOpen, setStatsOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
@@ -144,6 +168,27 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  /**
+   * A sync that failed on its own — at startup, on the timer, after a save — has nobody watching a
+   * return value. Sync is meant to be forgotten about, which is what makes a broken one dangerous:
+   * a session that expired on the phone leaves everything typed into it sitting on that phone, and
+   * nothing would say so until someone happened to open the panel about a thing they believe is
+   * working. So it is said out loud, once per distinct failure — the same broken wifi retrying every
+   * ten minutes is one piece of news, not five — and never while the panel that explains it is
+   * already open.
+   */
+  const announcedError = useRef<string | null>(null);
+  useEffect(() => {
+    if (!sync.error) {
+      announcedError.current = null;
+      return;
+    }
+    const key = `${sync.error.code}:${sync.error.message}`;
+    if (announcedError.current === key || dataTab) return;
+    announcedError.current = key;
+    showToast(t('sync.badge.failedShort'), { label: t('sync.openPanel'), onClick: () => setDataTab('sync') });
+  }, [sync.error, dataTab, showToast, t]);
 
   useEffect(() => {
     saveCollapsedTableIds(collapsedTableIds);
@@ -485,9 +530,77 @@ export default function App() {
     closeEvent();
   };
 
+  // The sync indicator and the way into data & sync, for the screens that have no header of their
+  // own — a device that has just taken the cloud copy may have no events at all to open.
+  const cornerControls = (
+    <>
+      <button
+        onClick={() => openGuide()}
+        title={t('guide.title')}
+        aria-label={t('guide.title')}
+        className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+      >
+        📖
+      </button>
+      <SyncBadge sync={sync} onOpen={() => setDataTab('sync')} />
+      <button
+        onClick={() => setDataTab('backup')}
+        title={t('backup.title')}
+        aria-label={t('backup.title')}
+        className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
+      >
+        🗄️
+      </button>
+    </>
+  );
+
+  /**
+   * What the guide can open for you. "Show me" beats "go and find it" — but only for the screens the
+   * app can actually put on screen from here: an entry whose screen is missing from this map simply
+   * shows no button, rather than one that does nothing.
+   *
+   * Rebuilt per render on purpose: which of these exist depends on whether an event is open at all.
+   */
+  const guideScreens: Partial<Record<GuideScreen, () => void>> = state
+    ? {
+        autoSeat: handleAutoSeat,
+        tags: () => setSettingsOpen(true),
+        details: () => setEventDetailsOpen(true),
+        invitation: () => setInvitationOpen(true),
+        share: () => setQrOpen(true),
+        checkin: () => setCheckInOpen(true),
+        stats: () => setStatsOpen(true),
+        backup: () => setDataTab('backup'),
+        sync: () => setDataTab('sync'),
+      }
+    : { backup: () => setDataTab('backup'), sync: () => setDataTab('sync') };
+
+  const guideModal = guideOpen && (
+    <GuideModal
+      initialEntry={guideAt ?? undefined}
+      screenActions={guideScreens}
+      onClose={() => setGuideOpen(false)}
+    />
+  );
+
+  const dataModal = dataTab && (
+    <DataModal
+      events={events}
+      sync={sync}
+      initialTab={dataTab}
+      askConfirm={askConfirm}
+      onToast={showToast}
+      onImported={reload}
+      onOpenGuide={openGuide}
+      onClose={() => setDataTab(null)}
+    />
+  );
+
   // The onboarding screen, optionally with a Back link (shown when other events already exist).
   const onboardingScreen = (onBack?: () => void) => (
     <Onboarding
+      controls={cornerControls}
+      onOpenGuide={() => openGuide()}
       onBack={onBack}
       onImported={(result, fallbackName, eventType) =>
         startEvent({
@@ -535,12 +648,22 @@ export default function App() {
   // Hold the first paint until IndexedDB has been read, so existing events never flash onboarding.
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-slate-50 dark:bg-slate-950">
         <span
           className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"
           role="status"
           aria-label={t('common.loading')}
         />
+        {/* An update needs the database to itself. Without this the app waits on a spinner with
+            nothing to explain it, and reloading — the one thing anybody tries — cannot help, because
+            it is the *other* tab that is in the way. It carries on by itself the moment that tab
+            closes, so there is nothing to press here. */}
+        {dbBlocked && (
+          <div className="max-w-sm">
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t('common.blockedTitle')}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('common.blockedBody')}</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -555,6 +678,7 @@ export default function App() {
         {showPicker ? (
           <EventPicker
             events={events}
+            controls={cornerControls}
             onOpen={(id) => void switchEvent(id)}
             onNew={() => setCreatingNew(true)}
             onRename={renameEvent}
@@ -563,6 +687,8 @@ export default function App() {
         ) : (
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
+        {dataModal}
+        {guideModal}
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
@@ -587,6 +713,9 @@ export default function App() {
           onOpenOverview={() => setStatsOpen(true)}
           onOpenEvents={handleCloseToPicker}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenData={(tab) => setDataTab(tab)}
+          onOpenGuide={() => openGuide()}
+          sync={sync}
           onShowInvitation={() => setInvitationOpen(true)}
           onShowQr={() => setQrOpen(true)}
           onToast={showToast}
@@ -931,6 +1060,15 @@ export default function App() {
             setSettingsOpen(false);
             handleCloseToPicker();
           }}
+          onOpenData={() => {
+            setSettingsOpen(false);
+            setDataTab('backup');
+          }}
+          onOpenGuide={() => {
+            setSettingsOpen(false);
+            openGuide();
+          }}
+          syncConfigured={sync.configured}
           tableColumns={tableColumns}
           onTableColumnsChange={setTableColumns}
           systemTags={systemTags}
@@ -945,6 +1083,9 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
+
+      {dataModal}
+      {guideModal}
 
       {toastNode}
       <Analytics />

@@ -21,6 +21,12 @@ export interface ConfirmOptions {
     /** Defaults to `common.confirmFinal` ("Yes, continue"). */
     confirmLabel?: string;
   };
+  /**
+   * A word the user has to type before the last button unlocks — for the two or three actions that
+   * reach past this device, like replacing the cloud copy with what is here. A stray double-tap can
+   * dismiss a dialog; it cannot type "REPLACE".
+   */
+  requireText?: string;
   onConfirm: () => void;
 }
 
@@ -35,13 +41,19 @@ export function ConfirmModal({
   title,
   danger,
   confirmAgain,
+  requireText,
   onConfirm,
   onClose,
 }: ConfirmModalProps) {
   const { t } = useLanguage();
   const [step, setStep] = useState(1);
+  const [typed, setTyped] = useState('');
   const cancelRef = useRef<HTMLButtonElement>(null);
   const final = step === 2;
+  // The word is asked for on the last step only, so a two-step dialog explains itself first and
+  // demands the typing once there is nothing left to read.
+  const lastStep = final || !confirmAgain;
+  const locked = Boolean(requireText) && lastStep && typed.trim().toUpperCase() !== requireText!.toUpperCase();
 
   // The second step starts with focus on Cancel, so holding or double-tapping Enter can't carry
   // someone straight through both steps — the point of asking twice is that the last press is aimed.
@@ -79,6 +91,22 @@ export function ConfirmModal({
         {shown.message}
       </p>
 
+      {requireText && lastStep && (
+        <label className="block mb-5">
+          <span className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+            {t('common.typeToConfirm', { word: requireText })}
+          </span>
+          <input
+            autoFocus
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+          />
+        </label>
+      )}
+
       <div className="flex justify-end gap-2">
         <button
           ref={cancelRef}
@@ -88,9 +116,10 @@ export function ConfirmModal({
           {t('common.cancel')}
         </button>
         <button
-          autoFocus
+          autoFocus={!requireText}
+          disabled={locked}
           onClick={confirmAgain && !final ? () => setStep(2) : confirm}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${
+          className={`px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
             danger ? 'bg-red-600 hover:bg-red-500' : 'bg-indigo-600 hover:bg-indigo-500'
           }`}
         >

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ImportError, parseImportedJson } from '../lib/importGuests';
 import { parseImportedCsv } from '../lib/importCsv';
 import { useLanguage } from '../hooks/useLanguage';
@@ -22,6 +22,10 @@ interface OnboardingProps {
   onSeedTraditionsChange: (on: boolean) => void;
   /** Return to the events picker instead of creating an event — shown only when events already exist. */
   onBack?: () => void;
+  /** Extra top-right controls — the sync indicator and the way into data & sync. */
+  controls?: ReactNode;
+  /** Opens the guide, for someone who has never seen the app before. */
+  onOpenGuide?: () => void;
 }
 
 export function Onboarding({
@@ -31,6 +35,8 @@ export function Onboarding({
   seedTraditions,
   onSeedTraditionsChange,
   onBack,
+  controls,
+  onOpenGuide,
 }: OnboardingProps) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +79,7 @@ export function Onboarding({
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 px-4 py-16 sm:py-12 relative">
-      <SettingsControls className="absolute top-4 right-4" />
+      <SettingsControls className="absolute top-4 right-4">{controls}</SettingsControls>
       {onBack && (
         <button
           onClick={onBack}
@@ -89,6 +95,15 @@ export function Onboarding({
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">GuestSeat</h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">{t('onboarding.tagline')}</p>
+          {/* The one link a first-timer might want before touching anything of their own. */}
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="mt-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              📖 {t('guide.open')}
+            </button>
+          )}
         </div>
 
         <div className="mb-6">

@@ -9,6 +9,65 @@ folded into the release they belong to.
 
 ---
 
+## 1.16.0
+
+A guide, so the app explains itself.
+
+- **Udhëzuesi, inside the app** — one entry per screen, sixteen of them, grouped the way the app is:
+  planning the seating, the event itself, your data. Each opens with what the screen is for, then
+  numbered steps that name the button to press, then what is worth knowing before you touch it.
+  Albanian and English, and reachable from Settings, from the drawer, and from the very first screen
+  — before anyone has data of their own to risk.
+- **Searchable, including the steps.** Somebody typing "QR", "Excel" or "kopje" does not know which
+  screen answers — that is why they are typing. Search reads every word of an entry, ignores accents
+  and case, and opens the list by itself, because results hidden behind a toggle are a box that does
+  not answer.
+- **It opens where you got stuck**, and offers to open what it describes. The sync panel's own "how
+  this works" lands on the sync entry; the entry then has a button that puts that screen on the
+  screen, since "show me" beats "go and find it".
+- **It reads straight through.** The foot of each entry leads to the next, and "see also" points at
+  the two or three that answer the question this one raises — so nobody has to go back to the list to
+  carry on.
+- Tests: 12 more, checking that every entry exists in both languages with real copy in every step,
+  that "see also" never points at nothing, and that the search finds the entry a reader would expect
+  from a word they know.
+
+## 1.15.0
+
+The two answers to "where does this list exist besides this browser?" — a file you keep, and a cloud
+copy that keeps itself.
+
+- **Sync across your devices, through a project you own.** GuestSeat still has no server: you bring
+  your own Supabase project, and the events travel through *your* database. Setup is a script the app
+  opens in your own SQL editor (the key a browser holds can create rows, never a table — that is
+  protection, not a gap), and from then on the phone and the laptop keep each other in step by
+  themselves: on open, a few seconds after any change, when the tab comes back, when the device comes
+  back online.
+- **A new device can't overwrite an evening's work.** As soon as it connects it only *reads*, and
+  shows how much each side holds; until you choose — keep both, take the project's copy, or send this
+  device up — nothing goes up. The two destructive directions ask for a word to be typed.
+- **It merges per guest, not per event.** A wedding travels as rows — one for the event, one for
+  each guest, one for each table — so adding a guest on the laptop while someone checks people in on
+  a phone at the door keeps both. Only two devices editing the same guest can collide, and then the
+  later sync wins. A save sends only what changed: seating one guest rewrites the whole event in the
+  app, and the diff turns that back into one row.
+- Nothing is discarded before it has been sent, so a phone with a wrong clock keeps its edits.
+  Deletions travel as tombstones rather than being downloaded straight back, and deleting an event
+  tombstones every row it was made of. Once a day the two sides are counted, and a cloud copy that
+  turns out to be short is repaired.
+- **Which device did that.** Every row carries the device that wrote it, and the panel lists your
+  devices and the project's recent changes — with one email signed in everywhere, that is the only
+  question the data itself cannot answer.
+- **A backup file with every event in it.** The board's JSON export writes the event that happens to
+  be open; this writes them all, with their ids. Restoring puts the browser back to what the file
+  says, and *Add from file* only brings in what isn't here — so an old backup can't undo newer work.
+  Persistent storage can be requested from the same screen, which is what keeps Safari from clearing
+  a site left unvisited for a week.
+- Tests: 55 more, covering taking an event apart and putting it back together, the save diff, the
+  merge rules, the row shapes, key and project-address validation, and the backup file in both
+  directions. The whole loop was also driven end to end in two real browsers against a stand-in
+  Supabase: two devices editing the same wedding at the same time both keep their work.
+
 ## 1.14.0
 
 The two screens where a mistake costs the most: the guest's own lookup, and the buttons that

@@ -3,7 +3,8 @@ import { tableDisplayName, type Translator } from './tableDisplay';
 import { buildShareQr } from './qr';
 import type { Language } from './i18n';
 
-function downloadBlob(content: BlobPart, filename: string, type: string): void {
+/** Hands the browser a file. Shared with lib/backup.ts, which writes the whole-app backup. */
+export function downloadBlob(content: BlobPart, filename: string, type: string): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
