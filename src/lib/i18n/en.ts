@@ -901,7 +901,7 @@ export const en = {
           },
           {
             title: 'Point it back at this app',
-            text: 'In the project: Authentication → URL Configuration → set Site URL to this app’s address. The sync screen shows the address with a copy button. Supabase’s default sends the confirmation email to a page that doesn’t exist; with this set, that link brings you back here already signed in.',
+            text: 'In the project: Authentication → URL Configuration → set Site URL to this app’s address. The sync screen shows the address with a copy button. Supabase’s default sends the confirmation email to a page that doesn’t exist; with this set, that link brings you back here already signed in. Sharing the project with another app? Leave its Site URL alone and add this address under Redirect URLs instead — the app asks for it by name.',
           },
           {
             title: 'Copy the two things it needs',
@@ -917,6 +917,7 @@ export const en = {
           },
         ],
         tips: [
+          'One project can serve more than one app. If you already use a Supabase project for something else, run this script in the same one — it creates a table of its own and touches nothing that is already there. Sign in with the account you already have rather than creating a second.',
           'A new device only reads until you choose what should happen: keep both, take the project’s copy, or send this device up. That is what stops a freshly installed phone overwriting an evening’s work.',
           'It merges per guest and per table, so you can add a guest on the laptop while someone checks people in on a phone at the door and both survive. Only the same guest edited in both places at once can collide, and then the later sync wins.',
           'Once it is on it looks after itself: when the app opens, a few seconds after any change, when you return to the tab, and when the device comes back online. The cloud icon in the header is the whole status.',
@@ -1054,6 +1055,8 @@ export const en = {
       step1: 'Step 1 — create the project and the table',
       step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
       step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
+      step1bShared:
+        'On the same page, add that address under Redirect URLs as well. That entry is what the sign-up asks the confirmation email to come back to — and if the project is shared with another app, it is the whole answer: leave that app’s Site URL alone and the link still lands here.',
       siteUrlCopied: 'Address copied.',
       openDashboard: 'Open Supabase dashboard',
       step1c:

@@ -154,6 +154,13 @@ belonging to GuestSeat is anywhere in the path.
    cannot create a table — that is protection, not a gap.
 5. Sign in with an account that exists inside your project, on each device you want kept in step.
 
+**Already using a Supabase project for something else?** Use the same one. The script creates
+`guestseat_records` and its own policy, trigger and index — all named after that table — so it can't
+collide with another app's table in the same database, and one account signs in to both. The only
+shared setting is **Site URL**, which belongs to whichever app claimed it: leave it alone and add
+this app's address under **Redirect URLs**, which is where the sign-up asks the confirmation email to
+come back to.
+
 **How it behaves:**
 
 - What travels is not a whole event but the pieces it's made of: one row for the event (name,

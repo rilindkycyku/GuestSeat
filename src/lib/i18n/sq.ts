@@ -903,7 +903,7 @@ export const sq = {
           },
           {
             title: 'Kthejeni nga ky aplikacion',
-            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur.',
+            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur. E ndani projektin me një aplikacion tjetër? Lëreni Site URL-në e tij si është dhe shtojeni këtë adresë te Redirect URLs — aplikacioni e kërkon vetë me emër.',
           },
           {
             title: 'Kopjoni dy gjërat që i duhen',
@@ -919,6 +919,7 @@ export const sq = {
           },
         ],
         tips: [
+          'Një projekt mund t’i shërbejë më shumë se një aplikacioni. Nëse keni tashmë një projekt Supabase për diçka tjetër, ekzekutojeni këtë skript te i njëjti — krijon një tabelë të vetën dhe nuk prek asgjë që ndodhet aty. Hyni me llogarinë që keni tashmë, në vend që të krijoni një të dytë.',
           'Një pajisje e re vetëm lexon derisa të zgjidhni çfarë duhet të ndodhë: mbaji të dyja, merr kopjen e projektit, ose dërgo këtë pajisje. Kjo është ajo që ndal një telefon të sapoinstaluar të mbishkruajë punën e një mbrëmjeje.',
           'Bashkimi bëhet mysafir për mysafir dhe tavolinë për tavolinë, pra mund të shtoni një mysafir në kompjuter ndërsa dikush regjistron ardhjet me telefon te dera, dhe të dyja mbeten. Vetëm i njëjti mysafir i ndryshuar në të dyja anët njëkohësisht mund të përplaset, dhe atëherë fiton sinkronizimi i fundit.',
           'Sapo ndizet, kujdeset vetë: kur hapet aplikacioni, pak sekonda pas çdo ndryshimi, kur ktheheni te skeda, dhe kur pajisja kthehet online. Ikona e resë lart është i gjithë statusi.',
@@ -1056,6 +1057,8 @@ export const sq = {
       step1: 'Hapi 1 — krijoni projektin dhe tabelën',
       step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
       step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
+      step1bShared:
+        'Te e njëjta faqe, shtojeni po atë adresë edhe te Redirect URLs. Pikërisht aty kërkon regjistrimi që të kthehet emaili i konfirmimit — dhe nëse projektin e ndani me një aplikacion tjetër, kjo është e gjithë zgjidhja: Site URL-në e atij aplikacioni lëreni si është dhe linku prapë bie këtu.',
       siteUrlCopied: 'Adresa u kopjua.',
       openDashboard: 'Hap panelin e Supabase',
       step1c:
