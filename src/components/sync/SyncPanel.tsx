@@ -415,6 +415,7 @@ export function SyncPanel({
                     {t('common.copy')}
                   </button>
                 </div>
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.step1bShared')}</p>
               </li>
               <li>{t('sync.connect.step1c')}</li>
               <li>{t('sync.connect.step1d')}</li>

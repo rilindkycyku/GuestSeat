@@ -28,7 +28,7 @@ import {
   type SyncRecord,
 } from './records';
 import { guessDeviceName } from './device';
-import { checkKey, normalizeUrl, projectRef } from './supabase';
+import { checkKey, normalizeUrl, projectRef, signupPath } from './supabase';
 import { SCHEMA_VERSION, SQL_INSTALL, TABLE, pendingMigrations, sqlForMigration } from './schema';
 
 const guest = (id: string, name: string, extra: Partial<Guest> = {}): Guest => ({ id, name, tableId: null, ...extra });
@@ -361,6 +361,17 @@ describe('project setup', () => {
     expect(checkKey(`aaa.${payload}.bbb`)).toMatchObject({ ok: false, reason: 'serviceRole' });
     const anon = Buffer.from(JSON.stringify({ role: 'anon' })).toString('base64url');
     expect(checkKey(`aaa.${anon}.bbb`)).toMatchObject({ ok: true });
+  });
+
+  it('asks the confirmation email to come back to this app', () => {
+    // A project shared with another app of the user's has that app's Site URL, so the link would
+    // land there instead of here unless this address is named.
+    expect(signupPath('https://guestseat.rilindkycyku.dev')).toBe(
+      'signup?redirect_to=https%3A%2F%2Fguestseat.rilindkycyku.dev'
+    );
+    // Nothing to name (server-side render, or an origin the browser withheld): plain signup, and
+    // Supabase falls back to the Site URL as before.
+    expect(signupPath('')).toBe('signup');
   });
 
   it('finds the project ref only for real Supabase addresses', () => {

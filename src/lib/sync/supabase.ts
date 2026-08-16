@@ -382,6 +382,24 @@ export async function signIn({
 }
 
 /**
+ * Where the confirmation email should send the reader back to: this app, said explicitly.
+ *
+ * A project has exactly one **Site URL**, and that is where GoTrue sends a confirmation link when
+ * nobody says otherwise. That is fine for a project this app has to itself, and wrong the moment the
+ * project is shared with another app of the user's — say a ledger already using it — because then
+ * the Site URL is that app's address and the link lands there instead of here.
+ *
+ * Naming the address closes that: Supabase honours `redirect_to` when the address is in the
+ * project's **Redirect URLs** allow-list, and quietly falls back to the Site URL when it is not. So
+ * this is safe to send always — at worst it changes nothing, and at best it makes one project serve
+ * two apps.
+ */
+export function signupPath(origin: string): string {
+  const address = String(origin || '').trim();
+  return address ? `signup?redirect_to=${encodeURIComponent(address)}` : 'signup';
+}
+
+/**
  * Creates the account inside the user's own project. With email confirmation on (the Supabase
  * default) there is no session in the answer — the account exists but has to be confirmed first,
  * which is reported rather than treated as a failure.
@@ -398,7 +416,11 @@ export async function signUp({
   anonKey?: string;
 }): Promise<{ needsConfirmation: boolean; config: SyncConfig | null }> {
   const config = { ...readConfig(), ...(url ? { url } : {}), ...(anonKey ? { anonKey } : {}) };
-  const data = (await fetchAuth(config, 'signup', { email: email.trim(), password })) as GrantResponse;
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  const data = (await fetchAuth(config, signupPath(origin), {
+    email: email.trim(),
+    password,
+  })) as GrantResponse;
   if (!data.access_token) return { needsConfirmation: true, config: null };
   return {
     needsConfirmation: false,
