@@ -101,10 +101,19 @@ export function CheckInScreen({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 max-w-2xl w-full mx-auto">
-        {attendees.length === 0 && <p className="text-center text-slate-400 py-16">{t('checkin.empty')}</p>}
+      {/*
+        One column on a phone, more as the screen allows.
+
+        Check-in happens at the door with a queue waiting, and the whole job is
+        finding a name fast. A 2xl ribbon down the middle of a laptop showed six
+        guests where the same screen fits eighteen — and every name not on screen
+        is a scroll while somebody stands there. The rows keep their full height:
+        they are tap targets, and the tap marks a guest as arrived.
+      */}
+      <div className="flex-1 overflow-y-auto p-3 max-w-2xl lg:max-w-6xl w-full mx-auto grid content-start gap-2 lg:grid-cols-2 xl:grid-cols-3">
+        {attendees.length === 0 && <p className="col-span-full text-center text-slate-400 py-16">{t('checkin.empty')}</p>}
         {attendees.length > 0 && visible.length === 0 && (
-          <p className="text-center text-slate-400 py-16">{t('checkin.noMatches')}</p>
+          <p className="col-span-full text-center text-slate-400 py-16">{t('checkin.noMatches')}</p>
         )}
         {visible.map((g) => {
           const table = g.tableId ? tableById.get(g.tableId) : undefined;

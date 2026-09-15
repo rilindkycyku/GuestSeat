@@ -84,7 +84,15 @@ function NavDrawer({ label, onClose, children }: { label: string; onClose: () =>
   }, []);
 
   return (
-    <div className="lg:hidden fixed inset-0 z-50" data-print="hide">
+    /*
+     * The drawer used to be `lg:hidden`, and everything it holds — check-in, the
+     * overview, the backup file, the guide — was therefore unreachable on a
+     * laptop: the desktop header carries only the eight actions below, and the
+     * quick-action bubbles that duplicate them are phone-only. A wider screen
+     * should never offer *less* than a narrow one, so the same drawer now opens
+     * at every width.
+     */
+    <div className="fixed inset-0 z-50" data-print="hide">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
@@ -242,6 +250,17 @@ export function NavBar({
               aria-label={t('settings.title')}
             >
               ⚙️
+            </button>
+            {/* Everything that has no button of its own up here: check-in, the
+                overview, the backup file, the guide. */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              className={iconButtonClass}
+              title={t('nav.openMenu')}
+              aria-label={t('nav.openMenu')}
+              aria-expanded={menuOpen}
+            >
+              ☰
             </button>
           </div>
 

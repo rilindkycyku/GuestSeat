@@ -810,13 +810,18 @@ export default function App() {
                 </div>
               </div>
             )}
+            {/*
+              A fourth column past 1600px: three cards across a wide monitor grow
+              to twice the width a table card needs, and the extra width buys
+              nothing but longer travel between the first table and the last.
+            */}
             <div
-              className={`grid gap-2 sm:gap-4 ${
+              className={`grid gap-2 sm:gap-4 min-[1600px]:grid-cols-4 ${
                 tableColumns === 1 ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 xl:grid-cols-3'
               }`}
             >
               {state.tables.length === 0 && (
-                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-full text-center py-16 text-slate-400">
                   <p className="mb-3">{t('tables.noTablesYet')}</p>
                   <button
                     onClick={() => addTable(t('tables.namePrefix'))}
@@ -827,12 +832,12 @@ export default function App() {
                 </div>
               )}
               {state.tables.length > 0 && filteredTables.length === 0 && (
-                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-full text-center py-16 text-slate-400">
                   <p>{t('tables.noTablesForFilter')}</p>
                 </div>
               )}
               {isSearching && filteredTables.length > 0 && tablesToRender.length === 0 && (
-                <div className="col-span-2 xl:col-span-3 text-center py-16 text-slate-400">
+                <div className="col-span-full text-center py-16 text-slate-400">
                   <p>{t('tables.noSearchMatches')}</p>
                 </div>
               )}

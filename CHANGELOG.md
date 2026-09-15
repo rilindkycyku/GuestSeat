@@ -9,6 +9,26 @@ folded into the release they belong to.
 
 ---
 
+## 1.17.0
+
+The wide screen stops being a phone with margins.
+
+- **Every action is reachable at every width.** The drawer was `lg:hidden`, and so were the quick
+  bubbles that duplicate it — which meant check-in, the overview, the backup file and the guide had
+  no way in on a laptop at all. The same drawer now opens at any width, from a ☰ next to the
+  settings gear. A wider screen should never offer *less* than a narrow one.
+- **Check-in reads in columns.** The attendee list was a 2xl ribbon down the middle of the screen:
+  six guests visible where the same laptop fits eighteen, and every name off-screen is a scroll
+  while somebody stands at the door. Two columns from `lg`, three from `xl`; rows keep their height,
+  because the row is the tap target that marks a guest arrived.
+- **A fourth column of tables past 1600px.** Three cards across a wide monitor grow to twice the
+  width a table card needs, and the extra width buys nothing but travel between the first table and
+  the last.
+
+Nothing changes on a phone: the layouts below `lg` are the ones that shipped, to the pixel.
+
+---
+
 ## 1.16.0
 
 A guide, so the app explains itself.
