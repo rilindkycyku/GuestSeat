@@ -91,6 +91,27 @@ export function TableCard({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-slate-800 dark:text-white truncate">{displayName}</span>
+            {/*
+              How full the table is, as a shape rather than a fraction.
+              "4/8 vende" has to be read; a bar that is half filled is seen while
+              scanning the floor for room. The number stays — it is the one that
+              gets edited — and the bar rides under the name where the eye
+              already is. Colour matches the number: emerald when full, red when
+              over, indigo while there is room.
+            */}
+            <span
+              className="mt-1 block h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"
+              aria-hidden="true"
+            >
+              <span
+                className={`block h-full rounded-full ${
+                  isOverCapacity ? 'bg-red-500' : isFull ? 'bg-emerald-500' : 'bg-indigo-500/70'
+                }`}
+                style={{
+                  width: `${Math.min(100, table.capacity > 0 ? (guests.length / table.capacity) * 100 : 0)}%`,
+                }}
+              />
+            </span>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <button
                 onClick={(e) => {

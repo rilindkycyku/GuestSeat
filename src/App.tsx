@@ -341,16 +341,28 @@ export default function App() {
 
   // On first load, detect a shared list in the URL (#s=...) and offer to load it — this is how
   // a guest list arrives via a share link instead of a manually imported JSON file.
-  const sharedHandledRef = useRef(false);
+  /*
+   * The guard remembers *which* payload was handled, not merely that one was.
+   *
+   * It used to be a boolean paired with a `cancelled` flag, and the two cancelled
+   * each other out under StrictMode: the first mount set the boolean and started
+   * the decode, the cleanup set `cancelled`, so that decode bailed — and the
+   * second mount returned early because the boolean was already true. The link
+   * was then never applied at all. It only showed in development, since
+   * StrictMode is what double-invokes, which is why it survived: every shared
+   * link a guest opened in production worked.
+   *
+   * Keyed on the payload, the second mount sees the same string and returns
+   * early only because the work is genuinely done — and the decode is left to
+   * finish, since applying a list the user asked for is not something to cancel.
+   */
+  const sharedHandledRef = useRef<string | null>(null);
   useEffect(() => {
-    if (sharedHandledRef.current) return;
     const param = readShareParam();
-    if (!param) return;
-    sharedHandledRef.current = true;
-    let cancelled = false;
+    if (!param || sharedHandledRef.current === param) return;
+    sharedHandledRef.current = param;
     const forGuests = readFindSeatFlag();
     void decodeSharedState(param).then((shared) => {
-      if (cancelled) return;
       clearShareParam();
       if (!shared) {
         showToast(t('share.invalid'));
@@ -369,10 +381,7 @@ export default function App() {
         },
       });
     });
-    return () => {
-      cancelled = true;
-    };
-    // Runs once on mount; the ref guards against React StrictMode's double-invoke.
+    // Runs once per payload; the ref above says why it is keyed on the payload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -721,7 +730,12 @@ export default function App() {
           onToast={showToast}
         />
 
-        <main className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+        {/*
+          The unseated column widens past 1600px: at that width the plan has room
+          to spare, and a 280px rail makes a long list of names scroll where a
+          wider one simply shows them.
+        */}
+        <main className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] 2xl:grid-cols-[360px_1fr] gap-4 items-start">
           <div className="lg:sticky lg:top-[72px] lg:h-[calc(100vh-88px)]">
             <UnseatedPanel
               guests={unseatedGuests}
@@ -816,7 +830,7 @@ export default function App() {
               nothing but longer travel between the first table and the last.
             */}
             <div
-              className={`grid gap-2 sm:gap-4 min-[1600px]:grid-cols-4 ${
+              className={`grid gap-2 sm:gap-4 2xl:grid-cols-4 ${
                 tableColumns === 1 ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 xl:grid-cols-3'
               }`}
             >
