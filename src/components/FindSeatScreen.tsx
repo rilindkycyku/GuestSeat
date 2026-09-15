@@ -44,22 +44,30 @@ export function FindSeatScreen({
   const searching = query.trim().length >= FIND_SEAT_MIN_QUERY;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10 sm:py-14 relative">
+    /*
+     * This screen is usually not held in a hand: it runs on a tablet propped at
+     * the entrance, or on a laptop next to the guest book, and the person reading
+     * it is standing a step back. So above `lg` everything grows — the title, the
+     * field, the table name on the card — and the whole block sits in the middle
+     * of the screen instead of clinging to the top edge of a mostly empty one.
+     * On a phone nothing changes; that is still where most guests open it.
+     */
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10 sm:py-14 lg:py-0 lg:flex lg:items-center relative">
       <SettingsControls className="absolute top-4 right-4" />
 
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md lg:max-w-xl">
         <div className="text-center">
-          <span className="text-4xl">🪑</span>
-          <h1 className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{t('findSeat.title')}</h1>
-          <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{state.eventName}</p>
+          <span className="text-4xl lg:text-6xl">🪑</span>
+          <h1 className="mt-3 text-2xl lg:text-4xl font-bold text-slate-900 dark:text-white">{t('findSeat.title')}</h1>
+          <p className="mt-1 text-sm lg:text-base font-medium text-slate-500 dark:text-slate-400">{state.eventName}</p>
           {(details.venue || when) && (
-            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-0.5 text-xs lg:text-sm text-slate-400 dark:text-slate-500">
               {[details.venue?.trim(), when].filter(Boolean).join(' · ')}
             </p>
           )}
         </div>
 
-        <label className="mt-8 block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+        <label className="mt-8 block text-xs lg:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1.5">
           {t('findSeat.yourName')}
         </label>
         <input
@@ -68,7 +76,7 @@ export function FindSeatScreen({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('findSeat.placeholder')}
           aria-label={t('findSeat.yourName')}
-          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-400"
+          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 lg:px-5 lg:py-4 text-base lg:text-xl text-slate-900 dark:text-white outline-none focus:border-indigo-400"
         />
 
         {/* Results are announced, since finding your table is the whole point of the screen. */}
@@ -118,7 +126,7 @@ function MatchCard({ match }: { match: SeatMatch }) {
       )}
       <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3">
         <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <p className="min-w-0 flex-1 text-sm lg:text-lg font-semibold text-slate-800 dark:text-slate-100">
             {guest.surname ? `${guest.name} ${guest.surname}` : guest.name}
           </p>
           {sameName && (
@@ -129,7 +137,11 @@ function MatchCard({ match }: { match: SeatMatch }) {
         </div>
 
         {table ? (
-          <p className="mt-1 text-lg font-bold text-indigo-600 dark:text-indigo-400">{tableDisplayName(table, t)}</p>
+          /* The answer the guest came for — the one line that must read from a
+             step away. */
+          <p className="mt-1 text-lg lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            {tableDisplayName(table, t)}
+          </p>
         ) : (
           <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">{t('findSeat.noTableYet')}</p>
         )}

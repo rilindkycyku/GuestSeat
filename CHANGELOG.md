@@ -9,6 +9,49 @@ folded into the release they belong to.
 
 ---
 
+## 1.18.0
+
+Reading the plan, not just fitting it.
+
+- **Find-seat grows with the screen.** It runs on a tablet propped at the entrance or a laptop by
+  the guest book, read by someone standing a step back — so above `lg` the title, the field and the
+  table name scale up, and the block centres instead of clinging to the top of a mostly empty
+  screen. The table name, the one line the guest came for, goes from 18px to 30px. Phones are
+  untouched.
+- **Table cards show how full they are.** "4/8 vende" has to be read; a half-filled bar is seen
+  while scanning the floor for room. The number stays — it is what gets edited — and the bar takes
+  the colour the number already had: emerald when full, red when over, indigo while there is space.
+- **Wider screens get a fourth column of tables and a wider unseated rail** (360px from `2xl`). A
+  280px rail makes a long list of names scroll where a wider one just shows them.
+- **Fixed: a shared link never loaded in development.** The guard against StrictMode's double-invoke
+  was a boolean paired with a `cancelled` flag, and the two cancelled each other out — first mount
+  set the boolean and started the decode, the cleanup cancelled that decode, and the second mount
+  returned early because the boolean was set. Production was never affected (StrictMode is what
+  double-invokes), which is why it went unnoticed. The guard now remembers *which* payload it
+  handled.
+
+---
+
+## 1.17.0
+
+The wide screen stops being a phone with margins.
+
+- **Every action is reachable at every width.** The drawer was `lg:hidden`, and so were the quick
+  bubbles that duplicate it — which meant check-in, the overview, the backup file and the guide had
+  no way in on a laptop at all. The same drawer now opens at any width, from a ☰ next to the
+  settings gear. A wider screen should never offer *less* than a narrow one.
+- **Check-in reads in columns.** The attendee list was a 2xl ribbon down the middle of the screen:
+  six guests visible where the same laptop fits eighteen, and every name off-screen is a scroll
+  while somebody stands at the door. Two columns from `lg`, three from `xl`; rows keep their height,
+  because the row is the tap target that marks a guest arrived.
+- **A fourth column of tables past 1600px.** Three cards across a wide monitor grow to twice the
+  width a table card needs, and the extra width buys nothing but travel between the first table and
+  the last.
+
+Nothing changes on a phone: the layouts below `lg` are the ones that shipped, to the pixel.
+
+---
+
 ## 1.16.0
 
 A guide, so the app explains itself.
