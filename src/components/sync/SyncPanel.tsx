@@ -420,6 +420,10 @@ export function SyncPanel({
               <li>{t('sync.connect.step1c')}</li>
               <li>{t('sync.connect.step1d')}</li>
             </ol>
+            {/* One project can hold several of the user's apps — each writes its own table. Said
+                here, at the step where somebody is looking at a SQL script and wondering what it
+                is about to do to a database they already use for something else. */}
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.step1Shared')}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => setSetupOpen(true)} className={primaryBtn}>
                 {t('sync.setup.open')}

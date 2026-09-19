@@ -1063,6 +1063,8 @@ export const en = {
         'Under Project Settings, take the Project URL (in Data API) and the publishable key — sb_publishable_… under API Keys. An older anon key works too. Never copy a secret / service_role key here.',
       step1d:
         'Press “Set up the project” below: it opens your own SQL editor with the script already in it, and all that’s left is Run. The key you paste in step 2 can’t create the table — Supabase doesn’t allow it, and that is protection, not a gap.',
+      step1Shared:
+        'One project is enough for all of your apps. GuestSeat writes to its own table, guestseat_records, so another app of yours that syncs this way sits beside it untouched — same account, same security rule, its own rows. The script creates only this table and leaves anything already there alone, and running it a second time changes nothing. There is a practical side too: the free plan pauses a project nobody touches, and a project several apps use does not go untouched.',
       step2: 'Step 2 — connect this device',
       step2Body:
         'The account is created inside your own project, nowhere else. Use the same email and password on every device you want kept in step: “Create account” the first time, “Sign in” on the others.',

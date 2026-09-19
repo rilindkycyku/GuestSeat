@@ -1065,6 +1065,8 @@ export const sq = {
         'Te Project Settings merrni Project URL (te Data API) dhe çelësin publishable — sb_publishable_… te API Keys. Edhe çelësi i vjetër anon punon. Çelësat secret / service_role mos i kopjoni kurrë këtu.',
       step1d:
         'Shtypni «Konfiguro projektin» më poshtë: hapet redaktori juaj SQL me skriptin brenda dhe mjafton Run. Tabelën nuk e krijon dot çelësi që ngjitni te hapi 2 — Supabase nuk ia lejon atij këtë punë, dhe kjo është mbrojtje, jo mangësi.',
+      step1Shared:
+        'Një projekt i vetëm mjafton për të gjitha aplikacionet tuaja. GuestSeat shkruan te tabela e vet, guestseat_records, prandaj një aplikacion tjetër i juaji që sinkronizon kështu rri krah saj pa u prekur — e njëjta llogari, i njëjti rregull sigurie, rreshtat e vet. Skripti krijon vetëm këtë tabelë dhe nuk prek asgjë që gjendet aty, dhe ekzekutimi i dytë nuk ndryshon gjë. Ka edhe një anë praktike: plani falas e ndal një projekt që nuk e prek kush, dhe një projekt që e përdorin disa aplikacione nuk rri pa u prekur.',
       step2: 'Hapi 2 — lidhni këtë pajisje',
       step2Body:
         'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',

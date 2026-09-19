@@ -161,6 +161,15 @@ shared setting is **Site URL**, which belongs to whichever app claimed it: leave
 this app's address under **Redirect URLs**, which is where the sign-up asks the confirmation email to
 come back to.
 
+Two sibling apps sync the same way and are built to share a project with this one:
+[FinanCarePersonal](https://github.com/rilindkycyku/financarepersonal) (`financare_records`) and
+[Tavolina](https://github.com/rilindkycyku/cardgametracker) (`tavolina_records`). Run each app's own
+setup script once, from that app, and sign in everywhere with the same email and password — one
+account, three tables, one project. There is a practical reason to do it beyond tidiness: the free
+plan pauses a project nobody has touched for days, and a project several apps write to does not go
+untouched — so the seating plan you open twice a year stays alive on the back of the ledger you open
+daily.
+
 **How it behaves:**
 
 - What travels is not a whole event but the pieces it's made of: one row for the event (name,

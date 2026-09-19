@@ -131,8 +131,11 @@ anything here.
 - `sync/schema.ts` migrations are **append-only, idempotent and additive**. A shipped migration has
   already run on other people's databases — fix a mistake by adding the next number, never by
   editing one. Removing a column ships as two releases (stop writing it, then drop it).
-- A Supabase project may be **shared with another app**, so sign-up sends an explicit `redirect_to`
-  rather than relying on the project's single Site URL.
+- A Supabase project may be **shared with another app** — in practice the user's other two,
+  FinanCarePersonal (`financare_records`) and Tavolina (`tavolina_records`) — so sign-up sends an
+  explicit `redirect_to` rather than relying on the project's single Site URL. GuestSeat owns
+  `guestseat_records` and nothing else: the policy, trigger and index are all named after it, and the
+  setup script must never touch anything outside it.
 
 ### 3. Share links must stay small enough to scan
 
