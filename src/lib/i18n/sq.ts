@@ -1054,6 +1054,8 @@ export const sq = {
       split: '{{both}} rekorde ndodhen në të dyja anët, {{onlyLocal}} vetëm këtu dhe {{onlyCloud}} vetëm te projekti. Numërohen edhe shënimet e fshirjeve, prandaj një shifër këtu mund të jetë më e madhe se ajo që shfaq tabela.',
     },
     connect: {
+      sharedTitle: 'A e mban ky projekt edhe aplikacionet e tjera?',
+      accountTitle: '«Hyr» apo «Krijo llogari»?',
       step1: 'Hapi 1 — krijoni projektin dhe tabelën',
       step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
       step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',

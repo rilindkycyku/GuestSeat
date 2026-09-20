@@ -1052,6 +1052,8 @@ export const en = {
       split: '{{both}} records are on both sides, {{onlyLocal}} only here and {{onlyCloud}} only in the project. Deletions are counted too, so a number here can be larger than what the board shows.',
     },
     connect: {
+      sharedTitle: 'Can this project also hold my other apps?',
+      accountTitle: 'Sign in, or create an account?',
       step1: 'Step 1 — create the project and the table',
       step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
       step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',

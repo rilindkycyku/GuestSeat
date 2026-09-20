@@ -76,6 +76,32 @@ const heading = 'text-[11px] font-semibold uppercase tracking-wider text-slate-5
 const field =
   'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
 const primaryBtn = 'px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50';
+/**
+ * A collapsed explanation beside the control it explains.
+ *
+ * The setup screen has to answer two questions that are read once, if at all — "can this project
+ * also hold my other apps?" and "sign in or create an account?" — while the steps themselves are
+ * read every time somebody sets a device up. Left open, those answers pushed the form off a phone
+ * screen: 2412 characters of prose before the first button. Collapsed, they cost one line each and
+ * are still one tap away, which is the whole point of writing them down.
+ *
+ * `<details>` rather than state: the browser gives keyboard support, the open/closed semantics and
+ * find-in-page for free, and nothing here needs to know whether it is open.
+ */
+function Aside({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-white/60 dark:bg-slate-900/30">
+      <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2">
+        <svg viewBox="0 0 20 20" aria-hidden="true" className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90">
+          <path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {title}
+      </summary>
+      <div className="px-3 pb-3 text-xs text-slate-500 dark:text-slate-400 space-y-2">{children}</div>
+    </details>
+  );
+}
+
 const plainBtn =
   'px-3.5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50';
 const dangerBtn = 'px-3.5 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-500 disabled:opacity-50';
@@ -415,15 +441,14 @@ export function SyncPanel({
                     {t('common.copy')}
                   </button>
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.step1bShared')}</p>
               </li>
               <li>{t('sync.connect.step1c')}</li>
               <li>{t('sync.connect.step1d')}</li>
             </ol>
-            {/* One project can hold several of the user's apps — each writes its own table. Said
-                here, at the step where somebody is looking at a SQL script and wondering what it
-                is about to do to a database they already use for something else. */}
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.step1Shared')}</p>
+            <Aside title={t('sync.connect.sharedTitle')}>
+              <p>{t('sync.connect.step1Shared')}</p>
+              <p>{t('sync.connect.step1bShared')}</p>
+            </Aside>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => setSetupOpen(true)} className={primaryBtn}>
                 {t('sync.setup.open')}
@@ -440,14 +465,10 @@ export function SyncPanel({
           <section className={card}>
             <h3 className={heading}>{t('sync.connect.step2')}</h3>
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{t('sync.connect.step2Body')}</p>
-            {/* The account belongs to the project, so every app sharing it shares the account —
-                said here, where the sign-in / create-account choice is actually made, and where
-                picking wrong produces "this account already exists". The second line is the one
-                that stops a support question: the confirmation link can land in another of the
-                user's apps, and that looks broken without knowing the account is confirmed
-                server-side before the redirect happens. */}
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{t('sync.connect.step2Account')}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{t('sync.connect.step2Confirm')}</p>
+            <Aside title={t('sync.connect.accountTitle')}>
+              <p>{t('sync.connect.step2Account')}</p>
+              <p>{t('sync.connect.step2Confirm')}</p>
+            </Aside>
             <form
               className="space-y-2"
               onSubmit={(e) => {
