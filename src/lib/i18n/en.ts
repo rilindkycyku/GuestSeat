@@ -1055,7 +1055,7 @@ export const en = {
       sharedTitle: 'Can this project also hold my other apps?',
       accountTitle: 'Sign in, or create an account?',
       step1: 'Step 1 — create the project and the table',
-      step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
+      step1a: 'Open supabase.com/dashboard and create a new project — or better, use one you already have from another of your apps. The free plan is plenty: a few hundred guests is a few kilobytes.',
       step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
       step1bShared:
         'On the same page, add that address under Redirect URLs as well. That entry is what the sign-up asks the confirmation email to come back to — and if the project is shared with another app, it is the whole answer: leave that app’s Site URL alone and the link still lands here.',

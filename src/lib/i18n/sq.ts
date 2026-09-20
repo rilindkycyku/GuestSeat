@@ -1057,7 +1057,7 @@ export const sq = {
       sharedTitle: 'A e mban ky projekt edhe aplikacionet e tjera?',
       accountTitle: '«Hyr» apo «Krijo llogari»?',
       step1: 'Hapi 1 — krijoni projektin dhe tabelën',
-      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
+      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri — ose, më mirë, përdorni një që e keni tashmë nga një aplikacion tjetër i juaji. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
       step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
       step1bShared:
         'Te e njëjta faqe, shtojeni po atë adresë edhe te Redirect URLs. Pikërisht aty kërkon regjistrimi që të kthehet emaili i konfirmimit — dhe nëse projektin e ndani me një aplikacion tjetër, kjo është e gjithë zgjidhja: Site URL-në e atij aplikacioni lëreni si është dhe linku prapë bie këtu.',
