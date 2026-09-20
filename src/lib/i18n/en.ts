@@ -1052,21 +1052,14 @@ export const en = {
       split: '{{both}} records are on both sides, {{onlyLocal}} only here and {{onlyCloud}} only in the project. Deletions are counted too, so a number here can be larger than what the board shows.',
     },
     connect: {
-      sharedTitle: 'Can this project also hold my other apps?',
       accountTitle: 'Sign in, or create an account?',
-      step1: 'Step 1 — create the project and the table',
-      step1a: 'Open supabase.com/dashboard and create a new project — or better, use one you already have from another of your apps. The free plan is plenty: a few hundred guests is a few kilobytes.',
-      step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
-      step1bShared:
-        'On the same page, add that address under Redirect URLs as well. That entry is what the sign-up asks the confirmation email to come back to — and if the project is shared with another app, it is the whole answer: leave that app’s Site URL alone and the link still lands here.',
+      step1: 'Step 1 — the project and this app\u2019s table',
+      step1a: 'Setup happens once, in a Supabase project you own \u2014 and one project holds every app of mine, each writing its own table. The full walkthrough (creating a project, the keys, Site URL) lives in one place now:',
+      hubLink: 'Si ngrihet projekti \u2192 supabase.rilindkycyku.dev',
+      step1b: 'Add this app\u2019s address under Redirect URLs in your project (Authentication \u2192 URL Configuration). Leave Site URL to whichever app claimed it \u2014 sign-up asks for this address by name:',
+      step1d: 'Then press \u201cSet up the project\u201d: it opens your own SQL editor with this app\u2019s script already in it, and all that\u2019s left is Run. It creates only guestseat_records and touches nothing else; running it again changes nothing.',
       siteUrlCopied: 'Address copied.',
       openDashboard: 'Open Supabase dashboard',
-      step1c:
-        'Under Project Settings, take the Project URL (in Data API) and the publishable key — sb_publishable_… under API Keys. An older anon key works too. Never copy a secret / service_role key here.',
-      step1d:
-        'Press “Set up the project” below: it opens your own SQL editor with the script already in it, and all that’s left is Run. The key you paste in step 2 can’t create the table — Supabase doesn’t allow it, and that is protection, not a gap.',
-      step1Shared:
-        'One project is enough for all of your apps. GuestSeat writes to its own table, guestseat_records, so another app of yours that syncs this way sits beside it untouched — same account, same security rule, its own rows. The script creates only this table and leaves anything already there alone, and running it a second time changes nothing. There is a practical side too: the free plan pauses a project nobody touches, and a project several apps use does not go untouched.',
       step2: 'Step 2 — connect this device',
       step2Body:
         'The account is created inside your own project, nowhere else. Use the same email and password on every device you want kept in step: “Create account” the first time, “Sign in” on the others.',
