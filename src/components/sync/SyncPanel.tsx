@@ -77,6 +77,36 @@ const field =
   'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
 const primaryBtn = 'px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50';
 /**
+ * A field with its name above it, rather than only inside it.
+ *
+ * These four were `aria-label` + `placeholder`: correct for a screen reader, and invisible to
+ * everybody else the moment they typed. A filled-in form then read as four anonymous boxes — you
+ * could not tell the project URL from the key without selecting the text — and the key is the one
+ * field where pasting the wrong thing matters, because the secret key sits two lines under the
+ * public one in Supabase's panel.
+ *
+ * `hint` sits under the field it belongs to. It used to be one line after all four, which is the
+ * same information placed where it explains nothing.
+ */
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      {children}
+      {hint ? <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{hint}</span> : null}
+    </label>
+  );
+}
+
+/**
  * A collapsed explanation beside the control it explains.
  *
  * The setup screen has to answer two questions that are read once, if at all — "can this project
@@ -449,26 +479,32 @@ export function SyncPanel({
               <p>{t('sync.connect.step1Shared')}</p>
               <p>{t('sync.connect.step1bShared')}</p>
             </Aside>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => setSetupOpen(true)} className={primaryBtn}>
+            {/* Three buttons of similar width wrapped to three rows on a phone — 124px of the
+                step spent on two links nobody needs twice. The action that finishes the step gets
+                its own full-width row; the two references share the one below it. */}
+            <div className="mt-3 space-y-2">
+              <button onClick={() => setSetupOpen(true)} className={`${primaryBtn} w-full`}>
                 {t('sync.setup.open')}
               </button>
-              <button onClick={() => onOpenGuide('sync')} className={plainBtn}>
-                📖 {t('guide.readMore')}
-              </button>
-              <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className={plainBtn}>
-                {t('sync.connect.openDashboard')} ↗
-              </a>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => onOpenGuide('sync')} className={`${plainBtn} text-center`}>
+                  📖 {t('guide.readMore')}
+                </button>
+                <a
+                  href="https://supabase.com/dashboard"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${plainBtn} text-center`}
+                >
+                  {t('sync.connect.openDashboard')} ↗
+                </a>
+              </div>
             </div>
           </section>
 
           <section className={card}>
             <h3 className={heading}>{t('sync.connect.step2')}</h3>
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{t('sync.connect.step2Body')}</p>
-            <Aside title={t('sync.connect.accountTitle')}>
-              <p>{t('sync.connect.step2Account')}</p>
-              <p>{t('sync.connect.step2Confirm')}</p>
-            </Aside>
             <form
               className="space-y-2"
               onSubmit={(e) => {
@@ -476,43 +512,52 @@ export function SyncPanel({
                 void connect('signIn');
               }}
             >
-              <input
-                value={form.url}
-                onChange={(e) => setField('url', e.target.value)}
-                placeholder="https://abcdefgh.supabase.co"
-                aria-label={t('sync.connect.projectUrl')}
-                autoComplete="off"
-                spellCheck={false}
-                className={field}
-              />
-              <input
-                value={form.anonKey}
-                onChange={(e) => setField('anonKey', e.target.value)}
-                placeholder={t('sync.connect.keyPlaceholder')}
-                aria-label={t('sync.connect.publicKey')}
-                autoComplete="off"
-                spellCheck={false}
-                className={field}
-              />
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setField('email', e.target.value)}
-                placeholder={t('sync.connect.emailPlaceholder')}
-                aria-label={t('sync.connect.email')}
-                autoComplete="username"
-                className={field}
-              />
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setField('password', e.target.value)}
-                placeholder={t('sync.connect.passwordPlaceholder')}
-                aria-label={t('sync.connect.password')}
-                autoComplete="current-password"
-                className={field}
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.keyHint')}</p>
+              <Field label={t('sync.connect.projectUrl')}>
+                <input
+                  value={form.url}
+                  onChange={(e) => setField('url', e.target.value)}
+                  placeholder="https://abcdefgh.supabase.co"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.publicKey')} hint={t('sync.connect.keyHint')}>
+                <input
+                  value={form.anonKey}
+                  onChange={(e) => setField('anonKey', e.target.value)}
+                  placeholder={t('sync.connect.keyPlaceholder')}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.email')}>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setField('email', e.target.value)}
+                  placeholder={t('sync.connect.emailPlaceholder')}
+                  autoComplete="username"
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.password')}>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setField('password', e.target.value)}
+                  placeholder={t('sync.connect.passwordPlaceholder')}
+                  autoComplete="current-password"
+                  className={field}
+                />
+              </Field>
+              {/* The "which button?" answer belongs beside the two buttons that raise it, not four
+                  fields above them where it reads as preamble. */}
+              <Aside title={t('sync.connect.accountTitle')}>
+                <p>{t('sync.connect.step2Account')}</p>
+                <p>{t('sync.connect.step2Confirm')}</p>
+              </Aside>
               <div className="flex flex-wrap gap-2 pt-1">
                 <button type="submit" className={primaryBtn} disabled={busyAll}>
                   {working === 'signIn' ? t('sync.working') : t('sync.connect.signIn')}
