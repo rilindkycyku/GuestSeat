@@ -456,7 +456,7 @@ export function SyncPanel({
                 this app can say: its own address, and its own always-current setup script. */}
             <p className="text-sm text-slate-600 dark:text-slate-300">{t('sync.connect.step1a')}</p>
             <a
-              href="https://supabase.rilindkycyku.dev"
+              href="https://supabase-hub.rilindkycyku.dev"
               target="_blank"
               rel="noreferrer"
               className="mt-2 inline-block text-sm font-medium text-indigo-600 dark:text-indigo-400"

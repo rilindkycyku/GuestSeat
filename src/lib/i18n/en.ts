@@ -1055,7 +1055,7 @@ export const en = {
       accountTitle: 'Sign in, or create an account?',
       step1: 'Step 1 — the project and this app\u2019s table',
       step1a: 'Setup happens once, in a Supabase project you own \u2014 and one project holds every app of mine, each writing its own table. The full walkthrough (creating a project, the keys, Site URL) lives in one place now:',
-      hubLink: 'Si ngrihet projekti \u2192 supabase.rilindkycyku.dev',
+      hubLink: 'Si ngrihet projekti \u2192 supabase-hub.rilindkycyku.dev',
       step1b: 'Add this app\u2019s address under Redirect URLs in your project (Authentication \u2192 URL Configuration). Leave Site URL to whichever app claimed it \u2014 sign-up asks for this address by name:',
       step1d: 'Then press \u201cSet up the project\u201d: it opens your own SQL editor with this app\u2019s script already in it, and all that\u2019s left is Run. It creates only guestseat_records and touches nothing else; running it again changes nothing.',
       siteUrlCopied: 'Address copied.',

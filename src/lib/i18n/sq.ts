@@ -1057,7 +1057,7 @@ export const sq = {
       accountTitle: '«Hyr» apo «Krijo llogari»?',
       step1: 'Hapi 1 \u2014 projekti dhe tabela e këtij aplikacioni',
       step1a: 'Ngritja bëhet një herë, te një projekt Supabase që e zotëroni ju \u2014 dhe një projekt i vetëm i mban të gjitha aplikacionet e mia, secili me tabelën e vet. Udhëzimi i plotë (krijimi i projektit, çelësat, Site URL) rri tani te një vend i vetëm:',
-      hubLink: 'Si ngrihet projekti \u2192 supabase.rilindkycyku.dev',
+      hubLink: 'Si ngrihet projekti \u2192 supabase-hub.rilindkycyku.dev',
       step1b: 'Shtoni adresën e këtij aplikacioni te Redirect URLs te projekti juaj (Authentication \u2192 URL Configuration). Site URL-në lëreni atij aplikacioni që e zuri i pari \u2014 regjistrimi e kërkon këtë adresë me emër:',
       step1d: 'Pastaj shtypni \u00abKonfiguro projektin\u00bb: hapet redaktori juaj SQL me skriptin e këtij aplikacioni brenda dhe mjafton Run. Krijon vetëm guestseat_records dhe nuk prek asgjë tjetër; përsëritja nuk prish gjë.',
       siteUrlCopied: 'Adresa u kopjua.',
