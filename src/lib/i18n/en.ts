@@ -901,7 +901,7 @@ export const en = {
           },
           {
             title: 'Point it back at this app',
-            text: 'In the project: Authentication → URL Configuration → set Site URL to this app’s address. The sync screen shows the address with a copy button. Supabase’s default sends the confirmation email to a page that doesn’t exist; with this set, that link brings you back here already signed in. Sharing the project with another app? Leave its Site URL alone and add this address under Redirect URLs instead — the app asks for it by name.',
+            text: 'In the project: Authentication → URL Configuration → set Site URL to this app’s address. The sync screen shows the address with a copy button. Supabase’s default sends the confirmation email to a page that doesn’t exist; with this set, that link brings you back here already signed in. Sharing the project with another app? Leave its Site URL alone and add this address under Redirect URLs instead — the app asks for it by name. The account belongs to the project rather than to the app, so one account covers every app of yours sharing it — create it once and sign in everywhere else. A confirmation link can therefore open a different app of yours; the account is confirmed all the same, because Supabase confirms it before the redirect.',
           },
           {
             title: 'Copy the two things it needs',
@@ -1052,8 +1052,10 @@ export const en = {
       split: '{{both}} records are on both sides, {{onlyLocal}} only here and {{onlyCloud}} only in the project. Deletions are counted too, so a number here can be larger than what the board shows.',
     },
     connect: {
+      sharedTitle: 'Can this project also hold my other apps?',
+      accountTitle: 'Sign in, or create an account?',
       step1: 'Step 1 — create the project and the table',
-      step1a: 'Open supabase.com/dashboard and create a new project. The free plan is plenty: a few hundred guests is a few kilobytes.',
+      step1a: 'Open supabase.com/dashboard and create a new project — or better, use one you already have from another of your apps. The free plan is plenty: a few hundred guests is a few kilobytes.',
       step1b: 'Under Authentication → URL Configuration, set Site URL to this app’s address — that is:',
       step1bShared:
         'On the same page, add that address under Redirect URLs as well. That entry is what the sign-up asks the confirmation email to come back to — and if the project is shared with another app, it is the whole answer: leave that app’s Site URL alone and the link still lands here.',
@@ -1063,9 +1065,15 @@ export const en = {
         'Under Project Settings, take the Project URL (in Data API) and the publishable key — sb_publishable_… under API Keys. An older anon key works too. Never copy a secret / service_role key here.',
       step1d:
         'Press “Set up the project” below: it opens your own SQL editor with the script already in it, and all that’s left is Run. The key you paste in step 2 can’t create the table — Supabase doesn’t allow it, and that is protection, not a gap.',
+      step1Shared:
+        'One project is enough for all of your apps. GuestSeat writes to its own table, guestseat_records, so another app of yours that syncs this way sits beside it untouched — same account, same security rule, its own rows. The script creates only this table and leaves anything already there alone, and running it a second time changes nothing. There is a practical side too: the free plan pauses a project nobody touches, and a project several apps use does not go untouched.',
       step2: 'Step 2 — connect this device',
       step2Body:
         'The account is created inside your own project, nowhere else. Use the same email and password on every device you want kept in step: “Create account” the first time, “Sign in” on the others.',
+      step2Account:
+        'The account belongs to the project, not to the app — so it is one account for every app of yours sharing that project (GuestSeat, FinanCarePersonal, Tavolina). Create it once, in any one of them, and press Sign in in the others.',
+      step2Confirm:
+        'That is also why the confirmation email comes back to only one address — the app that claimed the project’s Site URL — so it may open a different app of yours than the one you pressed Create account in. Nothing is broken: Supabase confirms the account before sending you anywhere, so it is confirmed either way. Come back here and press Sign in. To make the link land in the right app, add each app’s address under Redirect URLs in step 1.',
       projectUrl: 'Project URL',
       publicKey: 'Public key',
       keyPlaceholder: 'sb_publishable_… or eyJhbGciOi…',

@@ -76,6 +76,62 @@ const heading = 'text-[11px] font-semibold uppercase tracking-wider text-slate-5
 const field =
   'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-400';
 const primaryBtn = 'px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50';
+/**
+ * A field with its name above it, rather than only inside it.
+ *
+ * These four were `aria-label` + `placeholder`: correct for a screen reader, and invisible to
+ * everybody else the moment they typed. A filled-in form then read as four anonymous boxes — you
+ * could not tell the project URL from the key without selecting the text — and the key is the one
+ * field where pasting the wrong thing matters, because the secret key sits two lines under the
+ * public one in Supabase's panel.
+ *
+ * `hint` sits under the field it belongs to. It used to be one line after all four, which is the
+ * same information placed where it explains nothing.
+ */
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      {children}
+      {hint ? <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{hint}</span> : null}
+    </label>
+  );
+}
+
+/**
+ * A collapsed explanation beside the control it explains.
+ *
+ * The setup screen has to answer two questions that are read once, if at all — "can this project
+ * also hold my other apps?" and "sign in or create an account?" — while the steps themselves are
+ * read every time somebody sets a device up. Left open, those answers pushed the form off a phone
+ * screen: 2412 characters of prose before the first button. Collapsed, they cost one line each and
+ * are still one tap away, which is the whole point of writing them down.
+ *
+ * `<details>` rather than state: the browser gives keyboard support, the open/closed semantics and
+ * find-in-page for free, and nothing here needs to know whether it is open.
+ */
+function Aside({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-white/60 dark:bg-slate-900/30">
+      <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2">
+        <svg viewBox="0 0 20 20" aria-hidden="true" className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90">
+          <path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {title}
+      </summary>
+      <div className="px-3 pb-3 text-xs text-slate-500 dark:text-slate-400 space-y-2">{children}</div>
+    </details>
+  );
+}
+
 const plainBtn =
   'px-3.5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50';
 const dangerBtn = 'px-3.5 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-500 disabled:opacity-50';
@@ -415,21 +471,34 @@ export function SyncPanel({
                     {t('common.copy')}
                   </button>
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.step1bShared')}</p>
               </li>
               <li>{t('sync.connect.step1c')}</li>
               <li>{t('sync.connect.step1d')}</li>
             </ol>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => setSetupOpen(true)} className={primaryBtn}>
+            <Aside title={t('sync.connect.sharedTitle')}>
+              <p>{t('sync.connect.step1Shared')}</p>
+              <p>{t('sync.connect.step1bShared')}</p>
+            </Aside>
+            {/* Three buttons of similar width wrapped to three rows on a phone — 124px of the
+                step spent on two links nobody needs twice. The action that finishes the step gets
+                its own full-width row; the two references share the one below it. */}
+            <div className="mt-3 space-y-2">
+              <button onClick={() => setSetupOpen(true)} className={`${primaryBtn} w-full`}>
                 {t('sync.setup.open')}
               </button>
-              <button onClick={() => onOpenGuide('sync')} className={plainBtn}>
-                📖 {t('guide.readMore')}
-              </button>
-              <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className={plainBtn}>
-                {t('sync.connect.openDashboard')} ↗
-              </a>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => onOpenGuide('sync')} className={`${plainBtn} text-center`}>
+                  📖 {t('guide.readMore')}
+                </button>
+                <a
+                  href="https://supabase.com/dashboard"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${plainBtn} text-center`}
+                >
+                  {t('sync.connect.openDashboard')} ↗
+                </a>
+              </div>
             </div>
           </section>
 
@@ -443,43 +512,52 @@ export function SyncPanel({
                 void connect('signIn');
               }}
             >
-              <input
-                value={form.url}
-                onChange={(e) => setField('url', e.target.value)}
-                placeholder="https://abcdefgh.supabase.co"
-                aria-label={t('sync.connect.projectUrl')}
-                autoComplete="off"
-                spellCheck={false}
-                className={field}
-              />
-              <input
-                value={form.anonKey}
-                onChange={(e) => setField('anonKey', e.target.value)}
-                placeholder={t('sync.connect.keyPlaceholder')}
-                aria-label={t('sync.connect.publicKey')}
-                autoComplete="off"
-                spellCheck={false}
-                className={field}
-              />
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setField('email', e.target.value)}
-                placeholder={t('sync.connect.emailPlaceholder')}
-                aria-label={t('sync.connect.email')}
-                autoComplete="username"
-                className={field}
-              />
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setField('password', e.target.value)}
-                placeholder={t('sync.connect.passwordPlaceholder')}
-                aria-label={t('sync.connect.password')}
-                autoComplete="current-password"
-                className={field}
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('sync.connect.keyHint')}</p>
+              <Field label={t('sync.connect.projectUrl')}>
+                <input
+                  value={form.url}
+                  onChange={(e) => setField('url', e.target.value)}
+                  placeholder="https://abcdefgh.supabase.co"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.publicKey')} hint={t('sync.connect.keyHint')}>
+                <input
+                  value={form.anonKey}
+                  onChange={(e) => setField('anonKey', e.target.value)}
+                  placeholder={t('sync.connect.keyPlaceholder')}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.email')}>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setField('email', e.target.value)}
+                  placeholder={t('sync.connect.emailPlaceholder')}
+                  autoComplete="username"
+                  className={field}
+                />
+              </Field>
+              <Field label={t('sync.connect.password')}>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setField('password', e.target.value)}
+                  placeholder={t('sync.connect.passwordPlaceholder')}
+                  autoComplete="current-password"
+                  className={field}
+                />
+              </Field>
+              {/* The "which button?" answer belongs beside the two buttons that raise it, not four
+                  fields above them where it reads as preamble. */}
+              <Aside title={t('sync.connect.accountTitle')}>
+                <p>{t('sync.connect.step2Account')}</p>
+                <p>{t('sync.connect.step2Confirm')}</p>
+              </Aside>
               <div className="flex flex-wrap gap-2 pt-1">
                 <button type="submit" className={primaryBtn} disabled={busyAll}>
                   {working === 'signIn' ? t('sync.working') : t('sync.connect.signIn')}

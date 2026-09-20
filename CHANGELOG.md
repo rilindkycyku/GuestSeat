@@ -9,6 +9,24 @@ folded into the release they belong to.
 
 ---
 
+## 1.18.1
+
+One Supabase project, three apps — said out loud.
+
+- **The setup screen now says a project can be shared.** GuestSeat writes to `guestseat_records` and
+  nothing else, so another app of yours that syncs this way sits beside it untouched: same account,
+  same security rule, its own rows. That was already true — the table, policy, trigger and index are
+  all named after it — but nowhere stated, so anyone looking at a SQL script was left guessing what
+  it would do to a database they already used for something else. Step 1 now answers that, and the
+  README names the two sibling apps (`financare_records`, `tavolina_records`).
+- **Why you might want to share one.** The free plan pauses a project nobody has touched for days.
+  A project several apps write to does not go untouched, so a seating plan opened twice a year stays
+  alive on the back of a ledger opened daily.
+- Sign-up already asked the confirmation email to come back here by name (`redirect_to`), which is
+  what makes a shared **Site URL** harmless. Unchanged — now explained where it matters.
+
+---
+
 ## 1.18.0
 
 Reading the plan, not just fitting it.

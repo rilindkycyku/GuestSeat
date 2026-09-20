@@ -161,6 +161,24 @@ shared setting is **Site URL**, which belongs to whichever app claimed it: leave
 this app's address under **Redirect URLs**, which is where the sign-up asks the confirmation email to
 come back to.
 
+Two sibling apps sync the same way and are built to share a project with this one:
+[FinanCarePersonal](https://github.com/rilindkycyku/financarepersonal) (`financare_records`) and
+[Tavolina](https://github.com/rilindkycyku/cardgametracker) (`tavolina_records`). Run each app's own
+setup script once, from that app, and sign in everywhere with the same email and password — one
+account, three tables, one project.
+
+Which row belongs to which app is answered by the table name, so none of the three stores a column
+repeating it. When you do want that column — to read the database as a whole — the script
+[`sql/tri-aplikacionet.sql`](https://github.com/rilindkycyku/financarepersonal/blob/main/sql/tri-aplikacionet.sql)
+in FinanCarePersonal derives it on read: two views over the three tables, one carrying an `app`
+column and one showing when each app last touched the project. Run once in the SQL editor; it
+touches no rows and skips tables you haven't set up.
+
+There is a practical reason to share a project beyond tidiness: the free
+plan pauses a project nobody has touched for days, and a project several apps write to does not go
+untouched — so the seating plan you open twice a year stays alive on the back of the ledger you open
+daily.
+
 **How it behaves:**
 
 - What travels is not a whole event but the pieces it's made of: one row for the event (name,

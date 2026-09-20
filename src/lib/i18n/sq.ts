@@ -903,7 +903,7 @@ export const sq = {
           },
           {
             title: 'Kthejeni nga ky aplikacion',
-            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur. E ndani projektin me një aplikacion tjetër? Lëreni Site URL-në e tij si është dhe shtojeni këtë adresë te Redirect URLs — aplikacioni e kërkon vetë me emër.',
+            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur. E ndani projektin me një aplikacion tjetër? Lëreni Site URL-në e tij si është dhe shtojeni këtë adresë te Redirect URLs — aplikacioni e kërkon vetë me emër. Llogaria i takon projektit e jo aplikacionit, prandaj një llogari mbulon të gjitha aplikacionet tuaja që e ndajnë atë — krijojeni një herë dhe te të tjerat hyni. Prandaj një link konfirmimi mund t’ju hapë një aplikacion tjetër tuajin; llogaria mbetet e konfirmuar, sepse atë e konfirmon Supabase para se t’ju dërgojë diku.',
           },
           {
             title: 'Kopjoni dy gjërat që i duhen',
@@ -1054,8 +1054,10 @@ export const sq = {
       split: '{{both}} rekorde ndodhen në të dyja anët, {{onlyLocal}} vetëm këtu dhe {{onlyCloud}} vetëm te projekti. Numërohen edhe shënimet e fshirjeve, prandaj një shifër këtu mund të jetë më e madhe se ajo që shfaq tabela.',
     },
     connect: {
+      sharedTitle: 'A e mban ky projekt edhe aplikacionet e tjera?',
+      accountTitle: '«Hyr» apo «Krijo llogari»?',
       step1: 'Hapi 1 — krijoni projektin dhe tabelën',
-      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
+      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri — ose, më mirë, përdorni një që e keni tashmë nga një aplikacion tjetër i juaji. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
       step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
       step1bShared:
         'Te e njëjta faqe, shtojeni po atë adresë edhe te Redirect URLs. Pikërisht aty kërkon regjistrimi që të kthehet emaili i konfirmimit — dhe nëse projektin e ndani me një aplikacion tjetër, kjo është e gjithë zgjidhja: Site URL-në e atij aplikacioni lëreni si është dhe linku prapë bie këtu.',
@@ -1065,9 +1067,15 @@ export const sq = {
         'Te Project Settings merrni Project URL (te Data API) dhe çelësin publishable — sb_publishable_… te API Keys. Edhe çelësi i vjetër anon punon. Çelësat secret / service_role mos i kopjoni kurrë këtu.',
       step1d:
         'Shtypni «Konfiguro projektin» më poshtë: hapet redaktori juaj SQL me skriptin brenda dhe mjafton Run. Tabelën nuk e krijon dot çelësi që ngjitni te hapi 2 — Supabase nuk ia lejon atij këtë punë, dhe kjo është mbrojtje, jo mangësi.',
+      step1Shared:
+        'Një projekt i vetëm mjafton për të gjitha aplikacionet tuaja. GuestSeat shkruan te tabela e vet, guestseat_records, prandaj një aplikacion tjetër i juaji që sinkronizon kështu rri krah saj pa u prekur — e njëjta llogari, i njëjti rregull sigurie, rreshtat e vet. Skripti krijon vetëm këtë tabelë dhe nuk prek asgjë që gjendet aty, dhe ekzekutimi i dytë nuk ndryshon gjë. Ka edhe një anë praktike: plani falas e ndal një projekt që nuk e prek kush, dhe një projekt që e përdorin disa aplikacione nuk rri pa u prekur.',
       step2: 'Hapi 2 — lidhni këtë pajisje',
       step2Body:
         'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',
+      step2Account:
+        'Llogaria i takon projektit, jo aplikacionit — pra është një e vetme për të gjitha aplikacionet tuaja që e ndajnë atë projekt (GuestSeat, FinanCarePersonal, Tavolina). Krijojeni një herë, te cilido prej tyre, dhe te të tjerat shtypni «Hyr».',
+      step2Confirm:
+        'Prandaj edhe emaili i konfirmimit kthehet vetëm te një adresë — ajo e aplikacionit që e zuri i pari Site URL-në e projektit — dhe mund t’ju hapë një aplikacion tjetër tuajin e jo atë ku shtypët «Krijo llogari». Nuk është prishur asgjë: llogarinë e konfirmon vetë Supabase para se t’ju dërgojë diku, pra ajo mbetet e konfirmuar. Kthehuni këtu dhe shtypni «Hyr». Që linku të bjerë te vendi i duhur, shtoni adresën e secilit aplikacion te Redirect URLs, te hapi 1.',
       projectUrl: 'Project URL',
       publicKey: 'Çelësi publik',
       keyPlaceholder: 'sb_publishable_… ose eyJhbGciOi…',
