@@ -440,6 +440,14 @@ export function SyncPanel({
           <section className={card}>
             <h3 className={heading}>{t('sync.connect.step2')}</h3>
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{t('sync.connect.step2Body')}</p>
+            {/* The account belongs to the project, so every app sharing it shares the account —
+                said here, where the sign-in / create-account choice is actually made, and where
+                picking wrong produces "this account already exists". The second line is the one
+                that stops a support question: the confirmation link can land in another of the
+                user's apps, and that looks broken without knowing the account is confirmed
+                server-side before the redirect happens. */}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{t('sync.connect.step2Account')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{t('sync.connect.step2Confirm')}</p>
             <form
               className="space-y-2"
               onSubmit={(e) => {

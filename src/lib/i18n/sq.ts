@@ -903,7 +903,7 @@ export const sq = {
           },
           {
             title: 'Kthejeni nga ky aplikacion',
-            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur. E ndani projektin me një aplikacion tjetër? Lëreni Site URL-në e tij si është dhe shtojeni këtë adresë te Redirect URLs — aplikacioni e kërkon vetë me emër.',
+            text: 'Te projekti: Authentication → URL Configuration → vendosni Site URL te adresa e këtij aplikacioni. Ekrani i sinkronizimit e tregon adresën me buton kopjimi. Parazgjedhja e Supabase e dërgon emailin e konfirmimit te një faqe që nuk ekziston; me këtë të vendosur, ai link ju kthen këtu tashmë të futur. E ndani projektin me një aplikacion tjetër? Lëreni Site URL-në e tij si është dhe shtojeni këtë adresë te Redirect URLs — aplikacioni e kërkon vetë me emër. Llogaria i takon projektit e jo aplikacionit, prandaj një llogari mbulon të gjitha aplikacionet tuaja që e ndajnë atë — krijojeni një herë dhe te të tjerat hyni. Prandaj një link konfirmimi mund t’ju hapë një aplikacion tjetër tuajin; llogaria mbetet e konfirmuar, sepse atë e konfirmon Supabase para se t’ju dërgojë diku.',
           },
           {
             title: 'Kopjoni dy gjërat që i duhen',
@@ -1070,6 +1070,10 @@ export const sq = {
       step2: 'Hapi 2 — lidhni këtë pajisje',
       step2Body:
         'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',
+      step2Account:
+        'Llogaria i takon projektit, jo aplikacionit — pra është një e vetme për të gjitha aplikacionet tuaja që e ndajnë atë projekt (GuestSeat, FinanCarePersonal, Tavolina). Krijojeni një herë, te cilido prej tyre, dhe te të tjerat shtypni «Hyr».',
+      step2Confirm:
+        'Prandaj edhe emaili i konfirmimit kthehet vetëm te një adresë — ajo e aplikacionit që e zuri i pari Site URL-në e projektit — dhe mund t’ju hapë një aplikacion tjetër tuajin e jo atë ku shtypët «Krijo llogari». Nuk është prishur asgjë: llogarinë e konfirmon vetë Supabase para se t’ju dërgojë diku, pra ajo mbetet e konfirmuar. Kthehuni këtu dhe shtypni «Hyr». Që linku të bjerë te vendi i duhur, shtoni adresën e secilit aplikacion te Redirect URLs, te hapi 1.',
       projectUrl: 'Project URL',
       publicKey: 'Çelësi publik',
       keyPlaceholder: 'sb_publishable_… ose eyJhbGciOi…',
