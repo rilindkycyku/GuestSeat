@@ -1054,21 +1054,14 @@ export const sq = {
       split: '{{both}} rekorde ndodhen në të dyja anët, {{onlyLocal}} vetëm këtu dhe {{onlyCloud}} vetëm te projekti. Numërohen edhe shënimet e fshirjeve, prandaj një shifër këtu mund të jetë më e madhe se ajo që shfaq tabela.',
     },
     connect: {
-      sharedTitle: 'A e mban ky projekt edhe aplikacionet e tjera?',
       accountTitle: '«Hyr» apo «Krijo llogari»?',
-      step1: 'Hapi 1 — krijoni projektin dhe tabelën',
-      step1a: 'Hapni supabase.com/dashboard dhe krijoni një projekt të ri — ose, më mirë, përdorni një që e keni tashmë nga një aplikacion tjetër i juaji. Plani falas mjafton: disa qindra mysafirë zënë pak kilobajt.',
-      step1b: 'Te Authentication → URL Configuration vendosni Site URL te adresa e këtij aplikacioni — domethënë kjo:',
-      step1bShared:
-        'Te e njëjta faqe, shtojeni po atë adresë edhe te Redirect URLs. Pikërisht aty kërkon regjistrimi që të kthehet emaili i konfirmimit — dhe nëse projektin e ndani me një aplikacion tjetër, kjo është e gjithë zgjidhja: Site URL-në e atij aplikacioni lëreni si është dhe linku prapë bie këtu.',
+      step1: 'Hapi 1 \u2014 projekti dhe tabela e këtij aplikacioni',
+      step1a: 'Ngritja bëhet një herë, te një projekt Supabase që e zotëroni ju \u2014 dhe një projekt i vetëm i mban të gjitha aplikacionet e mia, secili me tabelën e vet. Udhëzimi i plotë (krijimi i projektit, çelësat, Site URL) rri tani te një vend i vetëm:',
+      hubLink: 'Si ngrihet projekti \u2192 supabase-hub.rilindkycyku.dev',
+      step1b: 'Shtoni adresën e këtij aplikacioni te Redirect URLs te projekti juaj (Authentication \u2192 URL Configuration). Site URL-në lëreni atij aplikacioni që e zuri i pari \u2014 regjistrimi e kërkon këtë adresë me emër:',
+      step1d: 'Pastaj shtypni \u00abKonfiguro projektin\u00bb: hapet redaktori juaj SQL me skriptin e këtij aplikacioni brenda dhe mjafton Run. Krijon vetëm guestseat_records dhe nuk prek asgjë tjetër; përsëritja nuk prish gjë.',
       siteUrlCopied: 'Adresa u kopjua.',
       openDashboard: 'Hap panelin e Supabase',
-      step1c:
-        'Te Project Settings merrni Project URL (te Data API) dhe çelësin publishable — sb_publishable_… te API Keys. Edhe çelësi i vjetër anon punon. Çelësat secret / service_role mos i kopjoni kurrë këtu.',
-      step1d:
-        'Shtypni «Konfiguro projektin» më poshtë: hapet redaktori juaj SQL me skriptin brenda dhe mjafton Run. Tabelën nuk e krijon dot çelësi që ngjitni te hapi 2 — Supabase nuk ia lejon atij këtë punë, dhe kjo është mbrojtje, jo mangësi.',
-      step1Shared:
-        'Një projekt i vetëm mjafton për të gjitha aplikacionet tuaja. GuestSeat shkruan te tabela e vet, guestseat_records, prandaj një aplikacion tjetër i juaji që sinkronizon kështu rri krah saj pa u prekur — e njëjta llogari, i njëjti rregull sigurie, rreshtat e vet. Skripti krijon vetëm këtë tabelë dhe nuk prek asgjë që gjendet aty, dhe ekzekutimi i dytë nuk ndryshon gjë. Ka edhe një anë praktike: plani falas e ndal një projekt që nuk e prek kush, dhe një projekt që e përdorin disa aplikacione nuk rri pa u prekur.',
       step2: 'Hapi 2 — lidhni këtë pajisje',
       step2Body:
         'Llogaria krijohet brenda projektit tuaj, jo diku tjetër. Përdorni të njëjtin email dhe fjalëkalim në çdo pajisje që doni të mbani në hap: herën e parë «Krijo llogari», në pajisjet e tjera «Hyr».',

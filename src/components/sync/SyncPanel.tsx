@@ -451,34 +451,39 @@ export function SyncPanel({
 
           <section className={card}>
             <h3 className={heading}>{t('sync.connect.step1')}</h3>
-            <ol className="list-decimal ps-5 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-              <li>{t('sync.connect.step1a')}</li>
-              <li>
-                {t('sync.connect.step1b')}
-                <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                  <code className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs break-all">
-                    {siteUrl}
-                  </code>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard
-                        ?.writeText(siteUrl)
-                        .then(() => onToast(t('sync.connect.siteUrlCopied')))
-                        .catch(() => undefined);
-                    }}
-                    className={plainBtn}
-                  >
-                    {t('common.copy')}
-                  </button>
-                </div>
-              </li>
-              <li>{t('sync.connect.step1c')}</li>
-              <li>{t('sync.connect.step1d')}</li>
-            </ol>
-            <Aside title={t('sync.connect.sharedTitle')}>
-              <p>{t('sync.connect.step1Shared')}</p>
-              <p>{t('sync.connect.step1bShared')}</p>
-            </Aside>
+            {/* The walkthrough that used to live here — four numbered paragraphs, and the same
+                four paragraphs in three other apps — now has one home. What stays is what only
+                this app can say: its own address, and its own always-current setup script. */}
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('sync.connect.step1a')}</p>
+            <a
+              href="https://supabase-hub.rilindkycyku.dev"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-sm font-medium text-indigo-600 dark:text-indigo-400"
+            >
+              {t('sync.connect.hubLink')}
+            </a>
+
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{t('sync.connect.step1b')}</p>
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              <code className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs break-all">
+                {siteUrl}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard
+                    ?.writeText(siteUrl)
+                    .then(() => onToast(t('sync.connect.siteUrlCopied')))
+                    .catch(() => undefined);
+                }}
+                className={plainBtn}
+              >
+                {t('common.copy')}
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{t('sync.connect.step1d')}</p>
+
             {/* Three buttons of similar width wrapped to three rows on a phone — 124px of the
                 step spent on two links nobody needs twice. The action that finishes the step gets
                 its own full-width row; the two references share the one below it. */}
