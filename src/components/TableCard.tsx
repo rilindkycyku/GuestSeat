@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { Guest, Table, TableTag } from '../types';
 import { GuestChip } from './GuestChip';
@@ -28,7 +28,7 @@ interface TableCardProps {
   onCreateTag: (label: string) => void;
 }
 
-export function TableCard({
+export const TableCard = memo(function TableCard({
   table,
   guests,
   tags,
@@ -216,4 +216,4 @@ export function TableCard({
       )}
     </div>
   );
-}
+});

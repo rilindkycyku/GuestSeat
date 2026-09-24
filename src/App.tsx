@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
 import { useEventState } from './hooks/useEventState';
@@ -22,24 +22,26 @@ import { EventPicker } from './components/EventPicker';
 import { UnseatedPanel } from './components/UnseatedPanel';
 import { TableCard } from './components/TableCard';
 import { FloorTable } from './components/FloorTable';
-import { GuestEditorModal } from './components/GuestEditorModal';
-import { AddGuestModal } from './components/AddGuestModal';
 import { NavBar } from './components/NavBar';
-import { SettingsModal } from './components/SettingsModal';
 import { Credits } from './components/Credits';
-import { StatsModal } from './components/StatsModal';
-import { CheckInScreen } from './components/CheckInScreen';
-import { FindSeatScreen } from './components/FindSeatScreen';
-import { InvitationModal } from './components/InvitationModal';
-import { EventDetailsModal } from './components/EventDetailsModal';
-import { QrModal } from './components/QrModal';
-import { CapacityModal } from './components/CapacityModal';
 import { ConfirmModal, type ConfirmOptions } from './components/ConfirmModal';
-import { DataModal, type DataTab } from './components/DataModal';
-import { GuideModal } from './components/GuideModal';
+import type { DataTab } from './components/DataModal';
 import type { GuideScreen } from './lib/guide';
 import { SyncBadge } from './components/sync/SyncBadge';
-import { AutoSeatReport } from './components/AutoSeatReport';
+
+const GuestEditorModal = lazy(() => import('./components/GuestEditorModal').then((m) => ({ default: m.GuestEditorModal })));
+const AddGuestModal = lazy(() => import('./components/AddGuestModal').then((m) => ({ default: m.AddGuestModal })));
+const SettingsModal = lazy(() => import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })));
+const StatsModal = lazy(() => import('./components/StatsModal').then((m) => ({ default: m.StatsModal })));
+const CheckInScreen = lazy(() => import('./components/CheckInScreen').then((m) => ({ default: m.CheckInScreen })));
+const FindSeatScreen = lazy(() => import('./components/FindSeatScreen').then((m) => ({ default: m.FindSeatScreen })));
+const InvitationModal = lazy(() => import('./components/InvitationModal').then((m) => ({ default: m.InvitationModal })));
+const EventDetailsModal = lazy(() => import('./components/EventDetailsModal').then((m) => ({ default: m.EventDetailsModal })));
+const QrModal = lazy(() => import('./components/QrModal').then((m) => ({ default: m.QrModal })));
+const CapacityModal = lazy(() => import('./components/CapacityModal').then((m) => ({ default: m.CapacityModal })));
+const DataModal = lazy(() => import('./components/DataModal').then((m) => ({ default: m.DataModal })));
+const GuideModal = lazy(() => import('./components/GuideModal').then((m) => ({ default: m.GuideModal })));
+const AutoSeatReport = lazy(() => import('./components/AutoSeatReport').then((m) => ({ default: m.AutoSeatReport })));
 import { ImportError, parseImportedJson } from './lib/importGuests';
 import { parseImportedCsv } from './lib/importCsv';
 import {
@@ -636,21 +638,23 @@ export default function App() {
   // before the IndexedDB gate below.
   if (findSeatState) {
     return (
-      <FindSeatScreen
-        state={findSeatState}
-        onOpenFullPlan={() => {
-          const shared = findSeatState;
-          setFindSeatState(null);
-          askConfirm({
-            message: t('share.receivedConfirm', { name: shared.eventName, count: shared.guests.length }),
-            confirmLabel: t('share.load'),
-            onConfirm: () => {
-              loadSharedState(shared);
-              showToast(t('share.loaded', { count: shared.guests.length }));
-            },
-          });
-        }}
-      />
+      <Suspense fallback={null}>
+        <FindSeatScreen
+          state={findSeatState}
+          onOpenFullPlan={() => {
+            const shared = findSeatState;
+            setFindSeatState(null);
+            askConfirm({
+              message: t('share.receivedConfirm', { name: shared.eventName, count: shared.guests.length }),
+              confirmLabel: t('share.load'),
+              onConfirm: () => {
+                loadSharedState(shared);
+                showToast(t('share.loaded', { count: shared.guests.length }));
+              },
+            });
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -696,10 +700,12 @@ export default function App() {
         ) : (
           onboardingScreen(events.length > 0 ? () => setCreatingNew(false) : undefined)
         )}
-        {dataModal}
-        {guideModal}
+        <Suspense fallback={null}>
+          {dataModal}
+          {guideModal}
+          {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
+        </Suspense>
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
-        {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
         {toastNode}
       </>
     );
@@ -976,135 +982,138 @@ export default function App() {
         </button>
       </div>
 
-      {editingGuest && (
-        <GuestEditorModal
-          guest={editingGuest}
-          tables={state.tables}
-          tags={customTags}
-          allGuests={state.guests}
-          seatedCount={seatedCount}
-          onSave={(patch) => updateGuest(editingGuest.id, patch)}
-          onDelete={() =>
-            askConfirm({
-              message: t('guestEditor.deleteConfirm', {
-                name: editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name,
-              }),
-              confirmLabel: t('common.delete'),
-              danger: true,
-              onConfirm: () => {
-                const snapshot = state;
-                const name = editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name;
-                setEditingGuestId(null);
-                runWithUndo(snapshot, () => removeGuest(editingGuest.id), t('guestEditor.deleted', { name }));
-              },
-            })
-          }
-          onClose={() => setEditingGuestId(null)}
-          onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
-          onKeepApart={(otherId) => keepApart(editingGuest.id, otherId)}
-          onAllowTogether={(otherId) => allowTogether(editingGuest.id, otherId)}
-          onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
-          onSeatGuest={trySeatGuest}
-          onToggleTag={(tagId) => toggleGuestTag(editingGuest.id, tagId)}
-          onCreateTag={(label) => createTagForGuest(editingGuest.id, label)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {editingGuest && (
+          <GuestEditorModal
+            guest={editingGuest}
+            tables={state.tables}
+            tags={customTags}
+            allGuests={state.guests}
+            seatedCount={seatedCount}
+            onSave={(patch) => updateGuest(editingGuest.id, patch)}
+            onDelete={() =>
+              askConfirm({
+                message: t('guestEditor.deleteConfirm', {
+                  name: editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name,
+                }),
+                confirmLabel: t('common.delete'),
+                danger: true,
+                onConfirm: () => {
+                  const snapshot = state;
+                  const name = editingGuest.surname ? `${editingGuest.name} ${editingGuest.surname}` : editingGuest.name;
+                  setEditingGuestId(null);
+                  runWithUndo(snapshot, () => removeGuest(editingGuest.id), t('guestEditor.deleted', { name }));
+                },
+              })
+            }
+            onClose={() => setEditingGuestId(null)}
+            onLink={(otherId) => handleLinkGuests(editingGuest.id, otherId)}
+            onKeepApart={(otherId) => keepApart(editingGuest.id, otherId)}
+            onAllowTogether={(otherId) => allowTogether(editingGuest.id, otherId)}
+            onUnlink={(otherId) => unlinkGuests(editingGuest.id, otherId)}
+            onSeatGuest={trySeatGuest}
+            onToggleTag={(tagId) => toggleGuestTag(editingGuest.id, tagId)}
+            onCreateTag={(label) => createTagForGuest(editingGuest.id, label)}
+          />
+        )}
 
-      {addingGuest && <AddGuestModal onAdd={addGuest} onClose={() => setAddingGuest(false)} />}
+        {addingGuest && <AddGuestModal onAdd={addGuest} onClose={() => setAddingGuest(false)} />}
 
-      {capacityTable && (
-        <CapacityModal
-          table={capacityTable}
-          onSave={(capacity, shape) => updateTable(capacityTable.id, { capacity, shape })}
-          onClose={() => setCapacityTableId(null)}
-        />
-      )}
+        {capacityTable && (
+          <CapacityModal
+            table={capacityTable}
+            onSave={(capacity, shape) => updateTable(capacityTable.id, { capacity, shape })}
+            onClose={() => setCapacityTableId(null)}
+          />
+        )}
+
+        {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
+
+        {invitationOpen && (
+          <InvitationModal
+            state={state}
+            onChange={updateEventDetails}
+            onShowQr={() => setQrOpen(true)}
+            onToast={showToast}
+            seedTraditions={seedTraditions}
+            onClose={() => setInvitationOpen(false)}
+          />
+        )}
+
+        {eventDetailsOpen && (
+          <EventDetailsModal state={state} onChange={updateEventDetails} onClose={() => setEventDetailsOpen(false)} />
+        )}
+
+        {qrOpen && <QrModal state={state} onToast={showToast} onClose={() => setQrOpen(false)} />}
+
+        {statsOpen && <StatsModal state={state} onClose={() => setStatsOpen(false)} />}
+
+        {checkInOpen && (
+          <CheckInScreen
+            state={state}
+            onToggleArrived={toggleArrived}
+            onReset={handleResetArrivals}
+            onClose={() => setCheckInOpen(false)}
+          />
+        )}
+
+        {settingsOpen && (
+          <SettingsModal
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onAutoSeat={() => {
+              setSettingsOpen(false);
+              handleAutoSeat();
+            }}
+            onOverview={() => {
+              setSettingsOpen(false);
+              setStatsOpen(true);
+            }}
+            onCheckIn={() => {
+              setSettingsOpen(false);
+              setCheckInOpen(true);
+            }}
+            onEditEventDetails={() => {
+              setSettingsOpen(false);
+              setEventDetailsOpen(true);
+            }}
+            onEditInvitation={() => {
+              setSettingsOpen(false);
+              setInvitationOpen(true);
+            }}
+            onSwitchEvents={() => {
+              setSettingsOpen(false);
+              handleCloseToPicker();
+            }}
+            onOpenData={() => {
+              setSettingsOpen(false);
+              setDataTab('backup');
+            }}
+            onOpenGuide={() => {
+              setSettingsOpen(false);
+              openGuide();
+            }}
+            syncConfigured={sync.configured}
+            tableColumns={tableColumns}
+            onTableColumnsChange={setTableColumns}
+            systemTags={systemTags}
+            tags={customTags}
+            onAddTag={addTag}
+            onUpdateTag={updateTag}
+            onRemoveTag={removeTag}
+            onMarkAllComing={handleMarkAllComing}
+            onMarkAllPending={handleMarkAllPending}
+            onUnseatAll={handleUnseatAll}
+            onReset={handleReset}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
+
+        {dataModal}
+        {guideModal}
+      </Suspense>
 
       {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
-      {autoSeatReport && <AutoSeatReport result={autoSeatReport} onClose={() => setAutoSeatReport(null)} />}
-
-      {invitationOpen && (
-        <InvitationModal
-          state={state}
-          onChange={updateEventDetails}
-          onShowQr={() => setQrOpen(true)}
-          onToast={showToast}
-          seedTraditions={seedTraditions}
-          onClose={() => setInvitationOpen(false)}
-        />
-      )}
-
-      {eventDetailsOpen && (
-        <EventDetailsModal state={state} onChange={updateEventDetails} onClose={() => setEventDetailsOpen(false)} />
-      )}
-
-      {qrOpen && <QrModal state={state} onToast={showToast} onClose={() => setQrOpen(false)} />}
-
-      {statsOpen && <StatsModal state={state} onClose={() => setStatsOpen(false)} />}
-
-      {checkInOpen && (
-        <CheckInScreen
-          state={state}
-          onToggleArrived={toggleArrived}
-          onReset={handleResetArrivals}
-          onClose={() => setCheckInOpen(false)}
-        />
-      )}
-
-      {settingsOpen && (
-        <SettingsModal
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onAutoSeat={() => {
-            setSettingsOpen(false);
-            handleAutoSeat();
-          }}
-          onOverview={() => {
-            setSettingsOpen(false);
-            setStatsOpen(true);
-          }}
-          onCheckIn={() => {
-            setSettingsOpen(false);
-            setCheckInOpen(true);
-          }}
-          onEditEventDetails={() => {
-            setSettingsOpen(false);
-            setEventDetailsOpen(true);
-          }}
-          onEditInvitation={() => {
-            setSettingsOpen(false);
-            setInvitationOpen(true);
-          }}
-          onSwitchEvents={() => {
-            setSettingsOpen(false);
-            handleCloseToPicker();
-          }}
-          onOpenData={() => {
-            setSettingsOpen(false);
-            setDataTab('backup');
-          }}
-          onOpenGuide={() => {
-            setSettingsOpen(false);
-            openGuide();
-          }}
-          syncConfigured={sync.configured}
-          tableColumns={tableColumns}
-          onTableColumnsChange={setTableColumns}
-          systemTags={systemTags}
-          tags={customTags}
-          onAddTag={addTag}
-          onUpdateTag={updateTag}
-          onRemoveTag={removeTag}
-          onMarkAllComing={handleMarkAllComing}
-          onMarkAllPending={handleMarkAllPending}
-          onUnseatAll={handleUnseatAll}
-          onReset={handleReset}
-          onClose={() => setSettingsOpen(false)}
-        />
-      )}
-
-      {dataModal}
-      {guideModal}
 
       {toastNode}
       <Analytics />

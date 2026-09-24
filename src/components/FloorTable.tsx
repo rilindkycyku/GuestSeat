@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Guest, TableSide, TableTag, Table, TagColor } from '../types';
@@ -40,7 +40,7 @@ function fullName(g: Guest): string {
   return g.surname ? `${g.name} ${g.surname}` : g.name;
 }
 
-function SeatDot({
+const SeatDot = memo(function SeatDot({
   guest,
   x,
   y,
@@ -81,6 +81,7 @@ function SeatDot({
 
   return (
     <button
+      type="button"
       ref={setNodeRef}
       style={style}
       {...listeners}
@@ -110,14 +111,15 @@ function SeatDot({
       )}
     </button>
   );
-}
+});
+
 
 const SIDE_RING: Record<TableSide, string> = {
   groom: 'border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30',
   bride: 'border-pink-200 dark:border-pink-900 bg-pink-50/60 dark:bg-pink-950/30',
 };
 
-export function FloorTable({
+export const FloorTable = memo(function FloorTable({
   table,
   guests,
   tags,
@@ -352,4 +354,4 @@ export function FloorTable({
       )}
     </div>
   );
-}
+});

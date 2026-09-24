@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Guest, TableTag } from '../types';
@@ -15,7 +16,7 @@ interface GuestChipProps {
   tags?: TableTag[];
 }
 
-export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feudBadge, tags }: GuestChipProps) {
+export const GuestChip = memo(function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feudBadge, tags }: GuestChipProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: guest.id,
     data: { guestId: guest.id },
@@ -29,6 +30,7 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feu
 
   return (
     <button
+      type="button"
       ref={setNodeRef}
       style={style}
       {...listeners}
@@ -101,4 +103,4 @@ export function GuestChip({ guest, highlighted, onClick, compact, linkBadge, feu
       )}
     </button>
   );
-}
+});
