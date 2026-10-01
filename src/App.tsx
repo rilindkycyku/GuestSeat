@@ -1,3 +1,4 @@
+import { UpdatePrompt } from './components/common/UpdatePrompt';
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { Analytics } from '@vercel/analytics/react';
@@ -1116,6 +1117,7 @@ export default function App() {
       {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
 
       {toastNode}
+      <UpdatePrompt />
       <Analytics />
     </DndContext>
   );

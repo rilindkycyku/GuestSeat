@@ -9,6 +9,15 @@ folded into the release they belong to.
 
 ---
 
+## 1.19.0
+
+1-Click Auto-Configuration and in-app update prompt.
+
+- **1-Click auto-configuration:** Supports encoded URL setup parameters to automatically configure Supabase Project URL and Key.
+- **New version popup:** In-app notification prompt when an updated service worker is ready, letting users activate the latest release cleanly.
+
+---
+
 ## 1.18.1
 
 One Supabase project, three apps — said out loud.
