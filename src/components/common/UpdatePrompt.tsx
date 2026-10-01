@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
 
 export function UpdatePrompt() {
-  const { language } = useLanguage();
-  const isSq = language === 'sq';
+  const { lang } = useLanguage();
+  const isSq = lang === 'sq';
   const [hasUpdate, setHasUpdate] = useState(false);
   const [swWaiting, setSwWaiting] = useState<ServiceWorker | null>(null);
   const [updating, setUpdating] = useState(false);
