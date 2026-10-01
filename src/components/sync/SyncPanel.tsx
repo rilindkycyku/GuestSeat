@@ -13,7 +13,6 @@ import {
   schemaState,
   signIn,
   signOut,
-  signUp,
   type SchemaState,
 } from '../../lib/sync/supabase';
 import {
@@ -153,6 +152,37 @@ function Note({ tone = 'info', children }: { tone?: 'info' | 'warn' | 'bad'; chi
  * GuestSeat is in the path. What that costs is a setup with real steps in it, so the panel is
  * arranged as those steps and says at each one why it cannot do that part for them.
  */
+/** Read setup parameters from query or hash if opened via 1-click config link */
+function readConfigParams(): { url: string | null; anonKey: string | null } {
+  if (typeof window === 'undefined') return { url: null, anonKey: null };
+  const params = new URLSearchParams(window.location.search);
+  let hashQuery = '';
+  if (window.location.hash && window.location.hash.includes('?')) {
+    hashQuery = window.location.hash.slice(window.location.hash.indexOf('?'));
+  }
+  const hashParams = new URLSearchParams(hashQuery);
+
+  let url = hashParams.get('sb_url') || hashParams.get('url') || params.get('sb_url') || params.get('url');
+  let anonKey =
+    hashParams.get('sb_key') ||
+    hashParams.get('key') ||
+    hashParams.get('anonKey') ||
+    params.get('sb_key') ||
+    params.get('key') ||
+    params.get('anonKey');
+  const setupEncoded = hashParams.get('setup') || params.get('setup');
+
+  if (setupEncoded) {
+    try {
+      const decoded = JSON.parse(atob(setupEncoded));
+      if (decoded?.url) url = decoded.url;
+      if (decoded?.anonKey || decoded?.key) anonKey = decoded.anonKey || decoded.key;
+    } catch {}
+  }
+
+  return { url: url ? url.trim() : null, anonKey: anonKey ? anonKey.trim() : null };
+}
+
 export function SyncPanel({
   sync,
   askConfirm,
@@ -167,12 +197,28 @@ export function SyncPanel({
   const { t, lang } = useLanguage();
   const { config, connected, busy, error, syncNow, clearError } = sync;
 
-  const [form, setForm] = useState(() => ({
-    url: config.url || '',
-    anonKey: config.anonKey || '',
-    email: config.email || '',
-    password: '',
-  }));
+  const [form, setForm] = useState(() => {
+    const fromLink = readConfigParams();
+    return {
+      url: fromLink.url || config.url || '',
+      anonKey: fromLink.anonKey || config.anonKey || '',
+      email: config.email || '',
+      password: '',
+    };
+  });
+  const [configuredFromLink] = useState(() => {
+    const fromLink = readConfigParams();
+    return Boolean(fromLink.url && fromLink.anonKey);
+  });
+
+  useEffect(() => {
+    if (configuredFromLink) {
+      try {
+        const clean = window.location.pathname + window.location.hash.split('?')[0];
+        window.history.replaceState({}, document.title, clean);
+      } catch {}
+    }
+  }, [configuredFromLink]);
   const [working, setWorking] = useState<string | null>(null);
   const [sides, setSides] = useState<ConnectSummary | null>(null);
   const [schema, setSchema] = useState<SchemaState | null>(null);
@@ -263,16 +309,12 @@ export function SyncPanel({
 
     setWorking(mode);
     clearError();
+    if (url.includes('supabase-hub.rilindkycyku.dev')) {
+      onToast('«https://supabase-hub.rilindkycyku.dev» is Supabase Hub. Please enter your Supabase Project URL.');
+      return;
+    }
     try {
-      if (mode === 'signUp') {
-        const { needsConfirmation } = await signUp({ email: form.email, password: form.password, url, anonKey: key.key });
-        if (needsConfirmation) {
-          onToast(t('sync.connect.confirmEmail'));
-          return;
-        }
-      } else {
-        await signIn({ email: form.email, password: form.password, url, anonKey: key.key });
-      }
+      await signIn({ email: form.email, password: form.password, url, anonKey: key.key });
       // A device that has just connected knows nothing about what is up there, so the first run takes
       // the whole cloud copy — and, until the dialog is answered, sends nothing at all.
       resetWatermarks();
@@ -567,9 +609,15 @@ export function SyncPanel({
                 <button type="submit" className={primaryBtn} disabled={busyAll}>
                   {working === 'signIn' ? t('sync.working') : t('sync.connect.signIn')}
                 </button>
-                <button type="button" onClick={() => void connect('signUp')} className={plainBtn} disabled={busyAll}>
-                  {working === 'signUp' ? t('sync.working') : t('sync.connect.signUp')}
-                </button>
+                <a
+                  href="https://supabase-hub.rilindkycyku.dev"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={plainBtn}
+                  style={{ textDecoration: 'none' }}
+                >
+                  Supabase Hub ↗
+                </a>
               </div>
             </form>
           </section>
