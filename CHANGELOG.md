@@ -15,6 +15,12 @@ folded into the release they belong to.
 
 - **1-Click auto-configuration:** Supports encoded URL setup parameters to automatically configure Supabase Project URL and Key.
 - **New version popup:** In-app notification prompt when an updated service worker is ready, letting users activate the latest release cleanly.
+- **The update now actually waits for it.** The service worker was still set to update itself, so
+  the popup almost never had anything to offer: a new version took over by itself and the page
+  reloaded on its own - and the very first visit loaded several times over, because installing the
+  worker counted as a takeover too. Now a first visit loads once, a new version waits, and the page
+  reloads only after «Update now». The popup also shows on the event picker and the start screen,
+  not only with a plan open - that is where the app opens.
 
 ---
 

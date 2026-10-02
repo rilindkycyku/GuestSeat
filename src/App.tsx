@@ -708,6 +708,9 @@ export default function App() {
         </Suspense>
         {confirmState && <ConfirmModal {...confirmState} onClose={() => setConfirmState(null)} />}
         {toastNode}
+        {/* Here too, not only beside an open plan: the picker and the onboarding screen are where
+            the app opens, and a version waiting there would otherwise never be offered. */}
+        <UpdatePrompt />
       </>
     );
   }

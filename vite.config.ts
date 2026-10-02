@@ -17,7 +17,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // `prompt`, not `autoUpdate`: an auto-updating worker takes control by itself - on the very
+      // first visit too - and every takeover reloaded the page (`UpdatePrompt`), so a first opening
+      // loaded several times and a deploy reloaded the planner mid-drag. Now the new version waits,
+      // the prompt offers it, and the page reloads only when asked.
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'GuestSeat — Wedding Seating Planner',
@@ -39,8 +43,9 @@ export default defineConfig({
         globIgnores: ['**/vendor-excel*', '**/vendor-pdf*', '**/exceljs*', '**/jspdf*', '**/html2canvas*'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        // No `clientsClaim` / `skipWaiting`: both make a new worker take over the moment it
+        // installs, which is exactly what `prompt` exists to stop - the new version has to wait for
+        // «Update now» (`UpdatePrompt`), or the prompt never has anything to offer.
         // Serve the SPA shell for any navigation while offline.
         navigateFallback: 'index.html',
         runtimeCaching: [
