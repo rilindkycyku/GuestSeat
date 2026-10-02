@@ -238,9 +238,13 @@ When a change is user-visible:
 
 ## Gotchas
 
-- **Offline is a feature.** The service worker (`vite-plugin-pwa`, `registerType: 'autoUpdate'`)
+- **Offline is a feature.** The service worker (`vite-plugin-pwa`, `registerType: 'prompt'`)
   precaches JS/CSS/HTML/SVG/PNG/ICO/JSON and falls back to `index.html` for navigations. A runtime
   fetch to a third party breaks that and the privacy promise at once.
+- **Updates wait for the user.** `prompt`, not `autoUpdate`: a new version installs and waits,
+  `UpdatePrompt` offers it, and the page reloads only after «Update now». `autoUpdate` let every
+  worker takeover reload the page - the first install included - so a first visit loaded several
+  times and a deploy reloaded the planner on its own.
 - **A name is the identifier, not a surname.** Anything that assumes both exist is a bug.
 - Seating a kept-apart pair together **by hand** is allowed and flagged; auto-seating refuses it.
   Don't turn the flag into a block.

@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
 
+/**
+ * Set only by «Update now». A controller change is a reload *only* when the user asked for the
+ * update: the first install also changes the controller (from none to one), and reloading on that
+ * reloaded every first visit for nothing. Module-level, because the listener below can be added more
+ * than once and the flag has to be one.
+ */
+let requestedByUser = false;
+
 export function UpdatePrompt() {
   const { lang } = useLanguage();
   const isSq = lang === 'sq';
@@ -19,35 +27,42 @@ export function UpdatePrompt() {
         setHasUpdate(true);
       }
 
-      reg.addEventListener('updatefound', () => {
-        const installing = reg.installing;
-        if (!installing) return;
-
+      const follow = (installing: ServiceWorker) => {
         installing.addEventListener('statechange', () => {
           if (installing.state === 'installed' && navigator.serviceWorker.controller) {
             setSwWaiting(installing);
             setHasUpdate(true);
           }
         });
+      };
+      // A version already installing when this mounted: its `updatefound` has been and gone.
+      if (reg.installing) follow(reg.installing);
+      reg.addEventListener('updatefound', () => {
+        if (reg.installing) follow(reg.installing);
       });
     }).catch(() => {});
 
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      refreshing = true;
+    const onControllerChange = () => {
+      if (!requestedByUser) return;
+      requestedByUser = false;
       window.location.reload();
-    });
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
   }, []);
 
   const handleUpdate = () => {
     setUpdating(true);
+    requestedByUser = true;
     if (swWaiting) {
       swWaiting.postMessage({ type: 'SKIP_WAITING' });
     }
+    // The reload normally comes from `controllerchange` the moment the new worker takes over. This
+    // is the fallback for a browser that never fires it - late enough not to reload ahead of the
+    // takeover, which would only bring the same waiting version (and this prompt) straight back.
     setTimeout(() => {
       window.location.reload();
-    }, 800);
+    }, 3000);
   };
 
   if (!hasUpdate) return null;
